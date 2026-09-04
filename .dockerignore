@@ -1,0 +1,8 @@
+.venv
+raw
+.git
+.idea
+tests
+docs
+.pytest_cache
+data-shape.json

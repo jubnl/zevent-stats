@@ -1,0 +1,1184 @@
+{
+  "uid": "zevent",
+  "title": "ZEVENT",
+  "tags": [
+    "zevent"
+  ],
+  "timezone": "browser",
+  "editable": true,
+  "graphTooltip": 1,
+  "refresh": "1m",
+  "time": {
+    "from": "2026-09-04T20:00:00.000Z",
+    "to": "now"
+  },
+  "schemaVersion": 39,
+  "version": 1,
+  "templating": {
+    "list": [
+      {
+        "name": "streamer",
+        "label": "Streamer",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "zevent-pg"
+        },
+        "query": "SELECT display AS __text, twitch_id AS __value FROM streamer ORDER BY lower(display)",
+        "definition": "SELECT display AS __text, twitch_id AS __value FROM streamer ORDER BY lower(display)",
+        "multi": true,
+        "includeAll": true,
+        "refresh": 1,
+        "sort": 0,
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Total donations",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 5,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT donation_total FROM snapshot ORDER BY ts DESC LIMIT 1",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "green"
+          },
+          "unit": "currencyEUR",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Viewers now",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 5,
+        "y": 0,
+        "w": 5,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT viewers_total FROM snapshot ORDER BY ts DESC LIMIT 1",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "purple"
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Streamers online",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 10,
+        "y": 0,
+        "w": 5,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT streamers_online AS \"Online\", streamers_total AS \"Total\" FROM snapshot ORDER BY ts DESC LIMIT 1",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Donations, last hour",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 15,
+        "y": 0,
+        "w": 5,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT max(donation_total) - min(donation_total) FROM snapshot WHERE ts > now() - interval '1 hour'",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "orange"
+          },
+          "unit": "currencyEUR",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "External donations",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 20,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT sn.donation_total - sum(s.donation_total) FROM snapshot sn JOIN streamer_sample s USING (ts) WHERE sn.ts = (SELECT max(ts) FROM snapshot) GROUP BY sn.donation_total",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "yellow"
+          },
+          "unit": "currencyEUR",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 6,
+      "type": "row",
+      "title": "Global",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Total donations over time",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT ts AS time, donation_total AS \"Total\" FROM snapshot WHERE $__timeFilter(ts) ORDER BY 1",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "auto",
+            "pointSize": 4,
+            "spanNulls": true
+          },
+          "unit": "currencyEUR"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": false,
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Viewers over time",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 5,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT ts AS time, viewers_total AS \"Viewers\" FROM snapshot WHERE $__timeFilter(ts) ORDER BY 1",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "auto",
+            "pointSize": 4,
+            "spanNulls": true
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": false,
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Donations per interval",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 14,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroupAlias(ts, $__interval), sum(delta) AS \"Donated\" FROM (  SELECT ts, donation_total - lag(donation_total) OVER (ORDER BY ts) AS delta  FROM snapshot WHERE $__timeFilter(ts)) d WHERE delta IS NOT NULL GROUP BY 1 ORDER BY 1",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 80,
+            "showPoints": "never",
+            "pointSize": 4,
+            "spanNulls": true,
+            "drawStyle": "bars"
+          },
+          "unit": "currencyEUR"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": false,
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "interval": "5m"
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Streamers online",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 14,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT ts AS time, streamers_online AS \"Online\" FROM snapshot WHERE $__timeFilter(ts) ORDER BY 1",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "auto",
+            "pointSize": 4,
+            "spanNulls": true
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": false,
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "External donations over time (total minus all streamers)",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 23,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT sn.ts AS time, sn.donation_total - sum(s.donation_total) AS \"External\" FROM snapshot sn JOIN streamer_sample s USING (ts) WHERE $__timeFilter(sn.ts) GROUP BY sn.ts, sn.donation_total ORDER BY 1",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "auto",
+            "pointSize": 4,
+            "spanNulls": true
+          },
+          "unit": "currencyEUR"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": false,
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "External donations per interval (global gain minus streamer gains)",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 23,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroupAlias(ts, $__interval), sum(g) - sum(sg) AS \"External\" FROM (  SELECT ts, donation_total - lag(donation_total) OVER ( ORDER BY ts) AS g FROM snapshot WHERE $__timeFilter(ts)) gl JOIN (  SELECT ts, sum(delta) AS sg FROM (    SELECT ts, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta FROM streamer_sample WHERE $__timeFilter(ts)  ) x GROUP BY ts) st USING (ts) WHERE g IS NOT NULL GROUP BY 1 ORDER BY 1",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 80,
+            "showPoints": "never",
+            "pointSize": 4,
+            "spanNulls": true,
+            "drawStyle": "bars"
+          },
+          "unit": "currencyEUR"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": false,
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "interval": "5m"
+    },
+    {
+      "id": 13,
+      "type": "timeseries",
+      "title": "Streamers online per game",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 32,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "WITH top AS (SELECT game FROM streamer_sample WHERE $__timeFilter(ts) AND online GROUP BY game ORDER BY count(*) DESC LIMIT 8) SELECT ts AS time, CASE WHEN game IN (SELECT game FROM top) THEN game ELSE 'Other' END AS metric, count(*) AS value FROM streamer_sample WHERE $__timeFilter(ts) AND online GROUP BY 1, 2 ORDER BY 1",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 60,
+            "showPoints": "auto",
+            "pointSize": 4,
+            "spanNulls": true,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 14,
+      "type": "timeseries",
+      "title": "Viewers per game",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 32,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "WITH top AS (SELECT game FROM streamer_sample WHERE $__timeFilter(ts) AND online GROUP BY game ORDER BY sum(viewers) DESC LIMIT 8) SELECT ts AS time, CASE WHEN game IN (SELECT game FROM top) THEN game ELSE 'Other' END AS metric, sum(viewers) AS value FROM streamer_sample WHERE $__timeFilter(ts) AND online GROUP BY 1, 2 ORDER BY 1",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 60,
+            "showPoints": "auto",
+            "pointSize": 4,
+            "spanNulls": true,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 15,
+      "type": "row",
+      "title": "Leaderboards (latest snapshot)",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 41,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 16,
+      "type": "table",
+      "title": "Top by donations",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 42,
+        "w": 8,
+        "h": 12
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT st.display AS \"Streamer\", s.donation_total AS \"Donations\", s.viewers AS \"Viewers\", s.online AS \"Online\" FROM streamer_sample s JOIN streamer st USING (twitch_id) WHERE s.ts = (SELECT max(ts) FROM snapshot) ORDER BY s.donation_total DESC LIMIT 25",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Donations"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyEUR"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": []
+      }
+    },
+    {
+      "id": 17,
+      "type": "table",
+      "title": "Top by viewers",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 42,
+        "w": 8,
+        "h": 12
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT st.display AS \"Streamer\", s.viewers AS \"Viewers\", s.game AS \"Game\", s.donation_total AS \"Donations\" FROM streamer_sample s JOIN streamer st USING (twitch_id) WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.online ORDER BY s.viewers DESC LIMIT 25",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Donations"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyEUR"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": []
+      }
+    },
+    {
+      "id": 18,
+      "type": "table",
+      "title": "Top gained in selected range",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 42,
+        "w": 8,
+        "h": 12
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT st.display AS \"Streamer\", sum(d.delta) AS \"Gained\", (array_agg(d.donation_total ORDER BY d.ts DESC))[1] AS \"Donations\" FROM (  SELECT ts, twitch_id, donation_total, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta  FROM streamer_sample WHERE $__timeFilter(ts)) d JOIN streamer st USING (twitch_id) WHERE d.delta IS NOT NULL GROUP BY st.display ORDER BY 2 DESC LIMIT 25",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Gained"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyEUR"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Donations"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyEUR"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": []
+      }
+    },
+    {
+      "id": 19,
+      "type": "row",
+      "title": "Per streamer ($streamer)",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 54,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 20,
+      "type": "timeseries",
+      "title": "Donations per streamer",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 55,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT s.ts AS time, st.display AS metric, s.donation_total AS value FROM streamer_sample s JOIN streamer st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.twitch_id IN ($streamer) ORDER BY 1",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 60,
+            "showPoints": "auto",
+            "pointSize": 4,
+            "spanNulls": true,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          },
+          "unit": "currencyEUR"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 21,
+      "type": "timeseries",
+      "title": "Viewers per streamer",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 55,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT s.ts AS time, st.display AS metric, s.viewers AS value FROM streamer_sample s JOIN streamer st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.twitch_id IN ($streamer) ORDER BY 1",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 60,
+            "showPoints": "auto",
+            "pointSize": 4,
+            "spanNulls": true,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 22,
+      "type": "timeseries",
+      "title": "Donations gained per streamer per interval",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 64,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroupAlias(d.ts, $__interval), st.display AS metric, sum(d.delta) AS value FROM (  SELECT ts, twitch_id, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta  FROM streamer_sample WHERE $__timeFilter(ts) AND twitch_id IN ($streamer)) d JOIN streamer st USING (twitch_id) WHERE d.delta IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 60,
+            "showPoints": "never",
+            "pointSize": 4,
+            "spanNulls": true,
+            "drawStyle": "bars",
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          },
+          "unit": "currencyEUR"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "desc"
+        }
+      },
+      "interval": "5m"
+    },
+    {
+      "id": 23,
+      "type": "table",
+      "title": "Status of selected streamers",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 64,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "WITH cur AS (  SELECT twitch_id, ts, online, game, viewers FROM streamer_sample  WHERE ts = (SELECT max(ts) FROM snapshot) AND twitch_id IN ($streamer)), changed AS (  SELECT c.twitch_id, max(s.ts) AS at FROM cur c JOIN streamer_sample s USING (twitch_id)  WHERE s.online <> c.online OR s.game IS DISTINCT FROM c.game GROUP BY c.twitch_id) SELECT st.display AS \"Streamer\", c.online AS \"Online\", c.game AS \"Game\", c.viewers AS \"Viewers\",        extract(epoch FROM c.ts - coalesce(ch.at, st.first_seen)) AS \"Since\" FROM cur c JOIN streamer st USING (twitch_id) LEFT JOIN changed ch USING (twitch_id) ORDER BY c.online DESC, c.viewers DESC",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Since"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dtdurations"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": []
+      }
+    }
+  ]
+}

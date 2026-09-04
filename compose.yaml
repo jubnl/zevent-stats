@@ -1,0 +1,86 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: zevent
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: zevent
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "127.0.0.1:5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zevent -d zevent"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  collector:
+    build: .
+    environment:
+      DATABASE_URL: postgresql://zevent:${POSTGRES_PASSWORD}@db:5432/zevent
+      ZEVENT_API_URL: https://zevent.fr/api/
+      POLL_INTERVAL: "60"
+      RAW_DIR: /raw
+      BACKFILL_ON_START: "true"   # import raw/ files missing from the db at startup
+    volumes:
+      - ./raw:/raw
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Internal instance: full Grafana, login required. Publish as zevent.infra.jubnl.ch
+  grafana:
+    image: grafana/grafana-oss:11.3.0
+    environment:
+      GF_SERVER_ROOT_URL: ${GF_ROOT_URL:-http://localhost:3000}
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_ADMIN_PASSWORD}
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_NEWS_NEWS_FEED_ENABLED: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Public instance: anonymous read-only, one dashboard, fixed time range, 30s refresh.
+  # Publish as zevent.jubnl.ch. Optionally redirect / to /d/zevent-public?kiosk in the proxy.
+  grafana-public:
+    image: grafana/grafana-oss:11.3.0
+    environment:
+      GF_SERVER_ROOT_URL: ${GF_PUBLIC_ROOT_URL:-http://localhost:3001}
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_ADMIN_PASSWORD}
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_AUTH_ANONYMOUS_HIDE_VERSION: "true"
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_AUTH_DISABLE_SIGNOUT_MENU: "true"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_EXPLORE_ENABLED: "false"
+      GF_DASHBOARDS_MIN_REFRESH_INTERVAL: 30s
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /etc/grafana/provisioning/dashboards/zevent-public.json
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_NEWS_NEWS_FEED_ENABLED: "false"
+    volumes:
+      - grafana-public-data:/var/lib/grafana
+      - ./grafana/provisioning-public:/etc/grafana/provisioning:ro
+    ports:
+      - "127.0.0.1:3001:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  grafana-data:
+  grafana-public-data:
