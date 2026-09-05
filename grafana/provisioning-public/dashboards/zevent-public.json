@@ -7,9 +7,9 @@
   "timezone": "browser",
   "editable": false,
   "graphTooltip": 1,
-  "refresh": "30s",
+  "refresh": "15s",
   "time": {
-    "from": "2026-09-04T20:00:00.000Z",
+    "from": "2026-09-04T20:58:40.000Z",
     "to": "now"
   },
   "schemaVersion": 39,
