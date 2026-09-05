@@ -133,18 +133,18 @@ panels = [
     stat("Total donations", "SELECT donation_total FROM snapshot ORDER BY ts DESC LIMIT 1", 0, w=4, unit="currencyEUR",
          decimals=2),
     stat("Donations, last hour",
-         "SELECT max(donation_total) - min(donation_total) FROM snapshot WHERE ts > now() - interval '1 hour'", 16, w=4,
+         "SELECT max(donation_total) - min(donation_total) FROM snapshot WHERE ts > now() - interval '1 hour'", 4, w=4,
          unit="currencyEUR", decimals=2, color="orange"),
     stat("External donations",
          "SELECT sn.donation_total - sum(s.donation_total) FROM snapshot sn JOIN streamer_sample s USING (ts) "
          "WHERE sn.ts = (SELECT max(ts) FROM snapshot) GROUP BY sn.donation_total",
-         20, w=4, unit="currencyEUR", decimals=2, color="yellow"),
-    stat("Viewers now", "SELECT viewers_total FROM snapshot ORDER BY ts DESC LIMIT 1", 4, w=4, unit="short",
+         8, w=4, unit="currencyEUR", decimals=2, color="yellow"),
+    stat("Viewers now", "SELECT viewers_total FROM snapshot ORDER BY ts DESC LIMIT 1", 12, w=4, unit="short",
          color="purple"),
     # whole event, not the selected time range
-    stat("Peak viewers", "SELECT max(viewers_total) FROM snapshot", 8, w=4, unit="short", color="purple"),
+    stat("Peak viewers", "SELECT max(viewers_total) FROM snapshot", 16, w=4, unit="short", color="purple"),
     stat("Streamers online",
-         'SELECT streamers_online AS "Online", streamers_total AS "Total" FROM snapshot ORDER BY ts DESC LIMIT 1', 12,
+         'SELECT streamers_online AS "Online", streamers_total AS "Total" FROM snapshot ORDER BY ts DESC LIMIT 1', 20,
          w=4, color="blue", text_mode="value_and_name"),
 
     row("Global", 4),
