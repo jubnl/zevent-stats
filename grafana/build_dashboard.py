@@ -759,13 +759,9 @@ def live_panels(loc, scope):
            f'SELECT s.ts AS time, count(*) FILTER (WHERE s.online) AS "Online" {latest} AND $__timeFilter(s.ts) '
            "GROUP BY 1 ORDER BY 1",
            12, 0, w=12, h=4, unit="short", legend=False),
-        # The filtered view is a separate compact panel so that narrowing the filter to a few streamers
-        # gives normal-sized rows; the full list below is paginated.
-        live_timeline("Selected streamers ($streamer)", 4, 10, loc, filtered=True, per_page=15,
-                      description=LIVE_DESCRIPTION + " Pick streamers in the Streamer filter to compare a few; "
-                                                     "the full list is in the panel below."),
-        live_timeline(f"All streamers ({scope})", 14, 34, loc, filtered=False, per_page=50,
-                      description=LIVE_DESCRIPTION),
+        # paginated, follows the Location and Streamer filters
+        live_timeline(f"Streamers ({scope}, $streamer)", 4, 34, loc, filtered=True, per_page=50,
+                      description=LIVE_DESCRIPTION + " Follows the Location and Streamer filters."),
     ]
 
 
