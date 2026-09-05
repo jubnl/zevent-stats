@@ -38,12 +38,9 @@ def panel(ptype, title, sql, x, y, w, h, fmt="time_series", **extra):
     return p
 
 
-def stat(title, sql, x, w=6, y=0, unit=None, decimals=None, color="green", text_mode="value", description=None,
-         text_value=False):
+def stat(title, sql, x, w=6, y=0, unit=None, decimals=None, color="green", text_mode="value", description=None):
     d = {"color": {"mode": "fixed", "fixedColor": color}}
     extra = {"description": description} if description else {}
-    # the stat panel reduces numeric fields only unless told to take every field; needed for string values
-    fields = "/.*/" if text_value else ""
     if unit:
         d["unit"] = unit
     if decimals is not None:
@@ -52,7 +49,7 @@ def stat(title, sql, x, w=6, y=0, unit=None, decimals=None, color="green", text_
         "stat", title, sql, x, y, w, 4, fmt="table",
         fieldConfig={"defaults": d},
         options={
-            "reduceOptions": {"calcs": ["lastNotNull"], "fields": fields, "values": False},
+            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": False},
             "colorMode": "value", "graphMode": "none", "textMode": text_mode, "justifyMode": "center",
         },
         **extra,
@@ -150,23 +147,19 @@ def row(title, y):
 
 
 panels = [
-    stat("Total donations", "SELECT donation_total FROM snapshot ORDER BY ts DESC LIMIT 1", 0, w=5, unit="currencyEUR",
+    stat("Total donations", "SELECT donation_total FROM snapshot ORDER BY ts DESC LIMIT 1", 0, w=6, unit="currencyEUR",
          decimals=2),
-    # same number, unabbreviated: formatted in SQL so the stat panel shows the text as is
-    stat("Total donations, exact",
-         "SELECT '€' || to_char(donation_total, 'FM9,999,999,990.00') FROM snapshot ORDER BY ts DESC LIMIT 1",
-         5, w=5, description="The exact event total, same value as the tile on the left.", text_value=True),
     stat("Donations, last hour",
-         "SELECT max(donation_total) - min(donation_total) FROM snapshot WHERE ts > now() - interval '1 hour'", 10, w=4,
+         "SELECT max(donation_total) - min(donation_total) FROM snapshot WHERE ts > now() - interval '1 hour'", 6, w=6,
          unit="currencyEUR", decimals=2, color="orange"),
     stat("Donations not tied to a streamer",
          "SELECT sn.donation_total - sum(s.donation_total) FROM snapshot sn JOIN streamer_sample_v s USING (ts) "
          "WHERE NOT s.derived AND sn.ts = (SELECT max(ts) FROM snapshot) GROUP BY sn.donation_total",
-         14, w=5, unit="currencyEUR", decimals=2, color="yellow", description=MIRROR_NOTE),
+         12, w=6, unit="currencyEUR", decimals=2, color="yellow", description=MIRROR_NOTE),
     stat("MisterMV's private counter",
          "SELECT coalesce(sum(donation_total), 0) FROM streamer_sample_v "
          "WHERE derived AND ts = (SELECT max(ts) FROM snapshot)",
-         19, w=5, unit="currencyEUR", decimals=2, color="red",
+         18, w=6, unit="currencyEUR", decimals=2, color="red",
          description="The part of mistermv's counter that mirrors Domingo's since 01:08 UTC on Sept 5: donations to "
                      "Domingo credited to both. Shown as the \"mistermv (private counter)\" entry in the leaderboards "
                      "and left out of \"Donations not tied to a streamer\"."),

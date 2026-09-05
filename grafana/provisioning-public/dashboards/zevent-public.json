@@ -54,7 +54,7 @@
       "gridPos": {
         "x": 0,
         "y": 0,
-        "w": 5,
+        "w": 6,
         "h": 4
       },
       "targets": [
@@ -97,65 +97,15 @@
     {
       "id": 2,
       "type": "stat",
-      "title": "Total donations, exact",
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "zevent-pg"
-      },
-      "gridPos": {
-        "x": 5,
-        "y": 0,
-        "w": 5,
-        "h": 4
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "zevent-pg"
-          },
-          "rawQuery": true,
-          "rawSql": "SELECT '\u20ac' || to_char(donation_total, 'FM9,999,999,990.00') FROM snapshot ORDER BY ts DESC LIMIT 1",
-          "format": "table",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "green"
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "/.*/",
-          "values": false
-        },
-        "colorMode": "value",
-        "graphMode": "none",
-        "textMode": "value",
-        "justifyMode": "center"
-      },
-      "description": "The exact event total, same value as the tile on the left."
-    },
-    {
-      "id": 3,
-      "type": "stat",
       "title": "Donations, last hour",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
       },
       "gridPos": {
-        "x": 10,
+        "x": 6,
         "y": 0,
-        "w": 4,
+        "w": 6,
         "h": 4
       },
       "targets": [
@@ -196,7 +146,7 @@
       }
     },
     {
-      "id": 4,
+      "id": 3,
       "type": "stat",
       "title": "Donations not tied to a streamer",
       "datasource": {
@@ -204,9 +154,9 @@
         "uid": "zevent-pg"
       },
       "gridPos": {
-        "x": 14,
+        "x": 12,
         "y": 0,
-        "w": 5,
+        "w": 6,
         "h": 4
       },
       "targets": [
@@ -248,7 +198,7 @@
       "description": "All donations that could not be tied to a streamer: the event total minus the sum of the streamer counters. This holds donations made by people without picking a streamer (the Streamlabs Charity team page without a member), the tickets of the concert on Thursday, all shop donations, and so on. The derived \"mistermv (private counter)\" row is left out of the streamer sum: since 01:08 UTC on Sept 5 it mirrors Domingo's counter, which is already counted once."
     },
     {
-      "id": 5,
+      "id": 4,
       "type": "stat",
       "title": "MisterMV's private counter",
       "datasource": {
@@ -256,9 +206,9 @@
         "uid": "zevent-pg"
       },
       "gridPos": {
-        "x": 19,
+        "x": 18,
         "y": 0,
-        "w": 5,
+        "w": 6,
         "h": 4
       },
       "targets": [
@@ -300,7 +250,7 @@
       "description": "The part of mistermv's counter that mirrors Domingo's since 01:08 UTC on Sept 5: donations to Domingo credited to both. Shown as the \"mistermv (private counter)\" entry in the leaderboards and left out of \"Donations not tied to a streamer\"."
     },
     {
-      "id": 6,
+      "id": 5,
       "type": "stat",
       "title": "Viewers now",
       "datasource": {
@@ -350,7 +300,7 @@
       }
     },
     {
-      "id": 7,
+      "id": 6,
       "type": "stat",
       "title": "Peak viewers",
       "datasource": {
@@ -400,7 +350,7 @@
       }
     },
     {
-      "id": 8,
+      "id": 7,
       "type": "stat",
       "title": "Streamers online",
       "datasource": {
@@ -449,7 +399,7 @@
       }
     },
     {
-      "id": 9,
+      "id": 8,
       "type": "row",
       "title": "Global",
       "collapsed": false,
@@ -462,7 +412,7 @@
       "panels": []
     },
     {
-      "id": 10,
+      "id": 9,
       "type": "timeseries",
       "title": "Total donations over time",
       "datasource": {
@@ -514,7 +464,7 @@
       }
     },
     {
-      "id": 11,
+      "id": 10,
       "type": "timeseries",
       "title": "Viewers over time",
       "datasource": {
@@ -566,7 +516,7 @@
       }
     },
     {
-      "id": 12,
+      "id": 11,
       "type": "timeseries",
       "title": "Donations per interval",
       "datasource": {
@@ -620,7 +570,7 @@
       "interval": "5m"
     },
     {
-      "id": 13,
+      "id": 12,
       "type": "timeseries",
       "title": "Streamers online",
       "datasource": {
@@ -672,7 +622,7 @@
       }
     },
     {
-      "id": 14,
+      "id": 13,
       "type": "timeseries",
       "title": "Donations not tied to a streamer, over time (total minus all streamers)",
       "datasource": {
@@ -725,7 +675,7 @@
       "description": "All donations that could not be tied to a streamer: the event total minus the sum of the streamer counters. This holds donations made by people without picking a streamer (the Streamlabs Charity team page without a member), the tickets of the concert on Thursday, all shop donations, and so on. The derived \"mistermv (private counter)\" row is left out of the streamer sum: since 01:08 UTC on Sept 5 it mirrors Domingo's counter, which is already counted once."
     },
     {
-      "id": 15,
+      "id": 14,
       "type": "timeseries",
       "title": "Donations not tied to a streamer, per interval (total gain minus streamer gains)",
       "datasource": {
@@ -780,7 +730,7 @@
       "description": "All donations that could not be tied to a streamer: the event total minus the sum of the streamer counters. This holds donations made by people without picking a streamer (the Streamlabs Charity team page without a member), the tickets of the concert on Thursday, all shop donations, and so on. The derived \"mistermv (private counter)\" row is left out of the streamer sum: since 01:08 UTC on Sept 5 it mirrors Domingo's counter, which is already counted once."
     },
     {
-      "id": 16,
+      "id": 15,
       "type": "timeseries",
       "title": "Streamers online per game",
       "datasource": {
@@ -836,7 +786,7 @@
       }
     },
     {
-      "id": 17,
+      "id": 16,
       "type": "timeseries",
       "title": "Viewers per game",
       "datasource": {
@@ -892,7 +842,7 @@
       }
     },
     {
-      "id": 18,
+      "id": 17,
       "type": "row",
       "title": "Leaderboards (latest snapshot)",
       "collapsed": false,
@@ -905,7 +855,7 @@
       "panels": []
     },
     {
-      "id": 19,
+      "id": 18,
       "type": "table",
       "title": "Top by donations",
       "datasource": {
@@ -994,7 +944,7 @@
       }
     },
     {
-      "id": 20,
+      "id": 19,
       "type": "table",
       "title": "Top by viewers",
       "datasource": {
@@ -1083,7 +1033,7 @@
       }
     },
     {
-      "id": 21,
+      "id": 20,
       "type": "table",
       "title": "Top gained in selected range",
       "datasource": {
@@ -1188,7 +1138,7 @@
       }
     },
     {
-      "id": 22,
+      "id": 21,
       "type": "row",
       "title": "Per streamer ($streamer)",
       "collapsed": false,
@@ -1201,7 +1151,7 @@
       "panels": []
     },
     {
-      "id": 23,
+      "id": 22,
       "type": "stat",
       "title": "Donations of selected streamers",
       "datasource": {
@@ -1253,7 +1203,7 @@
       "description": "Sum of the selected streamers' counters at the latest snapshot. The derived \"mistermv (private counter)\" entry is not real money and is left out even when selected."
     },
     {
-      "id": 24,
+      "id": 23,
       "type": "timeseries",
       "title": "Donations per streamer",
       "datasource": {
@@ -1317,7 +1267,7 @@
       }
     },
     {
-      "id": 25,
+      "id": 24,
       "type": "timeseries",
       "title": "Viewers per streamer",
       "datasource": {
@@ -1381,7 +1331,7 @@
       }
     },
     {
-      "id": 26,
+      "id": 25,
       "type": "timeseries",
       "title": "Donations gained per streamer per interval",
       "datasource": {
@@ -1447,7 +1397,7 @@
       "interval": "5m"
     },
     {
-      "id": 27,
+      "id": 26,
       "type": "table",
       "title": "Status of selected streamers",
       "datasource": {
