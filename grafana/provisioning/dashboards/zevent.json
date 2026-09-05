@@ -770,7 +770,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT st.display AS \"Streamer\", s.donation_total AS \"Donations\", s.viewers AS \"Viewers\", s.online AS \"Online\" FROM streamer_sample s JOIN streamer st USING (twitch_id) WHERE s.ts = (SELECT max(ts) FROM snapshot) ORDER BY s.donation_total DESC LIMIT 25",
+          "rawSql": "SELECT st.display AS \"Streamer\", s.donation_total AS \"Donations\", s.viewers AS \"Viewers\", s.online AS \"Online\", st.login AS login FROM streamer_sample s JOIN streamer st USING (twitch_id) WHERE s.ts = (SELECT max(ts) FROM snapshot) ORDER BY s.donation_total DESC LIMIT 25",
           "format": "table",
           "refId": "A"
         }
@@ -798,6 +798,36 @@
               {
                 "id": "decimals",
                 "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Streamer"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open on Twitch",
+                    "url": "https://twitch.tv/${__data.fields.login}",
+                    "targetBlank": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "login"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
               }
             ]
           }
@@ -829,7 +859,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT st.display AS \"Streamer\", s.viewers AS \"Viewers\", s.game AS \"Game\", s.donation_total AS \"Donations\" FROM streamer_sample s JOIN streamer st USING (twitch_id) WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.online ORDER BY s.viewers DESC LIMIT 25",
+          "rawSql": "SELECT st.display AS \"Streamer\", s.viewers AS \"Viewers\", s.game AS \"Game\", s.donation_total AS \"Donations\", st.login AS login FROM streamer_sample s JOIN streamer st USING (twitch_id) WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.online ORDER BY s.viewers DESC LIMIT 25",
           "format": "table",
           "refId": "A"
         }
@@ -857,6 +887,36 @@
               {
                 "id": "decimals",
                 "value": 0
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Streamer"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open on Twitch",
+                    "url": "https://twitch.tv/${__data.fields.login}",
+                    "targetBlank": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "login"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
               }
             ]
           }
@@ -888,7 +948,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT st.display AS \"Streamer\", sum(d.delta) AS \"Gained\", (array_agg(d.donation_total ORDER BY d.ts DESC))[1] AS \"Donations\" FROM (  SELECT ts, twitch_id, donation_total, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta  FROM streamer_sample WHERE $__timeFilter(ts)) d JOIN streamer st USING (twitch_id) WHERE d.delta IS NOT NULL GROUP BY st.display ORDER BY 2 DESC LIMIT 25",
+          "rawSql": "SELECT st.display AS \"Streamer\", sum(d.delta) AS \"Gained\", (array_agg(d.donation_total ORDER BY d.ts DESC))[1] AS \"Donations\", st.login AS login FROM (  SELECT ts, twitch_id, donation_total, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta  FROM streamer_sample WHERE $__timeFilter(ts)) d JOIN streamer st USING (twitch_id) WHERE d.delta IS NOT NULL GROUP BY st.twitch_id, st.display, st.login ORDER BY 2 DESC LIMIT 25",
           "format": "table",
           "refId": "A"
         }
@@ -934,6 +994,36 @@
                 "value": 0
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Streamer"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open on Twitch",
+                    "url": "https://twitch.tv/${__data.fields.login}",
+                    "targetBlank": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "login"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
           }
         ]
       },
@@ -976,7 +1066,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT s.ts AS time, st.display AS metric, s.donation_total AS value FROM streamer_sample s JOIN streamer st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.twitch_id IN ($streamer) ORDER BY 1",
+          "rawSql": "SELECT s.ts AS time, st.display AS metric, st.login AS login, s.donation_total AS value FROM streamer_sample s JOIN streamer st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.twitch_id IN ($streamer) ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }
@@ -994,7 +1084,15 @@
               "group": "A"
             }
           },
-          "unit": "currencyEUR"
+          "unit": "currencyEUR",
+          "displayName": "${__field.labels.metric}",
+          "links": [
+            {
+              "title": "Open on Twitch",
+              "url": "https://twitch.tv/${__field.labels.login}",
+              "targetBlank": true
+            }
+          ]
         },
         "overrides": []
       },
@@ -1032,7 +1130,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT s.ts AS time, st.display AS metric, s.viewers AS value FROM streamer_sample s JOIN streamer st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.twitch_id IN ($streamer) ORDER BY 1",
+          "rawSql": "SELECT s.ts AS time, st.display AS metric, st.login AS login, s.viewers AS value FROM streamer_sample s JOIN streamer st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.twitch_id IN ($streamer) ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }
@@ -1050,7 +1148,15 @@
               "group": "A"
             }
           },
-          "unit": "short"
+          "unit": "short",
+          "displayName": "${__field.labels.metric}",
+          "links": [
+            {
+              "title": "Open on Twitch",
+              "url": "https://twitch.tv/${__field.labels.login}",
+              "targetBlank": true
+            }
+          ]
         },
         "overrides": []
       },
@@ -1088,7 +1194,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroupAlias(d.ts, $__interval), st.display AS metric, sum(d.delta) AS value FROM (  SELECT ts, twitch_id, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta  FROM streamer_sample WHERE $__timeFilter(ts) AND twitch_id IN ($streamer)) d JOIN streamer st USING (twitch_id) WHERE d.delta IS NOT NULL GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT $__timeGroupAlias(d.ts, $__interval), st.display AS metric, st.login AS login, sum(d.delta) AS value FROM (  SELECT ts, twitch_id, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta  FROM streamer_sample WHERE $__timeFilter(ts) AND twitch_id IN ($streamer)) d JOIN streamer st USING (twitch_id) WHERE d.delta IS NOT NULL GROUP BY 1, 2, 3 ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }
@@ -1107,7 +1213,15 @@
               "group": "A"
             }
           },
-          "unit": "currencyEUR"
+          "unit": "currencyEUR",
+          "displayName": "${__field.labels.metric}",
+          "links": [
+            {
+              "title": "Open on Twitch",
+              "url": "https://twitch.tv/${__field.labels.login}",
+              "targetBlank": true
+            }
+          ]
         },
         "overrides": []
       },
@@ -1146,7 +1260,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH cur AS (  SELECT twitch_id, ts, online, game, viewers FROM streamer_sample  WHERE ts = (SELECT max(ts) FROM snapshot) AND twitch_id IN ($streamer)), changed AS (  SELECT c.twitch_id, max(s.ts) AS at FROM cur c JOIN streamer_sample s USING (twitch_id)  WHERE s.online <> c.online OR s.game IS DISTINCT FROM c.game GROUP BY c.twitch_id) SELECT st.display AS \"Streamer\", c.online AS \"Online\", c.game AS \"Game\", c.viewers AS \"Viewers\",        extract(epoch FROM c.ts - coalesce(ch.at, st.first_seen)) AS \"Since\" FROM cur c JOIN streamer st USING (twitch_id) LEFT JOIN changed ch USING (twitch_id) ORDER BY c.online DESC, c.viewers DESC",
+          "rawSql": "WITH cur AS (  SELECT twitch_id, ts, online, game, viewers FROM streamer_sample  WHERE ts = (SELECT max(ts) FROM snapshot) AND twitch_id IN ($streamer)), changed AS (  SELECT c.twitch_id, max(s.ts) AS at FROM cur c JOIN streamer_sample s USING (twitch_id)  WHERE s.online <> c.online OR s.game IS DISTINCT FROM c.game GROUP BY c.twitch_id) SELECT st.display AS \"Streamer\", c.online AS \"Online\", c.game AS \"Game\", c.viewers AS \"Viewers\",        extract(epoch FROM c.ts - coalesce(ch.at, st.first_seen)) AS \"Since\", st.login AS login FROM cur c JOIN streamer st USING (twitch_id) LEFT JOIN changed ch USING (twitch_id) ORDER BY c.online DESC, c.viewers DESC",
           "format": "table",
           "refId": "A"
         }
@@ -1170,6 +1284,36 @@
               {
                 "id": "unit",
                 "value": "dtdurations"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Streamer"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open on Twitch",
+                    "url": "https://twitch.tv/${__data.fields.login}",
+                    "targetBlank": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "login"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
               }
             ]
           }
