@@ -1,6 +1,10 @@
 -- Derived views used by the Grafana dashboards. Runs automatically on a fresh database (mounted into
--- /docker-entrypoint-initdb.d, after init.sql). On an existing database apply it by hand, once per change:
---   docker compose exec -T db psql -U zevent -d zevent -f /docker-entrypoint-initdb.d/views.sql
+-- /docker-entrypoint-initdb.d, after init.sql). On an existing database apply it by hand, once per change,
+-- piping the file in from the host:
+--   docker compose exec -T db psql -U zevent -d zevent < db/views.sql
+-- Do not use the copy mounted inside the container (-f /docker-entrypoint-initdb.d/views.sql): git replaces
+-- the file on pull, and a running container keeps the old inode, so that copy is stale until the container
+-- is recreated.
 --
 -- Background: mistermv's API counter merges his own donations with a second source. In the data that
 -- second source is a copy of Domingo's counter: at 01:08 UTC on 2026-09-05 mistermv's counter jumped
