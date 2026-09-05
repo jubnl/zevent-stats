@@ -638,9 +638,9 @@ LOCATION_VAR = query_var("location", "Location", LOC_QUERY, all_value=".*")
 LOCATION_VAR_LAN = copy.deepcopy(LOCATION_VAR)
 LOCATION_VAR_LAN["current"] = {"selected": True, "text": ["On site (LAN)"], "value": ["LAN"]}
 
-# Concert opening (donations open) until now; grows as data arrives. Data before 2026-09-04 20:58 UTC
-# is backfilled from third-party sources (raw-backfill/, see zevent_tracker/external.py).
-TIME_RANGE = {"from": "2026-09-03T17:30:00.000Z", "to": "now"}
+# First datapoint until now; grows as data arrives. Data before 2026-09-04 20:58 UTC is backfilled from
+# third-party sources (raw-backfill/, see zevent_tracker/external.py); its first tick is 17:01 UTC.
+TIME_RANGE = {"from": "2026-09-03T17:01:00.000Z", "to": "now"}
 
 DASHBOARDS = [  # (uid, button title)
     ("zevent-public", "Main stats"),
