@@ -496,6 +496,62 @@ def insights_panels():
 
 
 # ---------------------------------------------------------------------------------------------------
+# Hero header of the streamer dashboard: an HTML text panel fed by hidden query variables that follow the
+# Streamer filter (chained variables re-run when $streamer changes, and on every refresh). With several
+# streamers selected the hero shows the one with the largest counter.
+HERO_CUR = ("WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers FROM streamer_sample_v s "
+            "WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.twitch_id IN ($streamer) AND NOT s.derived "
+            "ORDER BY s.donation_total DESC LIMIT 1) ")
+HERO_VARS = {
+    "hero_display": "SELECT st.display FROM cur JOIN streamer_v st USING (twitch_id)",
+    "hero_login": "SELECT st.login FROM cur JOIN streamer_v st USING (twitch_id)",
+    "hero_avatar": "SELECT coalesce(st.profile_url, '') FROM cur JOIN streamer_v st USING (twitch_id)",
+    "hero_location": "SELECT CASE st.location WHEN 'LAN' THEN 'On site at the ZEVENT' WHEN 'Online' THEN "
+                     "'Streaming from home' ELSE '' END FROM cur JOIN streamer_v st USING (twitch_id)",
+    "hero_status": "SELECT CASE WHEN cur.online THEN 'LIVE' ELSE 'OFFLINE' END FROM cur",
+    "hero_color": "SELECT CASE WHEN cur.online THEN '#3fb950' ELSE '#8b949e' END FROM cur",
+    "hero_game": "SELECT CASE WHEN cur.online THEN coalesce(cur.game, '') ELSE '' END FROM cur",
+    "hero_others": "SELECT CASE WHEN count(*) > 1 THEN '+ ' || (count(*) - 1) || ' other selected' ELSE '' END "
+                   "FROM streamer_v st WHERE st.twitch_id IN ($streamer) AND NOT st.derived",
+}
+
+
+def hidden_var(name, sql):
+    return {"name": name, "type": "query", "datasource": DS, "query": HERO_CUR + sql, "definition": name,
+            "hide": 2, "refresh": 2, "multi": False, "includeAll": False, "sort": 0, "current": {}}
+
+
+HERO_HTML = """
+<div style="display:flex;align-items:center;gap:28px;height:100%;padding:8px 12px">
+  <a href="https://twitch.tv/${hero_login}" target="_blank" rel="noopener">
+    <img src="${hero_avatar}" alt="${hero_display}"
+         style="width:190px;height:190px;border-radius:50%;object-fit:cover;border:5px solid ${hero_color};display:block">
+  </a>
+  <div style="min-width:0">
+    <div style="font-size:44px;font-weight:800;line-height:1.05;letter-spacing:-0.5px">
+      <a href="https://twitch.tv/${hero_login}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">${hero_display}</a>
+    </div>
+    <div style="font-size:17px;opacity:.75;margin-top:6px">
+      <a href="https://twitch.tv/${hero_login}" target="_blank" rel="noopener" style="color:inherit">twitch.tv/${hero_login}</a>
+      &middot; ${hero_location}
+    </div>
+    <div style="font-size:22px;margin-top:14px;font-weight:700">
+      <span style="color:${hero_color}">&#9679; ${hero_status}</span>
+      <span style="font-weight:500;opacity:.9;margin-left:8px">${hero_game}</span>
+    </div>
+    <div style="font-size:14px;opacity:.6;margin-top:10px">${hero_others}</div>
+  </div>
+</div>
+"""
+
+
+def text_panel(html, x, y, w, h):
+    global _id
+    _id += 1
+    return {"id": _id, "type": "text", "title": "", "transparent": True, "gridPos": {"x": x, "y": y, "w": w, "h": h},
+            "options": {"mode": "html", "content": html.strip()}}
+
+
 # ZEVENT streamer: one or a few streamers in detail. The Streamer filter has no "All" and lists streamers
 # by donations, so the dashboard opens on the current leader.
 def streamer_panels():
@@ -503,27 +559,28 @@ def streamer_panels():
     sel = ("FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) "
            "WHERE NOT st.derived AND s.twitch_id IN ($streamer)")
     return [
+        text_panel(HERO_HTML, 0, 0, 9, 8),
         stat("Donations",
              f"SELECT coalesce(sum(s.donation_total), 0) {sel} AND s.ts = (SELECT max(ts) FROM snapshot)",
-             0, w=4, unit="currencyEUR", decimals=2),
-        stat("Gained in selected range",
-             "WITH " + GAIN_CTE + "SELECT coalesce(sum(g.gained), 0) FROM g JOIN streamer_v st USING (twitch_id) "
-             "WHERE NOT st.derived AND g.twitch_id IN ($streamer)",
-             4, w=4, unit="currencyEUR", decimals=2, color="orange"),
-        stat("Best rank",
+             9, w=5, unit="currencyEUR", decimals=2),
+        stat("Rank",
              "SELECT min(r) FROM (SELECT twitch_id, rank() OVER (ORDER BY donation_total DESC) AS r "
              "FROM streamer_sample_v WHERE ts = (SELECT max(ts) FROM snapshot) AND NOT derived) x "
              "WHERE twitch_id IN ($streamer)",
-             8, w=4, unit="short", color="yellow",
+             14, w=5, unit="short", color="yellow",
              description="Position in the donation leaderboard at the latest sample (best of the selected streamers)."),
         stat("Viewers now",
              f"SELECT coalesce(sum(s.viewers), 0) {sel} AND s.ts = (SELECT max(ts) FROM snapshot)",
-             12, w=4, unit="short", color="purple"),
+             19, w=5, unit="short", color="purple"),
+        stat("Gained in selected range",
+             "WITH " + GAIN_CTE + "SELECT coalesce(sum(g.gained), 0) FROM g JOIN streamer_v st USING (twitch_id) "
+             "WHERE NOT st.derived AND g.twitch_id IN ($streamer)",
+             9, w=5, y=4, unit="currencyEUR", decimals=2, color="orange"),
+        stat("Hours streamed", hours_streamed_sql("true"), 14, w=5, y=4, unit="suffix: h", decimals=1, color="green",
+             description=HOURS_DESCRIPTION),
         stat("Peak viewers",
              f"SELECT coalesce(max(v), 0) FROM (SELECT s.ts, sum(s.viewers) AS v {sel} AND $__timeFilter(s.ts) GROUP BY s.ts) x",
-             16, w=4, unit="short", color="purple", description="Highest combined viewer count in the selected range."),
-        stat("Hours streamed", hours_streamed_sql("true"), 20, w=4, unit="suffix: h", decimals=1, color="green",
-             description=HOURS_DESCRIPTION),
+             19, w=5, y=4, unit="short", color="purple", description="Highest combined viewer count in the selected range."),
 
         table("Selected streamers",
               HOURS_CTE + ", " + GAIN_CTE + ", "
@@ -551,7 +608,7 @@ def streamer_panels():
               "FROM cur c JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) LEFT JOIN g USING (twitch_id) "
               "LEFT JOIN v USING (twitch_id) LEFT JOIN changed ch USING (twitch_id) "
               "WHERE c.twitch_id IN ($streamer) ORDER BY c.donation_total DESC",
-              0, 4, w=24, h=7, money_cols=("Donations", "Gained"), duration_cols=("Since",), hour_cols=("Hours",),
+              0, 8, w=24, h=7, money_cols=("Donations", "Gained"), duration_cols=("Since",), hour_cols=("Hours",),
               image_cols=("Avatar",), percent_cols=("Share of total",), streamer_links=True,
               description="Rank and share are of the event total at the latest sample; Gained, Peak viewers, Avg viewers "
                           "(average while live) and Hours are within the selected range. Since: time in the current "
@@ -560,24 +617,24 @@ def streamer_panels():
         ts("Donations over time",
            'SELECT s.ts AS time, st.display AS metric, st.login AS login, s.donation_total AS value '
            f'{sel} AND $__timeFilter(s.ts) ORDER BY 1',
-           0, 11, unit="currencyEUR", streamer_links=True),
+           0, 15, unit="currencyEUR", streamer_links=True),
         ts("Viewers over time",
            'SELECT s.ts AS time, st.display AS metric, st.login AS login, s.viewers AS value '
            f'{sel} AND $__timeFilter(s.ts) ORDER BY 1',
-           12, 11, unit="short", streamer_links=True),
+           12, 15, unit="short", streamer_links=True),
         ts("Donations gained per interval",
            'SELECT $__timeGroupAlias(d.ts, $__interval), st.display AS metric, st.login AS login, sum(d.delta) AS value FROM ('
            f'  SELECT ts, twitch_id, {gain_expr("donation_total", "PARTITION BY twitch_id")} AS delta'
            '  FROM streamer_sample_v WHERE $__timeFilter(ts) AND twitch_id IN ($streamer)'
            ') d JOIN streamer_v st USING (twitch_id) WHERE d.delta IS NOT NULL GROUP BY 1, 2, 3 ORDER BY 1',
-           0, 20, unit="currencyEUR", bars=True, stack=True, min_interval="5m", streamer_links=True),
+           0, 24, unit="currencyEUR", bars=True, stack=True, min_interval="5m", streamer_links=True),
         ts("Rank in the donation leaderboard over time",
            "SELECT r.ts AS time, st.display AS metric, st.login AS login, r.rank AS value FROM ("
            "  SELECT ts, twitch_id, rank() OVER (PARTITION BY ts ORDER BY donation_total DESC) AS rank"
            "  FROM streamer_sample_v WHERE $__timeFilter(ts) AND NOT derived"
            ") r JOIN streamer_v st USING (twitch_id) WHERE r.twitch_id IN ($streamer) ORDER BY 1",
-           12, 20, unit="short", streamer_links=True, description="1 is the top; lower is better."),
-        game_timeline(0, 29),
+           12, 24, unit="short", streamer_links=True, description="1 is the top; lower is better."),
+        game_timeline(0, 33),
     ]
 
 
@@ -779,4 +836,5 @@ write(dashboard_base("zevent-public", "ZEVENT", [LOCATION_VAR, streamer_var(LOC)
 write(dashboard_base("zevent-live-public", "ZEVENT live", [LOCATION_VAR_LAN, streamer_var(LOC)],
                      live_panels(LOC, "$location")))
 write(dashboard_base("zevent-insights-public", "ZEVENT insights", [LOCATION_VAR], insights_panels()))
-write(dashboard_base("zevent-streamer-public", "ZEVENT streamer", [STREAMER_VAR_DETAIL], streamer_panels()))
+write(dashboard_base("zevent-streamer-public", "ZEVENT streamer",
+                     [STREAMER_VAR_DETAIL] + [hidden_var(n, q) for n, q in HERO_VARS.items()], streamer_panels()))
