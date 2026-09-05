@@ -166,7 +166,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT sn.donation_total - sum(s.donation_total) FROM snapshot sn JOIN streamer_sample_v s USING (ts) WHERE NOT s.derived AND sn.ts = (SELECT max(ts) FROM snapshot) GROUP BY sn.donation_total",
+          "rawSql": "SELECT sn.donation_total - sn.donation_dup - sum(s.donation_total) FROM snapshot_v sn JOIN streamer_sample_v s USING (ts) WHERE NOT s.derived AND sn.ts = (SELECT max(ts) FROM snapshot) GROUP BY sn.donation_total, sn.donation_dup",
           "format": "table",
           "refId": "A"
         }
@@ -195,7 +195,7 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Global total minus the sum of streamer counters, excluding the derived \"mistermv (private counter)\" row: since 01:08 UTC on Sept 5 mistermv's counter mirrors Domingo's (every donation to Domingo credited to both), and the global total counts those once. See the \"Duplicated (mistermv)\" tile for the amount."
+      "description": "Global total minus the sum of streamer counters, with two corrections since 01:08 UTC on Sept 5: the derived \"mistermv (private counter)\" row is left out (it mirrors Domingo's counter, which the global total already counts once), and mistermv's other increments are subtracted from the global total, which carries each of them twice. See the \"Duplicated (mistermv)\" tile for both amounts."
     },
     {
       "id": 4,
@@ -218,7 +218,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT coalesce(sum(donation_total), 0) FROM streamer_sample_v WHERE derived AND ts = (SELECT max(ts) FROM snapshot)",
+          "rawSql": "SELECT coalesce(sum(s.donation_total) FILTER (WHERE s.derived), 0) AS \"Mirrored\", max(sn.donation_dup) AS \"In total\" FROM snapshot_v sn JOIN streamer_sample_v s USING (ts) WHERE sn.ts = (SELECT max(ts) FROM snapshot)",
           "format": "table",
           "refId": "A"
         }
@@ -230,7 +230,7 @@
             "fixedColor": "red"
           },
           "unit": "currencyEUR",
-          "decimals": 2
+          "decimals": 0
         },
         "overrides": []
       },
@@ -244,10 +244,10 @@
         },
         "colorMode": "value",
         "graphMode": "none",
-        "textMode": "value",
+        "textMode": "value_and_name",
         "justifyMode": "center"
       },
-      "description": "The derived \"mistermv (private counter)\" row: the part of mistermv's counter that mirrors Domingo's since 01:08 UTC on Sept 5 (the initial jump plus, each minute, the increment matching Domingo's). Counted once in the global total, twice in the streamer sum; left out of External donations. His own donations stay under \"mistermv\"."
+      "description": "Mirrored: the derived \"mistermv (private counter)\" row, the part of mistermv's counter that mirrors Domingo's since 01:08 UTC on Sept 5 (counted once in the global total, twice in the streamer sum). In total: mistermv's other increments since then, which the global total carries twice. Both are left out of External donations."
     },
     {
       "id": 5,
@@ -642,7 +642,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT sn.ts AS time, sn.donation_total - sum(s.donation_total) FILTER (WHERE NOT s.derived) AS \"External\", coalesce(sum(s.donation_total) FILTER (WHERE s.derived), 0) AS \"Duplicated (mistermv)\" FROM snapshot sn JOIN streamer_sample_v s USING (ts) WHERE $__timeFilter(sn.ts) GROUP BY sn.ts, sn.donation_total ORDER BY 1",
+          "rawSql": "SELECT sn.ts AS time, sn.donation_total - sn.donation_dup - sum(s.donation_total) FILTER (WHERE NOT s.derived) AS \"External\", coalesce(sum(s.donation_total) FILTER (WHERE s.derived), 0) AS \"Mirrored (mistermv)\", sn.donation_dup AS \"Double-counted in total (mistermv)\" FROM snapshot_v sn JOIN streamer_sample_v s USING (ts) WHERE $__timeFilter(sn.ts) GROUP BY sn.ts, sn.donation_total, sn.donation_dup ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }
@@ -672,7 +672,7 @@
           "sort": "desc"
         }
       },
-      "description": "Global total minus the sum of streamer counters, excluding the derived \"mistermv (private counter)\" row: since 01:08 UTC on Sept 5 mistermv's counter mirrors Domingo's (every donation to Domingo credited to both), and the global total counts those once. See the \"Duplicated (mistermv)\" tile for the amount."
+      "description": "Global total minus the sum of streamer counters, with two corrections since 01:08 UTC on Sept 5: the derived \"mistermv (private counter)\" row is left out (it mirrors Domingo's counter, which the global total already counts once), and mistermv's other increments are subtracted from the global total, which carries each of them twice. See the \"Duplicated (mistermv)\" tile for both amounts."
     },
     {
       "id": 14,
@@ -695,7 +695,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroupAlias(ts, $__interval), sum(g) - sum(sg) AS \"External\" FROM (  SELECT ts, donation_total - lag(donation_total) OVER ( ORDER BY ts) AS g FROM snapshot WHERE $__timeFilter(ts)) gl JOIN (  SELECT ts, sum(delta) AS sg FROM (    SELECT ts, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta FROM streamer_sample_v WHERE NOT derived AND $__timeFilter(ts)  ) x GROUP BY ts) st USING (ts) WHERE g IS NOT NULL GROUP BY 1 ORDER BY 1",
+          "rawSql": "SELECT $__timeGroupAlias(ts, $__interval), sum(g) - sum(sg) AS \"External\" FROM (  SELECT ts, donation_total - donation_dup - lag(donation_total - donation_dup) OVER ( ORDER BY ts) AS g FROM snapshot_v WHERE $__timeFilter(ts)) gl JOIN (  SELECT ts, sum(delta) AS sg FROM (    SELECT ts, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta FROM streamer_sample_v WHERE NOT derived AND $__timeFilter(ts)  ) x GROUP BY ts) st USING (ts) WHERE g IS NOT NULL GROUP BY 1 ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }
@@ -727,7 +727,7 @@
         }
       },
       "interval": "5m",
-      "description": "Global total minus the sum of streamer counters, excluding the derived \"mistermv (private counter)\" row: since 01:08 UTC on Sept 5 mistermv's counter mirrors Domingo's (every donation to Domingo credited to both), and the global total counts those once. See the \"Duplicated (mistermv)\" tile for the amount."
+      "description": "Global total minus the sum of streamer counters, with two corrections since 01:08 UTC on Sept 5: the derived \"mistermv (private counter)\" row is left out (it mirrors Domingo's counter, which the global total already counts once), and mistermv's other increments are subtracted from the global total, which carries each of them twice. See the \"Duplicated (mistermv)\" tile for both amounts."
     },
     {
       "id": 15,

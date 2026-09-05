@@ -131,9 +131,10 @@ def gain_expr(col, partition=""):
 # holding the part that mirrors Domingo's counter (see the file header for the full story). Rows
 # with derived = true are not API entities and must be left out of sums compared to the global total.
 MIRROR_NOTE = (
-    "Global total minus the sum of streamer counters, excluding the derived \"mistermv (private counter)\" "
-    "row: since 01:08 UTC on Sept 5 mistermv's counter mirrors Domingo's (every donation to Domingo credited "
-    "to both), and the global total counts those once. See the \"Duplicated (mistermv)\" tile for the amount."
+    "Global total minus the sum of streamer counters, with two corrections since 01:08 UTC on Sept 5: the derived "
+    "\"mistermv (private counter)\" row is left out (it mirrors Domingo's counter, which the global total already "
+    "counts once), and mistermv's other increments are subtracted from the global total, which carries each of "
+    "them twice. See the \"Duplicated (mistermv)\" tile for both amounts."
 )
 
 
@@ -151,17 +152,18 @@ panels = [
          "SELECT max(donation_total) - min(donation_total) FROM snapshot WHERE ts > now() - interval '1 hour'", 4, w=3,
          unit="currencyEUR", decimals=2, color="orange"),
     stat("External donations",
-         "SELECT sn.donation_total - sum(s.donation_total) FROM snapshot sn JOIN streamer_sample_v s USING (ts) "
-         "WHERE NOT s.derived AND sn.ts = (SELECT max(ts) FROM snapshot) GROUP BY sn.donation_total",
+         "SELECT sn.donation_total - sn.donation_dup - sum(s.donation_total) "
+         "FROM snapshot_v sn JOIN streamer_sample_v s USING (ts) "
+         "WHERE NOT s.derived AND sn.ts = (SELECT max(ts) FROM snapshot) GROUP BY sn.donation_total, sn.donation_dup",
          7, w=4, unit="currencyEUR", decimals=2, color="yellow", description=MIRROR_NOTE),
     stat("Duplicated (mistermv)",
-         "SELECT coalesce(sum(donation_total), 0) FROM streamer_sample_v "
-         "WHERE derived AND ts = (SELECT max(ts) FROM snapshot)",
-         11, w=4, unit="currencyEUR", decimals=2, color="red",
-         description="The derived \"mistermv (private counter)\" row: the part of mistermv's counter that mirrors "
-                     "Domingo's since 01:08 UTC on Sept 5 (the initial jump plus, each minute, the increment "
-                     "matching Domingo's). Counted once in the global total, twice in the streamer sum; left "
-                     "out of External donations. His own donations stay under \"mistermv\"."),
+         'SELECT coalesce(sum(s.donation_total) FILTER (WHERE s.derived), 0) AS "Mirrored", max(sn.donation_dup) AS "In total" '
+         "FROM snapshot_v sn JOIN streamer_sample_v s USING (ts) WHERE sn.ts = (SELECT max(ts) FROM snapshot)",
+         11, w=4, unit="currencyEUR", decimals=0, color="red", text_mode="value_and_name",
+         description="Mirrored: the derived \"mistermv (private counter)\" row, the part of mistermv's counter that "
+                     "mirrors Domingo's since 01:08 UTC on Sept 5 (counted once in the global total, twice in the "
+                     "streamer sum). In total: mistermv's other increments since then, which the global total "
+                     "carries twice. Both are left out of External donations."),
     stat("Viewers now", "SELECT viewers_total FROM snapshot ORDER BY ts DESC LIMIT 1", 15, w=3, unit="short",
          color="purple"),
     # whole event, not the selected time range
@@ -188,14 +190,15 @@ panels = [
        12, 14, unit="short", legend=False),
 
     ts("External donations over time (total minus all streamers)",
-       'SELECT sn.ts AS time, sn.donation_total - sum(s.donation_total) FILTER (WHERE NOT s.derived) AS "External", '
-       'coalesce(sum(s.donation_total) FILTER (WHERE s.derived), 0) AS "Duplicated (mistermv)" '
-       'FROM snapshot sn JOIN streamer_sample_v s USING (ts) '
-       'WHERE $__timeFilter(sn.ts) GROUP BY sn.ts, sn.donation_total ORDER BY 1',
+       'SELECT sn.ts AS time, sn.donation_total - sn.donation_dup - sum(s.donation_total) FILTER (WHERE NOT s.derived) AS "External", '
+       'coalesce(sum(s.donation_total) FILTER (WHERE s.derived), 0) AS "Mirrored (mistermv)", '
+       'sn.donation_dup AS "Double-counted in total (mistermv)" '
+       'FROM snapshot_v sn JOIN streamer_sample_v s USING (ts) '
+       'WHERE $__timeFilter(sn.ts) GROUP BY sn.ts, sn.donation_total, sn.donation_dup ORDER BY 1',
        0, 23, unit="currencyEUR", description=MIRROR_NOTE),
     ts("External donations per interval (global gain minus streamer gains)",
        'SELECT $__timeGroupAlias(ts, $__interval), sum(g) - sum(sg) AS "External" FROM ('
-       f'  SELECT ts, {gain_expr("donation_total")} AS g FROM snapshot WHERE $__timeFilter(ts)'
+       f'  SELECT ts, {gain_expr("donation_total - donation_dup")} AS g FROM snapshot_v WHERE $__timeFilter(ts)'
        ') gl JOIN ('
        '  SELECT ts, sum(delta) AS sg FROM ('
        f'    SELECT ts, {gain_expr("donation_total", "PARTITION BY twitch_id")} AS delta FROM streamer_sample_v WHERE NOT derived AND $__timeFilter(ts)'

@@ -13,6 +13,12 @@
 -- Split rule per sample minute, from the rebase minute on:
 --   rebase minute      -> the whole jump is mirrored
 --   any later minute   -> least(mistermv increment, Domingo increment), floored at 0; the excess is his own
+--
+-- Second effect, also from the rebase on: whenever mistermv's counter gains more than the mirrored
+-- Domingo increment (his "own" part, e.g. +1,010 at 11:51 UTC on Sept 5), the global total rises by
+-- twice that amount while no other listed counter moves. So the global total carries each of those
+-- amounts twice. snapshot_v exposes the cumulative excess as donation_dup so it can be taken out of
+-- "global minus streamers"; the official donation_total itself is left untouched.
 
 CREATE OR REPLACE VIEW mirror_config AS
 SELECT 'mistermv'::text                         AS login,
@@ -36,10 +42,19 @@ m AS (
   FROM d, c WHERE d.ts >= c.rebase_ts GROUP BY d.ts
 ),
 dd AS (
-  SELECT m.ts, CASE WHEN m.ts = c.rebase_ts THEN m.own_delta ELSE greatest(least(m.own_delta, m.src_delta), 0) END AS dup_delta
+  SELECT m.ts, m.own_delta AS m_delta,
+         CASE WHEN m.ts = c.rebase_ts THEN m.own_delta ELSE greatest(least(m.own_delta, m.src_delta), 0) END AS dup_delta
   FROM m, c WHERE m.own_delta IS NOT NULL AND m.src_delta IS NOT NULL
 )
-SELECT ts, dup_delta, sum(dup_delta) OVER (ORDER BY ts) AS dup FROM dd;
+SELECT ts, dup_delta, sum(dup_delta) OVER (ORDER BY ts) AS dup,
+       m_delta - dup_delta                              AS own_delta,   -- mistermv's non-mirrored increment
+       sum(m_delta - dup_delta) OVER (ORDER BY ts)      AS global_dup   -- cumulative excess carried twice by the global total
+FROM dd;
+
+-- snapshot plus donation_dup: the cumulative amount the global total carries twice (0 before the rebase).
+CREATE OR REPLACE VIEW snapshot_v AS
+SELECT sn.*, coalesce(d.global_dup, 0) AS donation_dup
+FROM snapshot sn LEFT JOIN mirror_dup d USING (ts);
 
 -- streamer plus the derived row. `derived` marks rows that are not API entities.
 CREATE OR REPLACE VIEW streamer_v AS
