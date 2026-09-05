@@ -100,7 +100,7 @@
       "gridPos": {
         "x": 0,
         "y": 0,
-        "w": 6,
+        "w": 4,
         "h": 4
       },
       "targets": [
@@ -147,9 +147,9 @@
         "uid": "zevent-pg"
       },
       "gridPos": {
-        "x": 6,
+        "x": 4,
         "y": 0,
-        "w": 6,
+        "w": 4,
         "h": 4
       },
       "targets": [
@@ -190,6 +190,58 @@
     },
     {
       "id": 3,
+      "type": "stat",
+      "title": "Hours streamed",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT coalesce(sum(extract(epoch FROM least(nxt - ts, interval '5 minutes'))) / 3600, 0) FROM (  SELECT s.ts, s.online, lead(s.ts) OVER (PARTITION BY s.twitch_id ORDER BY s.ts) AS nxt  FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id)  WHERE NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' AND $__timeFilter(s.ts) AND s.twitch_id IN ($streamer)) x WHERE online AND nxt IS NOT NULL",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "green"
+          },
+          "unit": "suffix: h",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "description": "Total time live, summed over the streamers matching the Location and Streamer filters, within the selected time range. Each live sample counts until the next sample (capped at 5 minutes, so gaps in the data do not count)."
+    },
+    {
+      "id": 4,
       "type": "timeseries",
       "title": "Streamers online over time ($location)",
       "datasource": {
@@ -241,7 +293,7 @@
       }
     },
     {
-      "id": 4,
+      "id": 5,
       "type": "state-timeline",
       "title": "Selected streamers ($streamer)",
       "datasource": {
@@ -333,7 +385,7 @@
       "description": "Green while live. Hover a bar for the game. Rows are sorted by the first time the streamer went live in the selected range; streamers that were not live in the range are at the bottom. Pick streamers in the Streamer filter to compare a few; the full list is in the panel below."
     },
     {
-      "id": 5,
+      "id": 6,
       "type": "state-timeline",
       "title": "All streamers ($location)",
       "datasource": {
