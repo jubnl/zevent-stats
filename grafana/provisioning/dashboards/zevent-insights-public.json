@@ -16,7 +16,7 @@
     ]
   },
   "time": {
-    "from": "2026-09-04T20:58:40.000Z",
+    "from": "2026-09-03T17:30:00.000Z",
     "to": "now"
   },
   "schemaVersion": 39,
@@ -415,7 +415,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH d AS (  SELECT ts, twitch_id, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta,          ts - lag(ts) OVER (PARTITION BY twitch_id ORDER BY ts) AS gap  FROM streamer_sample_v WHERE $__timeFilter(ts) AND NOT derived), e AS (  SELECT *, min(delta) OVER (PARTITION BY twitch_id ORDER BY ts ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS drop  FROM d WHERE delta IS NOT NULL AND gap <= interval '5 minutes') SELECT e.ts AS \"Time\", st.display AS \"Streamer\", e.delta AS \"Gain\", st.login AS login FROM e JOIN streamer_v st USING (twitch_id) WHERE e.delta > 0 AND coalesce(e.drop, 0) > -0.9 * e.delta AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY e.delta DESC LIMIT 25",
+          "rawSql": "WITH d AS (  SELECT ts, twitch_id, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta,          ts - lag(ts) OVER (PARTITION BY twitch_id ORDER BY ts) AS gap  FROM streamer_sample_v WHERE $__timeFilter(ts) AND NOT derived), e AS (  SELECT *, min(delta) OVER (PARTITION BY twitch_id ORDER BY ts ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS drop  FROM d WHERE delta IS NOT NULL AND gap <= interval '5 minutes') SELECT e.ts AS \"Time\", st.display AS \"Streamer\", e.delta AS \"Gain\", st.login AS login FROM e JOIN streamer_v st USING (twitch_id) WHERE e.delta > 0 AND coalesce(e.drop, 0) > -0.9 * e.delta AND st.login NOT IN ('zevent', 'zeventplays') AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY e.delta DESC LIMIT 25",
           "format": "table",
           "refId": "A"
         }
@@ -483,7 +483,7 @@
         "showHeader": true,
         "sortBy": []
       },
-      "description": "Gains within one minute of a streamer's counter (between two samples at most 5 minutes apart, so a gap in the data is not counted as one minute). A restore after an upstream blip (a counter dropping to 0 and coming back minutes later) is left out: rows whose streamer lost at least 90% of the amount in the previous 10 minutes are skipped."
+      "description": "Gains within one minute of a streamer's counter. The organisation's own channels (ZEVENT, ZEventPlays) are left out: their counters move in lumps (tickets, shop) and, before Sept 4 22:58 CEST, come from a 30-minute source. Gains are measured between two samples at most 5 minutes apart, so a gap in the data is not counted as one minute). A restore after an upstream blip (a counter dropping to 0 and coming back minutes later) is left out: rows whose streamer lost at least 90% of the amount in the previous 10 minutes are skipped."
     },
     {
       "id": 8,

@@ -336,7 +336,9 @@ def main_panels():
 # ZEVENT insights: milestones and pace, notable moments, patterns, on site vs remote, games, and the
 # donations that cannot be tied to a streamer. Location filter only.
 BLIP_NOTE = (
-    "Gains within one minute of a streamer's counter (between two samples at most 5 minutes apart, so a gap in "
+    "Gains within one minute of a streamer's counter. The organisation's own channels (ZEVENT, ZEventPlays) are "
+    "left out: their counters move in lumps (tickets, shop) and, before Sept 4 22:58 CEST, come from a 30-minute "
+    "source. Gains are measured between two samples at most 5 minutes apart, so a gap in "
     "the data is not counted as one minute). A restore after an upstream blip (a counter dropping to 0 and "
     "coming back minutes later) is left out: rows whose streamer lost at least 90% of the amount in the "
     "previous 10 minutes are skipped."
@@ -399,8 +401,8 @@ def insights_panels():
               ") "
               'SELECT e.ts AS "Time", st.display AS "Streamer", e.delta AS "Gain", st.login AS login '
               "FROM e JOIN streamer_v st USING (twitch_id) "
-              "WHERE e.delta > 0 AND coalesce(e.drop, 0) > -0.9 * e.delta AND " + LOC + " "
-              "ORDER BY e.delta DESC LIMIT 25",
+              "WHERE e.delta > 0 AND coalesce(e.drop, 0) > -0.9 * e.delta AND st.login NOT IN ('zevent', 'zeventplays') "
+              "AND " + LOC + " ORDER BY e.delta DESC LIMIT 25",
               12, 5, w=12, h=9, money_cols=("Gain",), streamer_links=True, description=BLIP_NOTE),
 
         row("Patterns", 14),
@@ -636,8 +638,9 @@ LOCATION_VAR = query_var("location", "Location", LOC_QUERY, all_value=".*")
 LOCATION_VAR_LAN = copy.deepcopy(LOCATION_VAR)
 LOCATION_VAR_LAN["current"] = {"selected": True, "text": ["On site (LAN)"], "value": ["LAN"]}
 
-# event start until now; grows as data arrives
-TIME_RANGE = {"from": "2026-09-04T20:58:40.000Z", "to": "now"}
+# Concert opening (donations open) until now; grows as data arrives. Data before 2026-09-04 20:58 UTC
+# is backfilled from third-party sources (raw-backfill/, see zevent_tracker/external.py).
+TIME_RANGE = {"from": "2026-09-03T17:30:00.000Z", "to": "now"}
 
 DASHBOARDS = [  # (uid, button title)
     ("zevent-public", "Main stats"),

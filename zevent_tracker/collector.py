@@ -96,7 +96,12 @@ def main() -> None:
     cfg = Config.from_env()
     with psycopg.connect(cfg.database_url) as conn:
         ensure_schema(conn)
-    if sys.argv[1:] == ["backfill"]:
-        backfill(cfg.raw_dir, cfg.database_url)
+    if sys.argv[1:2] == ["backfill"]:
+        # optional directory argument: import dumps from somewhere other than RAW_DIR (e.g. raw-backfill/)
+        backfill(Path(sys.argv[2]) if len(sys.argv) > 2 else cfg.raw_dir, cfg.database_url)
+        return
+    if sys.argv[1:2] == ["pull-external"]:
+        from .external import main as pull_external
+        pull_external(sys.argv[2:])
         return
     run(cfg)

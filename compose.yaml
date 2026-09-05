@@ -28,6 +28,9 @@ services:
       BACKFILL_ON_START: "true"   # import raw/ files missing from the db at startup
     volumes:
       - ./raw:/raw
+      # synthetic dumps for the hours before the collector started (see zevent_tracker/external.py); not
+      # imported automatically: run once `docker compose exec collector /app/.venv/bin/python main.py backfill /raw-backfill`
+      - ./raw-backfill:/raw-backfill:ro
     depends_on:
       db:
         condition: service_healthy
