@@ -54,7 +54,8 @@ def stat(title, sql, x, w=6, unit=None, decimals=None, color="green", text_mode=
     )
 
 
-def ts(title, sql, x, y, w=12, h=9, unit=None, bars=False, legend=True, stack=False, min_interval=None, streamer_links=False):
+def ts(title, sql, x, y, w=12, h=9, unit=None, bars=False, legend=True, stack=False, min_interval=None,
+       streamer_links=False):
     d = {"custom": {"lineWidth": 2, "fillOpacity": 10, "showPoints": "auto", "pointSize": 4, "spanNulls": True}}
     if unit:
         d["unit"] = unit
@@ -91,20 +92,23 @@ def twitch_link(var):
 
 def table(title, sql, x, y, w=8, h=12, money_cols=(), duration_cols=(), streamer_links=False):
     overrides = [
-        {"matcher": {"id": "byName", "options": c}, "properties": [{"id": "unit", "value": "currencyEUR"}, {"id": "decimals", "value": 0}]}
-        for c in money_cols
-    ] + [
-        {"matcher": {"id": "byName", "options": c}, "properties": [{"id": "unit", "value": "dtdurations"}]}
-        for c in duration_cols
-    ]
+                    {"matcher": {"id": "byName", "options": c},
+                     "properties": [{"id": "unit", "value": "currencyEUR"}, {"id": "decimals", "value": 0}]}
+                    for c in money_cols
+                ] + [
+                    {"matcher": {"id": "byName", "options": c}, "properties": [{"id": "unit", "value": "dtdurations"}]}
+                    for c in duration_cols
+                ]
     if streamer_links:
         overrides += [
-            {"matcher": {"id": "byName", "options": "Streamer"}, "properties": [{"id": "links", "value": [twitch_link("__data.fields.login")]}]},
+            {"matcher": {"id": "byName", "options": "Streamer"},
+             "properties": [{"id": "links", "value": [twitch_link("__data.fields.login")]}]},
             {"matcher": {"id": "byName", "options": "login"}, "properties": [{"id": "custom.hidden", "value": True}]},
         ]
     return panel(
         "table", title, sql, x, y, w, h, fmt="table",
-        fieldConfig={"defaults": {"custom": {"align": "auto", "cellOptions": {"type": "auto"}}}, "overrides": overrides},
+        fieldConfig={"defaults": {"custom": {"align": "auto", "cellOptions": {"type": "auto"}}},
+                     "overrides": overrides},
         options={"showHeader": True, "sortBy": []},
     )
 
@@ -121,20 +125,27 @@ def gain_expr(col, partition=""):
 def row(title, y):
     global _id
     _id += 1
-    return {"id": _id, "type": "row", "title": title, "collapsed": False, "gridPos": {"x": 0, "y": y, "w": 24, "h": 1}, "panels": []}
+    return {"id": _id, "type": "row", "title": title, "collapsed": False, "gridPos": {"x": 0, "y": y, "w": 24, "h": 1},
+            "panels": []}
 
 
 panels = [
-    stat("Total donations", "SELECT donation_total FROM snapshot ORDER BY ts DESC LIMIT 1", 0, w=4, unit="currencyEUR", decimals=2),
-    stat("Viewers now", "SELECT viewers_total FROM snapshot ORDER BY ts DESC LIMIT 1", 4, w=4, unit="short", color="purple"),
-    # whole event, not the selected time range
-    stat("Peak viewers", "SELECT max(viewers_total) FROM snapshot", 8, w=4, unit="short", color="purple"),
-    stat("Streamers online", 'SELECT streamers_online AS "Online", streamers_total AS "Total" FROM snapshot ORDER BY ts DESC LIMIT 1', 12, w=4, color="blue", text_mode="value_and_name"),
-    stat("Donations, last hour", "SELECT max(donation_total) - min(donation_total) FROM snapshot WHERE ts > now() - interval '1 hour'", 16, w=4, unit="currencyEUR", decimals=2, color="orange"),
+    stat("Total donations", "SELECT donation_total FROM snapshot ORDER BY ts DESC LIMIT 1", 0, w=4, unit="currencyEUR",
+         decimals=2),
+    stat("Donations, last hour",
+         "SELECT max(donation_total) - min(donation_total) FROM snapshot WHERE ts > now() - interval '1 hour'", 16, w=4,
+         unit="currencyEUR", decimals=2, color="orange"),
     stat("External donations",
          "SELECT sn.donation_total - sum(s.donation_total) FROM snapshot sn JOIN streamer_sample s USING (ts) "
          "WHERE sn.ts = (SELECT max(ts) FROM snapshot) GROUP BY sn.donation_total",
          20, w=4, unit="currencyEUR", decimals=2, color="yellow"),
+    stat("Viewers now", "SELECT viewers_total FROM snapshot ORDER BY ts DESC LIMIT 1", 4, w=4, unit="short",
+         color="purple"),
+    # whole event, not the selected time range
+    stat("Peak viewers", "SELECT max(viewers_total) FROM snapshot", 8, w=4, unit="short", color="purple"),
+    stat("Streamers online",
+         'SELECT streamers_online AS "Online", streamers_total AS "Total" FROM snapshot ORDER BY ts DESC LIMIT 1', 12,
+         w=4, color="blue", text_mode="value_and_name"),
 
     row("Global", 4),
     ts("Total donations over time",
@@ -233,7 +244,7 @@ dashboard = {
     "timezone": "browser",
     "editable": True,
     "graphTooltip": 1,
-    "refresh": "1m",
+    "refresh": "15s",
     "time": {"from": "2026-09-04T20:00:00.000Z", "to": "now"},  # event start until now; grows as data arrives
     "schemaVersion": 39,
     "version": 1,

@@ -97,155 +97,6 @@
     {
       "id": 2,
       "type": "stat",
-      "title": "Viewers now",
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "zevent-pg"
-      },
-      "gridPos": {
-        "x": 4,
-        "y": 0,
-        "w": 4,
-        "h": 4
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "zevent-pg"
-          },
-          "rawQuery": true,
-          "rawSql": "SELECT viewers_total FROM snapshot ORDER BY ts DESC LIMIT 1",
-          "format": "table",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "purple"
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "value",
-        "graphMode": "none",
-        "textMode": "value",
-        "justifyMode": "center"
-      }
-    },
-    {
-      "id": 3,
-      "type": "stat",
-      "title": "Peak viewers",
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "zevent-pg"
-      },
-      "gridPos": {
-        "x": 8,
-        "y": 0,
-        "w": 4,
-        "h": 4
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "zevent-pg"
-          },
-          "rawQuery": true,
-          "rawSql": "SELECT max(viewers_total) FROM snapshot",
-          "format": "table",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "purple"
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "value",
-        "graphMode": "none",
-        "textMode": "value",
-        "justifyMode": "center"
-      }
-    },
-    {
-      "id": 4,
-      "type": "stat",
-      "title": "Streamers online",
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "zevent-pg"
-      },
-      "gridPos": {
-        "x": 12,
-        "y": 0,
-        "w": 4,
-        "h": 4
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "zevent-pg"
-          },
-          "rawQuery": true,
-          "rawSql": "SELECT streamers_online AS \"Online\", streamers_total AS \"Total\" FROM snapshot ORDER BY ts DESC LIMIT 1",
-          "format": "table",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "blue"
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "value",
-        "graphMode": "none",
-        "textMode": "value_and_name",
-        "justifyMode": "center"
-      }
-    },
-    {
-      "id": 5,
-      "type": "stat",
       "title": "Donations, last hour",
       "datasource": {
         "type": "grafana-postgresql-datasource",
@@ -295,7 +146,7 @@
       }
     },
     {
-      "id": 6,
+      "id": 3,
       "type": "stat",
       "title": "External donations",
       "datasource": {
@@ -342,6 +193,155 @@
         "colorMode": "value",
         "graphMode": "none",
         "textMode": "value",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Viewers now",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 4,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT viewers_total FROM snapshot ORDER BY ts DESC LIMIT 1",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "purple"
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Peak viewers",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT max(viewers_total) FROM snapshot",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "purple"
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Streamers online",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT streamers_online AS \"Online\", streamers_total AS \"Total\" FROM snapshot ORDER BY ts DESC LIMIT 1",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
         "justifyMode": "center"
       }
     },
