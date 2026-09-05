@@ -134,7 +134,7 @@ MIRROR_NOTE = (
     "Global total minus the sum of streamer counters, with two corrections since 01:08 UTC on Sept 5: the derived "
     "\"mistermv (private counter)\" row is left out (it mirrors Domingo's counter, which the global total already "
     "counts once), and mistermv's other increments are subtracted from the global total, which carries each of "
-    "them twice. See the \"Duplicated (mistermv)\" tile for both amounts."
+    "them twice. See the \"MisterMV's private counter\" tile for both amounts."
 )
 
 
@@ -156,14 +156,12 @@ panels = [
          "FROM snapshot_v sn JOIN streamer_sample_v s USING (ts) "
          "WHERE NOT s.derived AND sn.ts = (SELECT max(ts) FROM snapshot) GROUP BY sn.donation_total, sn.donation_dup",
          12, w=6, unit="currencyEUR", decimals=2, color="yellow", description=MIRROR_NOTE),
-    stat("Duplicated (mistermv)",
-         'SELECT coalesce(sum(s.donation_total) FILTER (WHERE s.derived), 0) AS "Mirrored", max(sn.donation_dup) AS "In total" '
+    stat("MisterMV's private counter",
+         'SELECT coalesce(sum(s.donation_total) FILTER (WHERE s.derived), 0) AS "Mirrored", max(sn.donation_dup) AS "Other", '
+         'coalesce(sum(s.donation_total) FILTER (WHERE s.derived), 0) + max(sn.donation_dup) AS "Total" '
          "FROM snapshot_v sn JOIN streamer_sample_v s USING (ts) WHERE sn.ts = (SELECT max(ts) FROM snapshot)",
          18, w=6, unit="currencyEUR", decimals=0, color="red", text_mode="value_and_name",
-         description="Mirrored: the derived \"mistermv (private counter)\" row, the part of mistermv's counter that "
-                     "mirrors Domingo's since 01:08 UTC on Sept 5 (counted once in the global total, twice in the "
-                     "streamer sum). In total: mistermv's other increments since then, which the global total "
-                     "carries twice. Both are left out of External donations."),
+         description="Mirrored: Mirrored donations from Domingo. Other: mistermv's other increments since then, which the global total carries twice. Total: the sum of both."),
     stat("Viewers now", "SELECT viewers_total FROM snapshot ORDER BY ts DESC LIMIT 1", 0, w=8, y=4, unit="short",
          color="purple"),
     # whole event, not the selected time range

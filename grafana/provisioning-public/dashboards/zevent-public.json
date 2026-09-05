@@ -195,12 +195,12 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Global total minus the sum of streamer counters, with two corrections since 01:08 UTC on Sept 5: the derived \"mistermv (private counter)\" row is left out (it mirrors Domingo's counter, which the global total already counts once), and mistermv's other increments are subtracted from the global total, which carries each of them twice. See the \"Duplicated (mistermv)\" tile for both amounts."
+      "description": "Global total minus the sum of streamer counters, with two corrections since 01:08 UTC on Sept 5: the derived \"mistermv (private counter)\" row is left out (it mirrors Domingo's counter, which the global total already counts once), and mistermv's other increments are subtracted from the global total, which carries each of them twice. See the \"MisterMV's private counter\" tile for both amounts."
     },
     {
       "id": 4,
       "type": "stat",
-      "title": "Duplicated (mistermv)",
+      "title": "MisterMV's private counter",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -218,7 +218,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT coalesce(sum(s.donation_total) FILTER (WHERE s.derived), 0) AS \"Mirrored\", max(sn.donation_dup) AS \"In total\" FROM snapshot_v sn JOIN streamer_sample_v s USING (ts) WHERE sn.ts = (SELECT max(ts) FROM snapshot)",
+          "rawSql": "SELECT coalesce(sum(s.donation_total) FILTER (WHERE s.derived), 0) AS \"Mirrored\", max(sn.donation_dup) AS \"Other\", coalesce(sum(s.donation_total) FILTER (WHERE s.derived), 0) + max(sn.donation_dup) AS \"Total\" FROM snapshot_v sn JOIN streamer_sample_v s USING (ts) WHERE sn.ts = (SELECT max(ts) FROM snapshot)",
           "format": "table",
           "refId": "A"
         }
@@ -247,7 +247,7 @@
         "textMode": "value_and_name",
         "justifyMode": "center"
       },
-      "description": "Mirrored: the derived \"mistermv (private counter)\" row, the part of mistermv's counter that mirrors Domingo's since 01:08 UTC on Sept 5 (counted once in the global total, twice in the streamer sum). In total: mistermv's other increments since then, which the global total carries twice. Both are left out of External donations."
+      "description": "Mirrored: Mirrored donations from Domingo. Other: mistermv's other increments since then, which the global total carries twice. Total: the sum of both."
     },
     {
       "id": 5,
@@ -672,7 +672,7 @@
           "sort": "desc"
         }
       },
-      "description": "Global total minus the sum of streamer counters, with two corrections since 01:08 UTC on Sept 5: the derived \"mistermv (private counter)\" row is left out (it mirrors Domingo's counter, which the global total already counts once), and mistermv's other increments are subtracted from the global total, which carries each of them twice. See the \"Duplicated (mistermv)\" tile for both amounts."
+      "description": "Global total minus the sum of streamer counters, with two corrections since 01:08 UTC on Sept 5: the derived \"mistermv (private counter)\" row is left out (it mirrors Domingo's counter, which the global total already counts once), and mistermv's other increments are subtracted from the global total, which carries each of them twice. See the \"MisterMV's private counter\" tile for both amounts."
     },
     {
       "id": 14,
@@ -727,7 +727,7 @@
         }
       },
       "interval": "5m",
-      "description": "Global total minus the sum of streamer counters, with two corrections since 01:08 UTC on Sept 5: the derived \"mistermv (private counter)\" row is left out (it mirrors Domingo's counter, which the global total already counts once), and mistermv's other increments are subtracted from the global total, which carries each of them twice. See the \"Duplicated (mistermv)\" tile for both amounts."
+      "description": "Global total minus the sum of streamer counters, with two corrections since 01:08 UTC on Sept 5: the derived \"mistermv (private counter)\" row is left out (it mirrors Domingo's counter, which the global total already counts once), and mistermv's other increments are subtracted from the global total, which carries each of them twice. See the \"MisterMV's private counter\" tile for both amounts."
     },
     {
       "id": 15,
