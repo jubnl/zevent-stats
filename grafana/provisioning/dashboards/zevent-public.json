@@ -86,6 +86,30 @@
       "asDropdown": false,
       "tags": [],
       "tooltip": ""
+    },
+    {
+      "type": "link",
+      "title": "Insights",
+      "url": "/d/zevent-insights-public?kiosk=1",
+      "icon": "dashboard",
+      "keepTime": true,
+      "includeVars": false,
+      "targetBlank": false,
+      "asDropdown": false,
+      "tags": [],
+      "tooltip": ""
+    },
+    {
+      "type": "link",
+      "title": "Streamer",
+      "url": "/d/zevent-streamer-public?kiosk=1",
+      "icon": "dashboard",
+      "keepTime": true,
+      "includeVars": false,
+      "targetBlank": false,
+      "asDropdown": false,
+      "tags": [],
+      "tooltip": ""
     }
   ],
   "panels": [
@@ -723,239 +747,19 @@
     },
     {
       "id": 14,
-      "type": "timeseries",
-      "title": "Donations not tied to a streamer, over time (total minus all streamers)",
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "zevent-pg"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 27,
-        "w": 12,
-        "h": 9
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "zevent-pg"
-          },
-          "rawQuery": true,
-          "rawSql": "SELECT sn.ts AS time, sn.donation_total - sum(s.donation_total) FILTER (WHERE NOT s.derived) AS \"Not tied to a streamer\", coalesce(sum(s.donation_total) FILTER (WHERE s.derived), 0) AS \"Mirrored (mistermv)\" FROM snapshot sn JOIN streamer_sample_v s USING (ts) WHERE $__timeFilter(sn.ts) GROUP BY sn.ts, sn.donation_total ORDER BY 1",
-          "format": "time_series",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "lineWidth": 2,
-            "fillOpacity": 10,
-            "showPoints": "auto",
-            "pointSize": 4,
-            "spanNulls": true
-          },
-          "unit": "currencyEUR"
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "showLegend": true,
-          "displayMode": "list",
-          "placement": "bottom",
-          "calcs": []
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "description": "All donations that could not be tied to a streamer: the event total minus the sum of the streamer counters. This holds donations made by people without picking a streamer (the Streamlabs Charity team page without a member), the tickets of the concert on Thursday, all shop donations, and so on. The derived \"mistermv (private counter)\" row is left out of the streamer sum: since 01:08 UTC on Sept 5 it mirrors Domingo's counter, which is already counted once."
-    },
-    {
-      "id": 15,
-      "type": "timeseries",
-      "title": "Donations not tied to a streamer, per interval (total gain minus streamer gains)",
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "zevent-pg"
-      },
-      "gridPos": {
-        "x": 12,
-        "y": 27,
-        "w": 12,
-        "h": 9
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "zevent-pg"
-          },
-          "rawQuery": true,
-          "rawSql": "SELECT $__timeGroupAlias(ts, $__interval), sum(g) - sum(sg) AS \"Not tied to a streamer\" FROM (  SELECT ts, donation_total - lag(donation_total) OVER ( ORDER BY ts) AS g FROM snapshot WHERE $__timeFilter(ts)) gl JOIN (  SELECT ts, sum(delta) AS sg FROM (    SELECT ts, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta FROM streamer_sample_v WHERE NOT derived AND $__timeFilter(ts)  ) x GROUP BY ts) st USING (ts) WHERE g IS NOT NULL GROUP BY 1 ORDER BY 1",
-          "format": "time_series",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "lineWidth": 1,
-            "fillOpacity": 80,
-            "showPoints": "never",
-            "pointSize": 4,
-            "spanNulls": true,
-            "drawStyle": "bars"
-          },
-          "unit": "currencyEUR"
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "showLegend": false,
-          "displayMode": "list",
-          "placement": "bottom",
-          "calcs": []
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "interval": "5m",
-      "description": "All donations that could not be tied to a streamer: the event total minus the sum of the streamer counters. This holds donations made by people without picking a streamer (the Streamlabs Charity team page without a member), the tickets of the concert on Thursday, all shop donations, and so on. The derived \"mistermv (private counter)\" row is left out of the streamer sum: since 01:08 UTC on Sept 5 it mirrors Domingo's counter, which is already counted once."
-    },
-    {
-      "id": 16,
-      "type": "timeseries",
-      "title": "Streamers online per game ($location)",
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "zevent-pg"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 36,
-        "w": 12,
-        "h": 9
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "zevent-pg"
-          },
-          "rawQuery": true,
-          "rawSql": "WITH top AS (SELECT game FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.online AND coalesce(st.location, '') ~ '^(${location:regex})$' GROUP BY game ORDER BY count(*) DESC LIMIT 8) SELECT ts AS time, CASE WHEN game IN (SELECT game FROM top) THEN game ELSE 'Other' END AS metric, count(*) AS value FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.online AND coalesce(st.location, '') ~ '^(${location:regex})$' GROUP BY 1, 2 ORDER BY 1",
-          "format": "time_series",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "lineWidth": 1,
-            "fillOpacity": 60,
-            "showPoints": "auto",
-            "pointSize": 4,
-            "spanNulls": true,
-            "stacking": {
-              "mode": "normal",
-              "group": "A"
-            }
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "showLegend": true,
-          "displayMode": "list",
-          "placement": "bottom",
-          "calcs": []
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "desc"
-        }
-      }
-    },
-    {
-      "id": 17,
-      "type": "timeseries",
-      "title": "Viewers per game ($location)",
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "zevent-pg"
-      },
-      "gridPos": {
-        "x": 12,
-        "y": 36,
-        "w": 12,
-        "h": 9
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "zevent-pg"
-          },
-          "rawQuery": true,
-          "rawSql": "WITH top AS (SELECT game FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.online AND coalesce(st.location, '') ~ '^(${location:regex})$' GROUP BY game ORDER BY sum(viewers) DESC LIMIT 8) SELECT ts AS time, CASE WHEN game IN (SELECT game FROM top) THEN game ELSE 'Other' END AS metric, sum(viewers) AS value FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.online AND coalesce(st.location, '') ~ '^(${location:regex})$' GROUP BY 1, 2 ORDER BY 1",
-          "format": "time_series",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "lineWidth": 1,
-            "fillOpacity": 60,
-            "showPoints": "auto",
-            "pointSize": 4,
-            "spanNulls": true,
-            "stacking": {
-              "mode": "normal",
-              "group": "A"
-            }
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "showLegend": true,
-          "displayMode": "list",
-          "placement": "bottom",
-          "calcs": []
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "desc"
-        }
-      }
-    },
-    {
-      "id": 18,
       "type": "row",
       "title": "Leaderboards (latest snapshot, $location)",
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 45,
+        "y": 27,
         "w": 24,
         "h": 1
       },
       "panels": []
     },
     {
-      "id": 19,
+      "id": 15,
       "type": "table",
       "title": "Top by donations",
       "datasource": {
@@ -964,7 +768,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 46,
+        "y": 28,
         "w": 12,
         "h": 12
       },
@@ -975,7 +779,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH h AS (  SELECT twitch_id, sum(extract(epoch FROM least(nxt - ts, interval '5 minutes'))) / 3600 AS hours FROM (    SELECT ts, twitch_id, online, lead(ts) OVER (PARTITION BY twitch_id ORDER BY ts) AS nxt    FROM streamer_sample_v WHERE $__timeFilter(ts)  ) x WHERE online AND nxt IS NOT NULL GROUP BY twitch_id) , cur AS (  SELECT twitch_id, donation_total, viewers, online FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot)) SELECT st.display AS \"Streamer\", cur.donation_total AS \"Donations\", cur.viewers AS \"Viewers\", coalesce(h.hours, 0) AS \"Hours\", st.login AS login FROM cur JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) WHERE true AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY cur.donation_total DESC LIMIT 25",
+          "rawSql": "WITH h AS (  SELECT twitch_id, sum(extract(epoch FROM least(nxt - ts, interval '5 minutes'))) / 3600 AS hours FROM (    SELECT ts, twitch_id, online, lead(ts) OVER (PARTITION BY twitch_id ORDER BY ts) AS nxt    FROM streamer_sample_v WHERE $__timeFilter(ts)  ) x WHERE online AND nxt IS NOT NULL GROUP BY twitch_id) , cur AS (  SELECT twitch_id, donation_total, viewers, online FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot)) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", cur.donation_total AS \"Donations\", cur.viewers AS \"Viewers\", coalesce(h.hours, 0) AS \"Hours\", st.login AS login FROM cur JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) WHERE true AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY cur.donation_total DESC LIMIT 25",
           "format": "table",
           "refId": "A"
         }
@@ -991,6 +795,28 @@
           }
         },
         "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Avatar"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "image"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 44
+              },
+              {
+                "id": "displayName",
+                "value": " "
+              }
+            ]
+          },
           {
             "matcher": {
               "id": "byName",
@@ -1061,7 +887,7 @@
       }
     },
     {
-      "id": 20,
+      "id": 16,
       "type": "table",
       "title": "Top by viewers",
       "datasource": {
@@ -1070,7 +896,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 46,
+        "y": 28,
         "w": 12,
         "h": 12
       },
@@ -1081,7 +907,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH h AS (  SELECT twitch_id, sum(extract(epoch FROM least(nxt - ts, interval '5 minutes'))) / 3600 AS hours FROM (    SELECT ts, twitch_id, online, lead(ts) OVER (PARTITION BY twitch_id ORDER BY ts) AS nxt    FROM streamer_sample_v WHERE $__timeFilter(ts)  ) x WHERE online AND nxt IS NOT NULL GROUP BY twitch_id) , cur AS (  SELECT twitch_id, donation_total, viewers, online FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot)) SELECT st.display AS \"Streamer\", cur.donation_total AS \"Donations\", cur.viewers AS \"Viewers\", coalesce(h.hours, 0) AS \"Hours\", st.login AS login FROM cur JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) WHERE cur.online AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY cur.viewers DESC LIMIT 25",
+          "rawSql": "WITH h AS (  SELECT twitch_id, sum(extract(epoch FROM least(nxt - ts, interval '5 minutes'))) / 3600 AS hours FROM (    SELECT ts, twitch_id, online, lead(ts) OVER (PARTITION BY twitch_id ORDER BY ts) AS nxt    FROM streamer_sample_v WHERE $__timeFilter(ts)  ) x WHERE online AND nxt IS NOT NULL GROUP BY twitch_id) , cur AS (  SELECT twitch_id, donation_total, viewers, online FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot)) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", cur.donation_total AS \"Donations\", cur.viewers AS \"Viewers\", coalesce(h.hours, 0) AS \"Hours\", st.login AS login FROM cur JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) WHERE cur.online AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY cur.viewers DESC LIMIT 25",
           "format": "table",
           "refId": "A"
         }
@@ -1097,6 +923,28 @@
           }
         },
         "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Avatar"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "image"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 44
+              },
+              {
+                "id": "displayName",
+                "value": " "
+              }
+            ]
+          },
           {
             "matcher": {
               "id": "byName",
@@ -1167,7 +1015,7 @@
       }
     },
     {
-      "id": 21,
+      "id": 17,
       "type": "table",
       "title": "Top gained in selected range",
       "datasource": {
@@ -1176,7 +1024,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 58,
+        "y": 40,
         "w": 12,
         "h": 12
       },
@@ -1187,7 +1035,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH h AS (  SELECT twitch_id, sum(extract(epoch FROM least(nxt - ts, interval '5 minutes'))) / 3600 AS hours FROM (    SELECT ts, twitch_id, online, lead(ts) OVER (PARTITION BY twitch_id ORDER BY ts) AS nxt    FROM streamer_sample_v WHERE $__timeFilter(ts)  ) x WHERE online AND nxt IS NOT NULL GROUP BY twitch_id) , cur AS (  SELECT twitch_id, donation_total, viewers, online FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot)) , g AS (  SELECT twitch_id, sum(delta) AS gained FROM (    SELECT ts, twitch_id, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta    FROM streamer_sample_v WHERE $__timeFilter(ts)  ) d WHERE delta IS NOT NULL GROUP BY twitch_id) SELECT st.display AS \"Streamer\", g.gained AS \"Gained\", cur.donation_total AS \"Donations\", cur.viewers AS \"Viewers\", coalesce(h.hours, 0) AS \"Hours\", st.login AS login FROM cur JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) JOIN g USING (twitch_id) WHERE true AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY g.gained DESC LIMIT 25",
+          "rawSql": "WITH h AS (  SELECT twitch_id, sum(extract(epoch FROM least(nxt - ts, interval '5 minutes'))) / 3600 AS hours FROM (    SELECT ts, twitch_id, online, lead(ts) OVER (PARTITION BY twitch_id ORDER BY ts) AS nxt    FROM streamer_sample_v WHERE $__timeFilter(ts)  ) x WHERE online AND nxt IS NOT NULL GROUP BY twitch_id) , cur AS (  SELECT twitch_id, donation_total, viewers, online FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot)) , g AS (  SELECT twitch_id, sum(delta) AS gained FROM (    SELECT ts, twitch_id, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta    FROM streamer_sample_v WHERE $__timeFilter(ts)  ) d WHERE delta IS NOT NULL GROUP BY twitch_id) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", g.gained AS \"Gained\", cur.donation_total AS \"Donations\", cur.viewers AS \"Viewers\", coalesce(h.hours, 0) AS \"Hours\", st.login AS login FROM cur JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) JOIN g USING (twitch_id) WHERE true AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY g.gained DESC LIMIT 25",
           "format": "table",
           "refId": "A"
         }
@@ -1203,6 +1051,28 @@
           }
         },
         "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Avatar"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "image"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 44
+              },
+              {
+                "id": "displayName",
+                "value": " "
+              }
+            ]
+          },
           {
             "matcher": {
               "id": "byName",
@@ -1289,7 +1159,7 @@
       }
     },
     {
-      "id": 22,
+      "id": 18,
       "type": "table",
       "title": "Top by hours streamed in selected range",
       "datasource": {
@@ -1298,7 +1168,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 58,
+        "y": 40,
         "w": 12,
         "h": 12
       },
@@ -1309,7 +1179,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH h AS (  SELECT twitch_id, sum(extract(epoch FROM least(nxt - ts, interval '5 minutes'))) / 3600 AS hours FROM (    SELECT ts, twitch_id, online, lead(ts) OVER (PARTITION BY twitch_id ORDER BY ts) AS nxt    FROM streamer_sample_v WHERE $__timeFilter(ts)  ) x WHERE online AND nxt IS NOT NULL GROUP BY twitch_id) , cur AS (  SELECT twitch_id, donation_total, viewers, online FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot)) SELECT st.display AS \"Streamer\", cur.donation_total AS \"Donations\", cur.viewers AS \"Viewers\", coalesce(h.hours, 0) AS \"Hours\", st.login AS login FROM cur JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) WHERE true AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY coalesce(h.hours, 0) DESC, cur.donation_total DESC LIMIT 25",
+          "rawSql": "WITH h AS (  SELECT twitch_id, sum(extract(epoch FROM least(nxt - ts, interval '5 minutes'))) / 3600 AS hours FROM (    SELECT ts, twitch_id, online, lead(ts) OVER (PARTITION BY twitch_id ORDER BY ts) AS nxt    FROM streamer_sample_v WHERE $__timeFilter(ts)  ) x WHERE online AND nxt IS NOT NULL GROUP BY twitch_id) , cur AS (  SELECT twitch_id, donation_total, viewers, online FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot)) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", cur.donation_total AS \"Donations\", cur.viewers AS \"Viewers\", coalesce(h.hours, 0) AS \"Hours\", st.login AS login FROM cur JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) WHERE true AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY coalesce(h.hours, 0) DESC, cur.donation_total DESC LIMIT 25",
           "format": "table",
           "refId": "A"
         }
@@ -1325,6 +1195,28 @@
           }
         },
         "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Avatar"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "image"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 44
+              },
+              {
+                "id": "displayName",
+                "value": " "
+              }
+            ]
+          },
           {
             "matcher": {
               "id": "byName",
@@ -1354,351 +1246,6 @@
               {
                 "id": "decimals",
                 "value": 1
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Streamer"
-            },
-            "properties": [
-              {
-                "id": "links",
-                "value": [
-                  {
-                    "title": "Open on Twitch",
-                    "url": "https://twitch.tv/${__data.fields.login}",
-                    "targetBlank": true
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "login"
-            },
-            "properties": [
-              {
-                "id": "custom.hidden",
-                "value": true
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "showHeader": true,
-        "sortBy": []
-      }
-    },
-    {
-      "id": 23,
-      "type": "row",
-      "title": "Per streamer ($streamer, $location)",
-      "collapsed": false,
-      "gridPos": {
-        "x": 0,
-        "y": 70,
-        "w": 24,
-        "h": 1
-      },
-      "panels": []
-    },
-    {
-      "id": 24,
-      "type": "stat",
-      "title": "Donations of selected streamers",
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "zevent-pg"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 71,
-        "w": 24,
-        "h": 4
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "zevent-pg"
-          },
-          "rawQuery": true,
-          "rawSql": "SELECT coalesce(sum(s.donation_total), 0) FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.twitch_id IN ($streamer) AND NOT s.derived AND coalesce(st.location, '') ~ '^(${location:regex})$'",
-          "format": "table",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "green"
-          },
-          "unit": "currencyEUR",
-          "decimals": 2
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "value",
-        "graphMode": "none",
-        "textMode": "value",
-        "justifyMode": "center"
-      },
-      "description": "Sum of the selected streamers' counters at the latest snapshot. The derived \"mistermv (private counter)\" entry is not real money and is left out even when selected."
-    },
-    {
-      "id": 25,
-      "type": "timeseries",
-      "title": "Donations per streamer",
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "zevent-pg"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 75,
-        "w": 12,
-        "h": 9
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "zevent-pg"
-          },
-          "rawQuery": true,
-          "rawSql": "SELECT s.ts AS time, st.display AS metric, st.login AS login, s.donation_total AS value FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.twitch_id IN ($streamer) AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY 1",
-          "format": "time_series",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "lineWidth": 1,
-            "fillOpacity": 60,
-            "showPoints": "auto",
-            "pointSize": 4,
-            "spanNulls": true,
-            "stacking": {
-              "mode": "normal",
-              "group": "A"
-            }
-          },
-          "unit": "currencyEUR",
-          "displayName": "${__field.labels.metric}",
-          "links": [
-            {
-              "title": "Open on Twitch",
-              "url": "https://twitch.tv/${__field.labels.login}",
-              "targetBlank": true
-            }
-          ]
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "showLegend": true,
-          "displayMode": "list",
-          "placement": "bottom",
-          "calcs": []
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "desc"
-        }
-      }
-    },
-    {
-      "id": 26,
-      "type": "timeseries",
-      "title": "Viewers per streamer",
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "zevent-pg"
-      },
-      "gridPos": {
-        "x": 12,
-        "y": 75,
-        "w": 12,
-        "h": 9
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "zevent-pg"
-          },
-          "rawQuery": true,
-          "rawSql": "SELECT s.ts AS time, st.display AS metric, st.login AS login, s.viewers AS value FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.twitch_id IN ($streamer) AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY 1",
-          "format": "time_series",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "lineWidth": 1,
-            "fillOpacity": 60,
-            "showPoints": "auto",
-            "pointSize": 4,
-            "spanNulls": true,
-            "stacking": {
-              "mode": "normal",
-              "group": "A"
-            }
-          },
-          "unit": "short",
-          "displayName": "${__field.labels.metric}",
-          "links": [
-            {
-              "title": "Open on Twitch",
-              "url": "https://twitch.tv/${__field.labels.login}",
-              "targetBlank": true
-            }
-          ]
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "showLegend": true,
-          "displayMode": "list",
-          "placement": "bottom",
-          "calcs": []
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "desc"
-        }
-      }
-    },
-    {
-      "id": 27,
-      "type": "timeseries",
-      "title": "Donations gained per streamer per interval",
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "zevent-pg"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 84,
-        "w": 12,
-        "h": 9
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "zevent-pg"
-          },
-          "rawQuery": true,
-          "rawSql": "SELECT $__timeGroupAlias(d.ts, $__interval), st.display AS metric, st.login AS login, sum(d.delta) AS value FROM (  SELECT ts, twitch_id, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta  FROM streamer_sample_v WHERE $__timeFilter(ts) AND twitch_id IN ($streamer)) d JOIN streamer_v st USING (twitch_id) WHERE d.delta IS NOT NULL AND coalesce(st.location, '') ~ '^(${location:regex})$' GROUP BY 1, 2, 3 ORDER BY 1",
-          "format": "time_series",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "lineWidth": 1,
-            "fillOpacity": 60,
-            "showPoints": "never",
-            "pointSize": 4,
-            "spanNulls": true,
-            "drawStyle": "bars",
-            "stacking": {
-              "mode": "normal",
-              "group": "A"
-            }
-          },
-          "unit": "currencyEUR",
-          "displayName": "${__field.labels.metric}",
-          "links": [
-            {
-              "title": "Open on Twitch",
-              "url": "https://twitch.tv/${__field.labels.login}",
-              "targetBlank": true
-            }
-          ]
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "showLegend": true,
-          "displayMode": "list",
-          "placement": "bottom",
-          "calcs": []
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "desc"
-        }
-      },
-      "interval": "5m"
-    },
-    {
-      "id": 28,
-      "type": "table",
-      "title": "Status of selected streamers",
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "zevent-pg"
-      },
-      "gridPos": {
-        "x": 12,
-        "y": 84,
-        "w": 12,
-        "h": 9
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "zevent-pg"
-          },
-          "rawQuery": true,
-          "rawSql": "WITH cur AS (  SELECT twitch_id, ts, online, game, viewers FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot) AND twitch_id IN ($streamer)), changed AS (  SELECT c.twitch_id, max(s.ts) AS at FROM cur c JOIN streamer_sample_v s USING (twitch_id)  WHERE s.online <> c.online OR s.game IS DISTINCT FROM c.game GROUP BY c.twitch_id) SELECT st.display AS \"Streamer\", c.online AS \"Online\", c.game AS \"Game\", c.viewers AS \"Viewers\",        extract(epoch FROM c.ts - coalesce(ch.at, st.first_seen)) AS \"Since\", st.login AS login FROM cur c JOIN streamer_v st USING (twitch_id) LEFT JOIN changed ch USING (twitch_id) WHERE coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY c.online DESC, c.viewers DESC",
-          "format": "table",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "auto"
-            },
-            "minWidth": 50
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Since"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "dtdurations"
               }
             ]
           },

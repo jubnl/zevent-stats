@@ -86,6 +86,30 @@
       "asDropdown": false,
       "tags": [],
       "tooltip": ""
+    },
+    {
+      "type": "link",
+      "title": "Insights",
+      "url": "/d/zevent-insights-public?kiosk=1",
+      "icon": "dashboard",
+      "keepTime": true,
+      "includeVars": false,
+      "targetBlank": false,
+      "asDropdown": false,
+      "tags": [],
+      "tooltip": ""
+    },
+    {
+      "type": "link",
+      "title": "Streamer",
+      "url": "/d/zevent-streamer-public?kiosk=1",
+      "icon": "dashboard",
+      "keepTime": true,
+      "includeVars": false,
+      "targetBlank": false,
+      "asDropdown": false,
+      "tags": [],
+      "tooltip": ""
     }
   ],
   "panels": [
