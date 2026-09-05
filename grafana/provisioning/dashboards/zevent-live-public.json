@@ -233,7 +233,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT coalesce(sum(extract(epoch FROM least(nxt - ts, interval '5 minutes'))) / 3600, 0) FROM (  SELECT s.ts, s.online, lead(s.ts) OVER (PARTITION BY s.twitch_id ORDER BY s.ts) AS nxt  FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id)  WHERE NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' AND $__timeFilter(s.ts) AND s.twitch_id IN ($streamer)) x WHERE online AND nxt IS NOT NULL",
+          "rawSql": "SELECT coalesce(sum(least(s.gap_s, 300)) FILTER (WHERE s.online), 0) / 3600.0 FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' AND $__timeFilter(s.ts) AND s.twitch_id IN ($streamer) AND s.gap_s IS NOT NULL",
           "format": "table",
           "refId": "A"
         }
@@ -262,7 +262,7 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Total time live, summed over the streamers matching the Location and Streamer filters, within the selected time range. Each live sample counts until the next sample (capped at 5 minutes, so gaps in the data do not count)."
+      "description": "Total time live, summed over the streamers matching the Location and Streamer filters, within the selected time range. Each live sample counts the minute since the previous sample (capped at 5 minutes, so gaps in the data do not count)."
     },
     {
       "id": 4,

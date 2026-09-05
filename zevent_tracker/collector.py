@@ -14,7 +14,7 @@ import psycopg
 
 from .api import fetch
 from .backfill import backfill
-from .db import ensure_schema, insert
+from .db import ensure_schema, insert, recompute
 from .parse import parse
 
 log = logging.getLogger("zevent")
@@ -99,6 +99,12 @@ def main() -> None:
     if sys.argv[1:2] == ["backfill"]:
         # optional directory argument: import dumps from somewhere other than RAW_DIR (e.g. raw-backfill/)
         backfill(Path(sys.argv[2]) if len(sys.argv) > 2 else cfg.raw_dir, cfg.database_url)
+        return
+    if sys.argv[1:2] == ["recompute"]:
+        # derived facts for every sample (or from an ISO timestamp): main.py recompute [2026-09-05T00:00:00]
+        start = datetime.fromisoformat(sys.argv[2]).replace(tzinfo=timezone.utc) if len(sys.argv) > 2 else None
+        with psycopg.connect(cfg.database_url) as conn, conn.transaction():
+            recompute(conn, start)
         return
     if sys.argv[1:2] == ["pull-external"]:
         from .external import main as pull_external

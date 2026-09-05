@@ -491,7 +491,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT coalesce(sum(extract(epoch FROM least(nxt - ts, interval '5 minutes'))) / 3600, 0) FROM (  SELECT s.ts, s.online, lead(s.ts) OVER (PARTITION BY s.twitch_id ORDER BY s.ts) AS nxt  FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id)  WHERE NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' AND $__timeFilter(s.ts) AND s.twitch_id IN ($streamer)) x WHERE online AND nxt IS NOT NULL",
+          "rawSql": "SELECT coalesce(sum(least(s.gap_s, 300)) FILTER (WHERE s.online), 0) / 3600.0 FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' AND $__timeFilter(s.ts) AND s.twitch_id IN ($streamer) AND s.gap_s IS NOT NULL",
           "format": "table",
           "refId": "A"
         }
@@ -520,7 +520,7 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Total time live, summed over the streamers matching the Location and Streamer filters, within the selected time range. Each live sample counts until the next sample (capped at 5 minutes, so gaps in the data do not count)."
+      "description": "Total time live, summed over the streamers matching the Location and Streamer filters, within the selected time range. Each live sample counts the minute since the previous sample (capped at 5 minutes, so gaps in the data do not count)."
     },
     {
       "id": 9,
@@ -543,7 +543,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH g AS (  SELECT twitch_id, sum(delta) AS gained FROM (    SELECT ts, twitch_id, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta    FROM streamer_sample_v WHERE $__timeFilter(ts)  ) d WHERE delta IS NOT NULL GROUP BY twitch_id) , v AS (  SELECT sum(x.viewers * extract(epoch FROM least(nxt - ts, interval '5 minutes'))) / 3600 AS viewer_hours FROM (    SELECT s.ts, s.twitch_id, s.viewers, lead(s.ts) OVER (PARTITION BY s.twitch_id ORDER BY s.ts) AS nxt    FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id)    WHERE $__timeFilter(s.ts) AND NOT st.derived AND s.twitch_id IN ($streamer) AND coalesce(st.location, '') ~ '^(${location:regex})$'  ) x WHERE x.nxt IS NOT NULL) SELECT (SELECT coalesce(sum(g.gained), 0) FROM g JOIN streamer_v st USING (twitch_id)         WHERE NOT st.derived AND g.twitch_id IN ($streamer) AND coalesce(st.location, '') ~ '^(${location:regex})$') / nullif(v.viewer_hours, 0) FROM v",
+          "rawSql": "WITH g AS (  SELECT s.twitch_id, sum(s.gain) AS gained FROM streamer_sample_v s  WHERE $__timeFilter(s.ts) AND s.gain IS NOT NULL GROUP BY s.twitch_id) , v AS (  SELECT sum(x.viewers * least(x.gap_s, 300)) / 3600.0 AS viewer_hours  FROM streamer_sample_v x JOIN streamer_v st USING (twitch_id)  WHERE $__timeFilter(x.ts) AND NOT st.derived AND x.twitch_id IN ($streamer) AND coalesce(st.location, '') ~ '^(${location:regex})$' AND x.gap_s IS NOT NULL) SELECT (SELECT coalesce(sum(g.gained), 0) FROM g JOIN streamer_v st USING (twitch_id)         WHERE NOT st.derived AND g.twitch_id IN ($streamer) AND coalesce(st.location, '') ~ '^(${location:regex})$') / nullif(v.viewer_hours, 0) FROM v",
           "format": "table",
           "refId": "A"
         }
@@ -831,7 +831,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH h AS (  SELECT twitch_id, sum(extract(epoch FROM least(nxt - ts, interval '5 minutes'))) / 3600 AS hours FROM (    SELECT ts, twitch_id, online, lead(ts) OVER (PARTITION BY twitch_id ORDER BY ts) AS nxt    FROM streamer_sample_v WHERE $__timeFilter(ts)  ) x WHERE online AND nxt IS NOT NULL GROUP BY twitch_id) , cur AS (  SELECT twitch_id, donation_total, viewers, online FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot)) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", cur.donation_total AS \"Donations\", cur.viewers AS \"Viewers\", coalesce(h.hours, 0) AS \"Hours\", st.login AS login FROM cur JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) WHERE true AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY cur.donation_total DESC LIMIT 25",
+          "rawSql": "WITH h AS (  SELECT s.twitch_id, sum(least(s.gap_s, 300)) FILTER (WHERE s.online) / 3600.0 AS hours  FROM streamer_sample_v s WHERE $__timeFilter(s.ts) AND s.gap_s IS NOT NULL GROUP BY s.twitch_id) , cur AS (  SELECT twitch_id, donation_total, viewers, online FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot)) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", cur.donation_total AS \"Donations\", cur.viewers AS \"Viewers\", coalesce(h.hours, 0) AS \"Hours\", st.login AS login FROM cur JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) WHERE true AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY cur.donation_total DESC LIMIT 25",
           "format": "table",
           "refId": "A"
         }
@@ -959,7 +959,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH h AS (  SELECT twitch_id, sum(extract(epoch FROM least(nxt - ts, interval '5 minutes'))) / 3600 AS hours FROM (    SELECT ts, twitch_id, online, lead(ts) OVER (PARTITION BY twitch_id ORDER BY ts) AS nxt    FROM streamer_sample_v WHERE $__timeFilter(ts)  ) x WHERE online AND nxt IS NOT NULL GROUP BY twitch_id) , cur AS (  SELECT twitch_id, donation_total, viewers, online FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot)) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", cur.donation_total AS \"Donations\", cur.viewers AS \"Viewers\", coalesce(h.hours, 0) AS \"Hours\", st.login AS login FROM cur JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) WHERE cur.online AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY cur.viewers DESC LIMIT 25",
+          "rawSql": "WITH h AS (  SELECT s.twitch_id, sum(least(s.gap_s, 300)) FILTER (WHERE s.online) / 3600.0 AS hours  FROM streamer_sample_v s WHERE $__timeFilter(s.ts) AND s.gap_s IS NOT NULL GROUP BY s.twitch_id) , cur AS (  SELECT twitch_id, donation_total, viewers, online FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot)) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", cur.donation_total AS \"Donations\", cur.viewers AS \"Viewers\", coalesce(h.hours, 0) AS \"Hours\", st.login AS login FROM cur JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) WHERE cur.online AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY cur.viewers DESC LIMIT 25",
           "format": "table",
           "refId": "A"
         }
@@ -1087,7 +1087,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH h AS (  SELECT twitch_id, sum(extract(epoch FROM least(nxt - ts, interval '5 minutes'))) / 3600 AS hours FROM (    SELECT ts, twitch_id, online, lead(ts) OVER (PARTITION BY twitch_id ORDER BY ts) AS nxt    FROM streamer_sample_v WHERE $__timeFilter(ts)  ) x WHERE online AND nxt IS NOT NULL GROUP BY twitch_id) , cur AS (  SELECT twitch_id, donation_total, viewers, online FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot)) , g AS (  SELECT twitch_id, sum(delta) AS gained FROM (    SELECT ts, twitch_id, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta    FROM streamer_sample_v WHERE $__timeFilter(ts)  ) d WHERE delta IS NOT NULL GROUP BY twitch_id) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", g.gained AS \"Gained\", cur.donation_total AS \"Donations\", cur.viewers AS \"Viewers\", coalesce(h.hours, 0) AS \"Hours\", st.login AS login FROM cur JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) JOIN g USING (twitch_id) WHERE true AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY g.gained DESC LIMIT 25",
+          "rawSql": "WITH h AS (  SELECT s.twitch_id, sum(least(s.gap_s, 300)) FILTER (WHERE s.online) / 3600.0 AS hours  FROM streamer_sample_v s WHERE $__timeFilter(s.ts) AND s.gap_s IS NOT NULL GROUP BY s.twitch_id) , cur AS (  SELECT twitch_id, donation_total, viewers, online FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot)) , g AS (  SELECT s.twitch_id, sum(s.gain) AS gained FROM streamer_sample_v s  WHERE $__timeFilter(s.ts) AND s.gain IS NOT NULL GROUP BY s.twitch_id) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", g.gained AS \"Gained\", cur.donation_total AS \"Donations\", cur.viewers AS \"Viewers\", coalesce(h.hours, 0) AS \"Hours\", st.login AS login FROM cur JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) JOIN g USING (twitch_id) WHERE true AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY g.gained DESC LIMIT 25",
           "format": "table",
           "refId": "A"
         }
@@ -1231,7 +1231,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH h AS (  SELECT twitch_id, sum(extract(epoch FROM least(nxt - ts, interval '5 minutes'))) / 3600 AS hours FROM (    SELECT ts, twitch_id, online, lead(ts) OVER (PARTITION BY twitch_id ORDER BY ts) AS nxt    FROM streamer_sample_v WHERE $__timeFilter(ts)  ) x WHERE online AND nxt IS NOT NULL GROUP BY twitch_id) , cur AS (  SELECT twitch_id, donation_total, viewers, online FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot)) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", cur.donation_total AS \"Donations\", cur.viewers AS \"Viewers\", coalesce(h.hours, 0) AS \"Hours\", st.login AS login FROM cur JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) WHERE true AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY coalesce(h.hours, 0) DESC, cur.donation_total DESC LIMIT 25",
+          "rawSql": "WITH h AS (  SELECT s.twitch_id, sum(least(s.gap_s, 300)) FILTER (WHERE s.online) / 3600.0 AS hours  FROM streamer_sample_v s WHERE $__timeFilter(s.ts) AND s.gap_s IS NOT NULL GROUP BY s.twitch_id) , cur AS (  SELECT twitch_id, donation_total, viewers, online FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot)) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", cur.donation_total AS \"Donations\", cur.viewers AS \"Viewers\", coalesce(h.hours, 0) AS \"Hours\", st.login AS login FROM cur JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) WHERE true AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY coalesce(h.hours, 0) DESC, cur.donation_total DESC LIMIT 25",
           "format": "table",
           "refId": "A"
         }

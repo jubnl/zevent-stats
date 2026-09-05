@@ -415,7 +415,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH d AS (  SELECT ts, twitch_id, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta,          ts - lag(ts) OVER (PARTITION BY twitch_id ORDER BY ts) AS gap  FROM streamer_sample_v WHERE $__timeFilter(ts) AND NOT derived), e AS (  SELECT *, min(delta) OVER (PARTITION BY twitch_id ORDER BY ts ROWS BETWEEN 10 PRECEDING AND 1 PRECEDING) AS drop  FROM d WHERE delta IS NOT NULL AND gap <= interval '5 minutes') SELECT e.ts AS \"Time\", st.display AS \"Streamer\", e.delta AS \"Gain\", st.login AS login FROM e JOIN streamer_v st USING (twitch_id) WHERE e.delta > 0 AND coalesce(e.drop, 0) > -0.9 * e.delta AND st.login NOT IN ('zevent', 'zeventplays') AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY e.delta DESC LIMIT 25",
+          "rawSql": "WITH e AS (  SELECT s.ts, s.twitch_id, s.gain AS delta FROM streamer_sample_v s  WHERE $__timeFilter(s.ts) AND NOT s.derived AND s.gain > 0 AND s.gap_s <= 300  ORDER BY s.gain DESC LIMIT 200) SELECT e.ts AS \"Time\", st.display AS \"Streamer\", e.delta AS \"Gain\", st.login AS login FROM e JOIN streamer_v st USING (twitch_id) WHERE st.login NOT IN ('zevent', 'zeventplays') AND coalesce(st.location, '') ~ '^(${location:regex})$' AND NOT EXISTS (SELECT 1 FROM streamer_sample_v p WHERE p.twitch_id = e.twitch_id                 AND p.ts < e.ts AND p.ts >= e.ts - interval '10 minutes' AND p.gain <= -0.9 * e.delta) ORDER BY e.delta DESC LIMIT 25",
           "format": "table",
           "refId": "A"
         }
@@ -519,7 +519,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT to_char(h, 'FM00\"h\"') AS \"Hour\", sum(delta) AS \"Donated\" FROM (  SELECT extract(hour FROM ts AT TIME ZONE 'Europe/Paris') AS h,          donation_total - lag(donation_total) OVER ( ORDER BY ts) AS delta  FROM snapshot WHERE $__timeFilter(ts)) d WHERE delta IS NOT NULL GROUP BY h ORDER BY h",
+          "rawSql": "SELECT to_char(h, 'FM00\"h\"') AS \"Hour\", sum(delta) AS \"Donated\" FROM (  SELECT extract(hour FROM ts AT TIME ZONE 'Europe/Paris') AS h,          donation_total - lag(donation_total) OVER (ORDER BY ts) AS delta  FROM snapshot WHERE $__timeFilter(ts)) d WHERE delta IS NOT NULL GROUP BY h ORDER BY h",
           "format": "table",
           "refId": "A"
         }
@@ -574,7 +574,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH v AS (  SELECT twitch_id, sum(viewers * extract(epoch FROM least(nxt - ts, interval '5 minutes'))) / 3600 AS viewer_hours,          sum(extract(epoch FROM least(nxt - ts, interval '5 minutes'))) FILTER (WHERE online) / 3600 AS hours  FROM (SELECT ts, twitch_id, online, viewers, lead(ts) OVER (PARTITION BY twitch_id ORDER BY ts) AS nxt        FROM streamer_sample_v WHERE $__timeFilter(ts)) x  WHERE nxt IS NOT NULL GROUP BY twitch_id), g AS (  SELECT twitch_id, sum(delta) AS gained FROM (    SELECT ts, twitch_id, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta    FROM streamer_sample_v WHERE $__timeFilter(ts)  ) d WHERE delta IS NOT NULL GROUP BY twitch_id) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", g.gained / v.viewer_hours AS \"Per viewer-hour\", g.gained AS \"Gained\", v.viewer_hours AS \"Viewer-hours\", v.hours AS \"Hours\", st.login AS login FROM g JOIN v USING (twitch_id) JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND v.viewer_hours >= 100 AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY 3 DESC LIMIT 25",
+          "rawSql": "WITH v AS (  SELECT x.twitch_id, sum(x.viewers * least(x.gap_s, 300)) / 3600.0 AS viewer_hours,          sum(least(x.gap_s, 300)) FILTER (WHERE x.online) / 3600.0 AS hours  FROM streamer_sample_v x WHERE $__timeFilter(x.ts) AND x.gap_s IS NOT NULL GROUP BY x.twitch_id), g AS (  SELECT s.twitch_id, sum(s.gain) AS gained FROM streamer_sample_v s  WHERE $__timeFilter(s.ts) AND s.gain IS NOT NULL GROUP BY s.twitch_id) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", g.gained / v.viewer_hours AS \"Per viewer-hour\", g.gained AS \"Gained\", v.viewer_hours AS \"Viewer-hours\", v.hours AS \"Hours\", st.login AS login FROM g JOIN v USING (twitch_id) JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND v.viewer_hours >= 100 AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY 3 DESC LIMIT 25",
           "format": "table",
           "refId": "A"
         }
@@ -832,7 +832,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroupAlias(d.ts, $__interval), coalesce(st.location, 'Unknown') AS metric, sum(d.delta) AS value FROM (  SELECT ts, twitch_id, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta  FROM streamer_sample_v WHERE $__timeFilter(ts) AND NOT derived) d JOIN streamer_v st USING (twitch_id) WHERE d.delta IS NOT NULL AND coalesce(st.location, '') ~ '^(${location:regex})$' GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT $__timeGroupAlias(d.ts, $__interval), coalesce(st.location, 'Unknown') AS metric, sum(d.gain) AS value FROM streamer_sample_v d JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(d.ts) AND NOT d.derived AND d.gain IS NOT NULL AND coalesce(st.location, '') ~ '^(${location:regex})$' GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }
@@ -1140,7 +1140,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT x.game AS \"Game\", sum(extract(epoch FROM least(nxt - ts, interval '5 minutes'))) / 3600 AS \"Hours\", count(DISTINCT x.twitch_id) AS \"Streamers\",        sum(x.viewers * extract(epoch FROM least(nxt - ts, interval '5 minutes'))) / 3600 AS \"Viewer-hours\" FROM (  SELECT s.ts, s.twitch_id, s.online, s.viewers, coalesce(s.game, '(no game)') AS game,          lead(s.ts) OVER (PARTITION BY s.twitch_id ORDER BY s.ts) AS nxt FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$') x WHERE x.online AND x.nxt IS NOT NULL GROUP BY x.game ORDER BY 2 DESC LIMIT 25",
+          "rawSql": "SELECT coalesce(x.game, '(no game)') AS \"Game\", sum(least(x.gap_s, 300)) / 3600.0 AS \"Hours\",        count(DISTINCT x.twitch_id) AS \"Streamers\", sum(x.viewers * least(x.gap_s, 300)) / 3600.0 AS \"Viewer-hours\" FROM streamer_sample_v x JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(x.ts) AND NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' AND x.online AND x.gap_s IS NOT NULL GROUP BY 1 ORDER BY 2 DESC LIMIT 25",
           "format": "table",
           "refId": "A"
         }
@@ -1266,7 +1266,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroupAlias(ts, $__interval), sum(g) - sum(sg) AS \"Not tied to a streamer\" FROM (  SELECT ts, donation_total - lag(donation_total) OVER ( ORDER BY ts) AS g FROM snapshot WHERE $__timeFilter(ts)) gl JOIN (  SELECT ts, sum(delta) AS sg FROM (    SELECT ts, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta FROM streamer_sample_v WHERE NOT derived AND $__timeFilter(ts)  ) x GROUP BY ts) st USING (ts) WHERE g IS NOT NULL GROUP BY 1 ORDER BY 1",
+          "rawSql": "SELECT $__timeGroupAlias(ts, $__interval), sum(g) - sum(sg) AS \"Not tied to a streamer\" FROM (  SELECT ts, donation_total - lag(donation_total) OVER (ORDER BY ts) AS g FROM snapshot WHERE $__timeFilter(ts)) gl JOIN (  SELECT ts, sum(gain) AS sg FROM streamer_sample_v WHERE NOT derived AND $__timeFilter(ts) GROUP BY ts) st USING (ts) WHERE g IS NOT NULL GROUP BY 1 ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }

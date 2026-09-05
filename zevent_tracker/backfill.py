@@ -13,7 +13,7 @@ from pathlib import Path
 
 import psycopg
 
-from .db import insert
+from .db import insert, recompute
 from .parse import parse
 
 log = logging.getLogger("zevent.backfill")
@@ -52,12 +52,18 @@ def backfill(raw_dir: Path, database_url: str) -> dict[str, int]:
         log.info("backfill: %d raw files, %d already in db, %d to import", len(files), counts["skipped"], len(todo))
         for i, (ts, f) in enumerate(todo, 1):
             try:
-                insert(conn, parse(json.loads(f.read_bytes()), ts))
+                insert(conn, parse(json.loads(f.read_bytes()), ts), derive=False)
                 counts["imported"] += 1
             except Exception as e:  # corrupt file, bad shape: log and move on
                 counts["failed"] += 1
                 log.warning("backfill: %s failed: %s", f, e)
             if i % 200 == 0:
                 log.info("backfill: %d/%d", i, len(todo))
+        if counts["imported"]:
+            # derived facts from the oldest imported minute on (later rows may have new predecessors)
+            start = min(ts for ts, _ in todo)
+            log.info("backfill: recomputing derived facts from %s", start.isoformat())
+            with conn.transaction():
+                recompute(conn, start)
     log.info("backfill done: %s", counts)
     return counts

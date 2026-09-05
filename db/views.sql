@@ -4,7 +4,8 @@
 --   docker compose exec -T db psql -U zevent -d zevent < db/views.sql
 -- Do not use the copy mounted inside the container (-f /docker-entrypoint-initdb.d/views.sql): git replaces
 -- the file on pull, and a running container keeps the old inode, so that copy is stale until the container
--- is recreated.
+-- is recreated. Apply it AFTER the collector has started at least once: the views read columns the
+-- collector adds at startup (zevent_tracker/db.py SCHEMA_UPDATES).
 --
 -- Background: mistermv's API counter merges his own donations with a second source. In the data that
 -- second source is a copy of Domingo's counter: at 01:08 UTC on 2026-09-05 mistermv's counter jumped
@@ -14,23 +15,22 @@
 -- "mistermv (private counter)" (the mirrored part), so leaderboards show both and the derived row can
 -- be excluded from sums that are compared to the global total.
 --
--- Split rule per sample minute, from the rebase minute on:
---   rebase minute      -> the whole jump is mirrored
---   any later minute   -> least(mistermv increment, Domingo increment), floored at 0; the excess is his own
+-- Since 2026-09-06 the split is no longer computed here: the collector stores the mirrored amount on
+-- mistermv's sample rows (columns dup and dup_gain, rule in zevent_tracker/db.py DUP_SQL, read from
+-- mirror_config below), together with the per-row gain, gap and rank. The views only read columns, so
+-- every dashboard query is a plain scan of the sample range.
 --
 -- The global total is NOT corrected. "External donations" (global minus the real streamer counters) is
 -- money donated on the Streamlabs Charity team page without a member id, which lands in the team total
--- and on no streamer. zevent's global total tracks the Streamlabs team total with a ~1 minute lag
--- (sampled 2026-09-05 16:13-16:17 UTC: Streamlabs was 1.4-6.9K ahead, never behind). An earlier
--- version of this file subtracted mistermv's non-mirrored increments from the global total on the
--- theory that it counted them twice; the Streamlabs comparison showed that was wrong, so it was removed.
+-- and on no streamer (plus the shop, e.g. 3.7M added at once on 2026-09-05 20:04 UTC). zevent's global
+-- total tracks the Streamlabs team total with a ~1 minute lag.
 
 -- The views are recreated inside one transaction so the swap is atomic for the dashboards.
 BEGIN;
-DROP VIEW IF EXISTS snapshot_v;        -- removed 2026-09-05, see above
+DROP VIEW IF EXISTS snapshot_v;        -- removed 2026-09-05
 DROP VIEW IF EXISTS streamer_sample_v;
 DROP VIEW IF EXISTS streamer_v;
-DROP VIEW IF EXISTS mirror_dup;
+DROP VIEW IF EXISTS mirror_dup;        -- removed 2026-09-06, replaced by the dup columns
 DROP VIEW IF EXISTS mirror_config;
 
 CREATE VIEW mirror_config AS
@@ -40,28 +40,8 @@ SELECT 'mistermv'::text                         AS login,
        'mistermv-private'::text                 AS derived_id,    -- twitch_id of the derived row
        'mistermv (private counter)'::text       AS derived_display;
 
--- Per sample ts from the rebase on: the mirrored increment and the cumulative mirrored amount.
-CREATE VIEW mirror_dup AS
-WITH c AS (SELECT * FROM mirror_config),
-d AS (
-  SELECT s.ts, st.login, s.donation_total - lag(s.donation_total) OVER (PARTITION BY s.twitch_id ORDER BY s.ts) AS delta
-  FROM streamer_sample s JOIN streamer st USING (twitch_id), c
-  WHERE st.login IN (c.login, c.source_login)
-),
-m AS (
-  SELECT d.ts,
-         max(d.delta) FILTER (WHERE d.login = c.login)        AS own_delta,
-         max(d.delta) FILTER (WHERE d.login = c.source_login) AS src_delta
-  FROM d, c WHERE d.ts >= c.rebase_ts GROUP BY d.ts
-),
-dd AS (
-  SELECT m.ts, CASE WHEN m.ts = c.rebase_ts THEN m.own_delta ELSE greatest(least(m.own_delta, m.src_delta), 0) END AS dup_delta
-  FROM m, c WHERE m.own_delta IS NOT NULL AND m.src_delta IS NOT NULL
-)
-SELECT ts, dup_delta, sum(dup_delta) OVER (ORDER BY ts) AS dup FROM dd;
-
 -- streamer plus the derived row. `derived` marks rows that are not API entities.
--- `location` (added 2026-09-05, needs the collector to have run once) is 'LAN' or 'Online'.
+-- `location` is 'LAN' (on site) or 'Online' (from home).
 CREATE VIEW streamer_v AS
 SELECT twitch_id, login, display, profile_url, donation_url, location, first_seen, last_seen, false AS derived
 FROM streamer
@@ -70,15 +50,22 @@ SELECT c.derived_id, st.login, c.derived_display, st.profile_url, st.donation_ur
 FROM streamer st JOIN mirror_config c ON st.login = c.login;
 
 -- streamer_sample with mistermv's counter split: his row minus the mirrored amount, plus a derived row
--- carrying the mirrored amount (offline, no viewers, no game).
+-- carrying the mirrored amount (offline, no viewers, no game, no rank). Columns:
+--   gain    donation gain since the streamer's previous sample (NULL on the first one)
+--   gap_s   seconds since that previous sample (NULL on the first one); cap it at 300 when summing time
+--   rank    position in the donation leaderboard at that ts
+-- The derived row's gain at the rebase minute is NULL: that jump is not money moving that minute.
 CREATE VIEW streamer_sample_v AS
-WITH mirrored AS (
-  SELECT d.ts, st.twitch_id, d.dup FROM mirror_dup d, streamer st JOIN mirror_config c ON st.login = c.login
-)
-SELECT s.ts, s.twitch_id, s.online, s.game, s.viewers, s.donation_total - coalesce(mr.dup, 0) AS donation_total, false AS derived
-FROM streamer_sample s LEFT JOIN mirrored mr ON mr.ts = s.ts AND mr.twitch_id = s.twitch_id
+SELECT ts, twitch_id, online, game, viewers,
+       donation_total - coalesce(dup, 0) AS donation_total,
+       gain - coalesce(dup_gain, 0)      AS gain,
+       gap_s, rank, false AS derived
+FROM streamer_sample
 UNION ALL
-SELECT d.ts, c.derived_id, false, NULL, 0, d.dup, true
-FROM mirror_dup d, mirror_config c;
+SELECT s.ts, c.derived_id, false, NULL, 0, s.dup,
+       CASE WHEN s.ts = c.rebase_ts THEN NULL ELSE s.dup_gain END,
+       s.gap_s, NULL, true
+FROM streamer_sample s JOIN streamer st USING (twitch_id) JOIN mirror_config c ON st.login = c.login
+WHERE s.dup IS NOT NULL;
 
 COMMIT;

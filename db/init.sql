@@ -24,6 +24,12 @@ CREATE TABLE streamer_sample (
   game           text,
   viewers        integer NOT NULL,
   donation_total numeric(12,2) NOT NULL,
+  -- derived facts, filled by the collector after each insert (zevent_tracker/db.py recompute()):
+  gain           numeric(12,2),   -- donation_total minus the streamer's previous sample
+  gap_s          integer,         -- seconds since the streamer's previous sample
+  dup            numeric(12,2),   -- MisterMV's mirrored amount (db/views.sql), NULL elsewhere
+  dup_gain       numeric(12,2),   -- its increment at this sample
+  rank           integer,         -- position by donation_total - dup among the streamers at this ts
   PRIMARY KEY (twitch_id, ts)
 );
 CREATE INDEX streamer_sample_ts_idx ON streamer_sample (ts);
