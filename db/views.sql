@@ -18,13 +18,22 @@
 --   rebase minute      -> the whole jump is mirrored
 --   any later minute   -> least(mistermv increment, Domingo increment), floored at 0; the excess is his own
 --
--- Second effect, also from the rebase on: whenever mistermv's counter gains more than the mirrored
--- Domingo increment (his "own" part, e.g. +1,010 at 11:51 UTC on Sept 5), the global total rises by
--- twice that amount while no other listed counter moves. So the global total carries each of those
--- amounts twice. snapshot_v exposes the cumulative excess as donation_dup so it can be taken out of
--- "global minus streamers"; the official donation_total itself is left untouched.
+-- The global total is NOT corrected. "External donations" (global minus the real streamer counters) is
+-- money donated on the Streamlabs Charity team page without a member id, which lands in the team total
+-- and on no streamer. zevent's global total tracks the Streamlabs team total with a ~1 minute lag
+-- (sampled 2026-09-05 16:13-16:17 UTC: Streamlabs was 1.4-6.9K ahead, never behind). An earlier
+-- version of this file subtracted mistermv's non-mirrored increments from the global total on the
+-- theory that it counted them twice; the Streamlabs comparison showed that was wrong, so it was removed.
 
-CREATE OR REPLACE VIEW mirror_config AS
+-- The views are recreated inside one transaction so the swap is atomic for the dashboards.
+BEGIN;
+DROP VIEW IF EXISTS snapshot_v;        -- removed 2026-09-05, see above
+DROP VIEW IF EXISTS streamer_sample_v;
+DROP VIEW IF EXISTS streamer_v;
+DROP VIEW IF EXISTS mirror_dup;
+DROP VIEW IF EXISTS mirror_config;
+
+CREATE VIEW mirror_config AS
 SELECT 'mistermv'::text                         AS login,
        'domingo'::text                          AS source_login,
        '2026-09-05 01:08:00+00'::timestamptz    AS rebase_ts,     -- first sample with the mirrored counter
@@ -32,7 +41,7 @@ SELECT 'mistermv'::text                         AS login,
        'mistermv (private counter)'::text       AS derived_display;
 
 -- Per sample ts from the rebase on: the mirrored increment and the cumulative mirrored amount.
-CREATE OR REPLACE VIEW mirror_dup AS
+CREATE VIEW mirror_dup AS
 WITH c AS (SELECT * FROM mirror_config),
 d AS (
   SELECT s.ts, st.login, s.donation_total - lag(s.donation_total) OVER (PARTITION BY s.twitch_id ORDER BY s.ts) AS delta
@@ -46,22 +55,13 @@ m AS (
   FROM d, c WHERE d.ts >= c.rebase_ts GROUP BY d.ts
 ),
 dd AS (
-  SELECT m.ts, m.own_delta AS m_delta,
-         CASE WHEN m.ts = c.rebase_ts THEN m.own_delta ELSE greatest(least(m.own_delta, m.src_delta), 0) END AS dup_delta
+  SELECT m.ts, CASE WHEN m.ts = c.rebase_ts THEN m.own_delta ELSE greatest(least(m.own_delta, m.src_delta), 0) END AS dup_delta
   FROM m, c WHERE m.own_delta IS NOT NULL AND m.src_delta IS NOT NULL
 )
-SELECT ts, dup_delta, sum(dup_delta) OVER (ORDER BY ts) AS dup,
-       m_delta - dup_delta                              AS own_delta,   -- mistermv's non-mirrored increment
-       sum(m_delta - dup_delta) OVER (ORDER BY ts)      AS global_dup   -- cumulative excess carried twice by the global total
-FROM dd;
-
--- snapshot plus donation_dup: the cumulative amount the global total carries twice (0 before the rebase).
-CREATE OR REPLACE VIEW snapshot_v AS
-SELECT sn.*, coalesce(d.global_dup, 0) AS donation_dup
-FROM snapshot sn LEFT JOIN mirror_dup d USING (ts);
+SELECT ts, dup_delta, sum(dup_delta) OVER (ORDER BY ts) AS dup FROM dd;
 
 -- streamer plus the derived row. `derived` marks rows that are not API entities.
-CREATE OR REPLACE VIEW streamer_v AS
+CREATE VIEW streamer_v AS
 SELECT twitch_id, login, display, profile_url, donation_url, first_seen, last_seen, false AS derived
 FROM streamer
 UNION ALL
@@ -70,7 +70,7 @@ FROM streamer st JOIN mirror_config c ON st.login = c.login;
 
 -- streamer_sample with mistermv's counter split: his row minus the mirrored amount, plus a derived row
 -- carrying the mirrored amount (offline, no viewers, no game).
-CREATE OR REPLACE VIEW streamer_sample_v AS
+CREATE VIEW streamer_sample_v AS
 WITH mirrored AS (
   SELECT d.ts, st.twitch_id, d.dup FROM mirror_dup d, streamer st JOIN mirror_config c ON st.login = c.login
 )
@@ -79,3 +79,5 @@ FROM streamer_sample s LEFT JOIN mirrored mr ON mr.ts = s.ts AND mr.twitch_id = 
 UNION ALL
 SELECT d.ts, c.derived_id, false, NULL, 0, d.dup, true
 FROM mirror_dup d, mirror_config c;
+
+COMMIT;
