@@ -1483,7 +1483,7 @@
     }
   ],
   "timepicker": {
-    "hidden": true,
+    "hidden": false,
     "refresh_intervals": [
       "15s",
       "30s"

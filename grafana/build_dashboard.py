@@ -310,7 +310,7 @@ public.update({
     "editable": False,
     "refresh": "30s",
     # hidden time picker also hides the refresh picker; from/to stay fixed at the values below
-    "timepicker": {"hidden": True, "refresh_intervals": ["15s", "30s"]},
+    "timepicker": {"hidden": False, "refresh_intervals": ["15s", "30s"]},
     "time": {"from": "2026-09-04T20:58:40.000Z", "to": "now"},
 })
 out_public = here / "provisioning-public" / "dashboards" / "zevent-public.json"
