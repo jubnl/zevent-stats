@@ -38,7 +38,7 @@ def panel(ptype, title, sql, x, y, w, h, fmt="time_series", **extra):
     return p
 
 
-def stat(title, sql, x, w=6, unit=None, decimals=None, color="green", text_mode="value", description=None):
+def stat(title, sql, x, w=6, y=0, unit=None, decimals=None, color="green", text_mode="value", description=None):
     d = {"color": {"mode": "fixed", "fixedColor": color}}
     extra = {"description": description} if description else {}
     if unit:
@@ -46,7 +46,7 @@ def stat(title, sql, x, w=6, unit=None, decimals=None, color="green", text_mode=
     if decimals is not None:
         d["decimals"] = decimals
     return panel(
-        "stat", title, sql, x, 0, w, 4, fmt="table",
+        "stat", title, sql, x, y, w, 4, fmt="table",
         fieldConfig={"defaults": d},
         options={
             "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": False},
@@ -146,48 +146,48 @@ def row(title, y):
 
 
 panels = [
-    stat("Total donations", "SELECT donation_total FROM snapshot ORDER BY ts DESC LIMIT 1", 0, w=4, unit="currencyEUR",
+    stat("Total donations", "SELECT donation_total FROM snapshot ORDER BY ts DESC LIMIT 1", 0, w=6, unit="currencyEUR",
          decimals=2),
     stat("Donations, last hour",
-         "SELECT max(donation_total) - min(donation_total) FROM snapshot WHERE ts > now() - interval '1 hour'", 4, w=3,
+         "SELECT max(donation_total) - min(donation_total) FROM snapshot WHERE ts > now() - interval '1 hour'", 6, w=6,
          unit="currencyEUR", decimals=2, color="orange"),
     stat("External donations",
          "SELECT sn.donation_total - sn.donation_dup - sum(s.donation_total) "
          "FROM snapshot_v sn JOIN streamer_sample_v s USING (ts) "
          "WHERE NOT s.derived AND sn.ts = (SELECT max(ts) FROM snapshot) GROUP BY sn.donation_total, sn.donation_dup",
-         7, w=4, unit="currencyEUR", decimals=2, color="yellow", description=MIRROR_NOTE),
+         12, w=6, unit="currencyEUR", decimals=2, color="yellow", description=MIRROR_NOTE),
     stat("Duplicated (mistermv)",
          'SELECT coalesce(sum(s.donation_total) FILTER (WHERE s.derived), 0) AS "Mirrored", max(sn.donation_dup) AS "In total" '
          "FROM snapshot_v sn JOIN streamer_sample_v s USING (ts) WHERE sn.ts = (SELECT max(ts) FROM snapshot)",
-         11, w=4, unit="currencyEUR", decimals=0, color="red", text_mode="value_and_name",
+         18, w=6, unit="currencyEUR", decimals=0, color="red", text_mode="value_and_name",
          description="Mirrored: the derived \"mistermv (private counter)\" row, the part of mistermv's counter that "
                      "mirrors Domingo's since 01:08 UTC on Sept 5 (counted once in the global total, twice in the "
                      "streamer sum). In total: mistermv's other increments since then, which the global total "
                      "carries twice. Both are left out of External donations."),
-    stat("Viewers now", "SELECT viewers_total FROM snapshot ORDER BY ts DESC LIMIT 1", 15, w=3, unit="short",
+    stat("Viewers now", "SELECT viewers_total FROM snapshot ORDER BY ts DESC LIMIT 1", 0, w=8, y=4, unit="short",
          color="purple"),
     # whole event, not the selected time range
-    stat("Peak viewers", "SELECT max(viewers_total) FROM snapshot", 18, w=3, unit="short", color="purple"),
+    stat("Peak viewers", "SELECT max(viewers_total) FROM snapshot", 8, w=8, y=4, unit="short", color="purple"),
     stat("Streamers online",
-         'SELECT streamers_online AS "Online", streamers_total AS "Total" FROM snapshot ORDER BY ts DESC LIMIT 1', 21,
-         w=3, color="blue", text_mode="value_and_name"),
+         'SELECT streamers_online AS "Online", streamers_total AS "Total" FROM snapshot ORDER BY ts DESC LIMIT 1', 16,
+         w=8, y=4, color="blue", text_mode="value_and_name"),
 
-    row("Global", 4),
+    row("Global", 8),
     ts("Total donations over time",
        'SELECT ts AS time, donation_total AS "Total" FROM snapshot WHERE $__timeFilter(ts) ORDER BY 1',
-       0, 5, unit="currencyEUR", legend=False),
+       0, 9, unit="currencyEUR", legend=False),
     ts("Viewers over time",
        'SELECT ts AS time, viewers_total AS "Viewers" FROM snapshot WHERE $__timeFilter(ts) ORDER BY 1',
-       12, 5, unit="short", legend=False),
+       12, 9, unit="short", legend=False),
     ts("Donations per interval",
        'SELECT $__timeGroupAlias(ts, $__interval), sum(delta) AS "Donated" FROM ('
        '  SELECT ts, donation_total - lag(donation_total) OVER (ORDER BY ts) AS delta'
        '  FROM snapshot WHERE $__timeFilter(ts)'
        ') d WHERE delta IS NOT NULL GROUP BY 1 ORDER BY 1',
-       0, 14, unit="currencyEUR", bars=True, legend=False, min_interval="5m"),
+       0, 18, unit="currencyEUR", bars=True, legend=False, min_interval="5m"),
     ts("Streamers online",
        'SELECT ts AS time, streamers_online AS "Online" FROM snapshot WHERE $__timeFilter(ts) ORDER BY 1',
-       12, 14, unit="short", legend=False),
+       12, 18, unit="short", legend=False),
 
     ts("External donations over time (total minus all streamers)",
        'SELECT sn.ts AS time, sn.donation_total - sn.donation_dup - sum(s.donation_total) FILTER (WHERE NOT s.derived) AS "External", '
@@ -195,7 +195,7 @@ panels = [
        'sn.donation_dup AS "Double-counted in total (mistermv)" '
        'FROM snapshot_v sn JOIN streamer_sample_v s USING (ts) '
        'WHERE $__timeFilter(sn.ts) GROUP BY sn.ts, sn.donation_total, sn.donation_dup ORDER BY 1',
-       0, 23, unit="currencyEUR", description=MIRROR_NOTE),
+       0, 27, unit="currencyEUR", description=MIRROR_NOTE),
     ts("External donations per interval (global gain minus streamer gains)",
        'SELECT $__timeGroupAlias(ts, $__interval), sum(g) - sum(sg) AS "External" FROM ('
        f'  SELECT ts, {gain_expr("donation_total - donation_dup")} AS g FROM snapshot_v WHERE $__timeFilter(ts)'
@@ -204,51 +204,57 @@ panels = [
        f'    SELECT ts, {gain_expr("donation_total", "PARTITION BY twitch_id")} AS delta FROM streamer_sample_v WHERE NOT derived AND $__timeFilter(ts)'
        '  ) x GROUP BY ts'
        ') st USING (ts) WHERE g IS NOT NULL GROUP BY 1 ORDER BY 1',
-       12, 23, unit="currencyEUR", bars=True, legend=False, min_interval="5m", description=MIRROR_NOTE),
+       12, 27, unit="currencyEUR", bars=True, legend=False, min_interval="5m", description=MIRROR_NOTE),
 
     ts("Streamers online per game",
        "WITH top AS (SELECT game FROM streamer_sample_v WHERE $__timeFilter(ts) AND online GROUP BY game ORDER BY count(*) DESC LIMIT 8) SELECT ts AS time, CASE WHEN game IN (SELECT game FROM top) THEN game ELSE 'Other' END AS metric, count(*) AS value FROM streamer_sample_v WHERE $__timeFilter(ts) AND online GROUP BY 1, 2 ORDER BY 1",
-       0, 32, unit="short", stack=True),
+       0, 36, unit="short", stack=True),
     ts("Viewers per game",
        "WITH top AS (SELECT game FROM streamer_sample_v WHERE $__timeFilter(ts) AND online GROUP BY game ORDER BY sum(viewers) DESC LIMIT 8) SELECT ts AS time, CASE WHEN game IN (SELECT game FROM top) THEN game ELSE 'Other' END AS metric, sum(viewers) AS value FROM streamer_sample_v WHERE $__timeFilter(ts) AND online GROUP BY 1, 2 ORDER BY 1",
-       12, 32, unit="short", stack=True),
+       12, 36, unit="short", stack=True),
 
-    row("Leaderboards (latest snapshot)", 41),
+    row("Leaderboards (latest snapshot)", 45),
     table("Top by donations",
           'SELECT st.display AS "Streamer", s.donation_total AS "Donations", s.viewers AS "Viewers", s.online AS "Online", st.login AS login '
           'FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) '
           'WHERE s.ts = (SELECT max(ts) FROM snapshot) ORDER BY s.donation_total DESC LIMIT 25',
-          0, 42, money_cols=("Donations",), streamer_links=True),
+          0, 46, money_cols=("Donations",), streamer_links=True),
     table("Top by viewers",
           'SELECT st.display AS "Streamer", s.viewers AS "Viewers", s.game AS "Game", s.donation_total AS "Donations", st.login AS login '
           'FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) '
           'WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.online ORDER BY s.viewers DESC LIMIT 25',
-          8, 42, money_cols=("Donations",), streamer_links=True),
+          8, 46, money_cols=("Donations",), streamer_links=True),
     table("Top gained in selected range",
           'SELECT st.display AS "Streamer", sum(d.delta) AS "Gained", (array_agg(d.donation_total ORDER BY d.ts DESC))[1] AS "Donations", st.login AS login FROM ('
           f'  SELECT ts, twitch_id, donation_total, {gain_expr("donation_total", "PARTITION BY twitch_id")} AS delta'
           '  FROM streamer_sample_v WHERE $__timeFilter(ts)'
           ') d JOIN streamer_v st USING (twitch_id) WHERE d.delta IS NOT NULL '
           'GROUP BY st.twitch_id, st.display, st.login ORDER BY 2 DESC LIMIT 25',
-          16, 42, money_cols=("Gained", "Donations"), streamer_links=True),
+          16, 46, money_cols=("Gained", "Donations"), streamer_links=True),
 
-    row("Per streamer ($streamer)", 54),
+    row("Per streamer ($streamer)", 58),
+    stat("Donations of selected streamers",
+         "SELECT coalesce(sum(donation_total), 0) FROM streamer_sample_v "
+         "WHERE ts = (SELECT max(ts) FROM snapshot) AND twitch_id IN ($streamer) AND NOT derived",
+         0, w=24, y=59, unit="currencyEUR", decimals=2,
+         description="Sum of the selected streamers' counters at the latest snapshot. The derived "
+                     "\"mistermv (private counter)\" entry is not real money and is left out even when selected."),
     ts("Donations per streamer",
        'SELECT s.ts AS time, st.display AS metric, st.login AS login, s.donation_total AS value '
        'FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) '
        'WHERE $__timeFilter(s.ts) AND s.twitch_id IN ($streamer) ORDER BY 1',
-       0, 55, unit="currencyEUR", stack=True, streamer_links=True),
+       0, 63, unit="currencyEUR", stack=True, streamer_links=True),
     ts("Viewers per streamer",
        'SELECT s.ts AS time, st.display AS metric, st.login AS login, s.viewers AS value '
        'FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) '
        'WHERE $__timeFilter(s.ts) AND s.twitch_id IN ($streamer) ORDER BY 1',
-       12, 55, unit="short", stack=True, streamer_links=True),
+       12, 63, unit="short", stack=True, streamer_links=True),
     ts("Donations gained per streamer per interval",
        'SELECT $__timeGroupAlias(d.ts, $__interval), st.display AS metric, st.login AS login, sum(d.delta) AS value FROM ('
        f'  SELECT ts, twitch_id, {gain_expr("donation_total", "PARTITION BY twitch_id")} AS delta'
        '  FROM streamer_sample_v WHERE $__timeFilter(ts) AND twitch_id IN ($streamer)'
        ') d JOIN streamer_v st USING (twitch_id) WHERE d.delta IS NOT NULL GROUP BY 1, 2, 3 ORDER BY 1',
-       0, 64, unit="currencyEUR", bars=True, stack=True, min_interval="5m", streamer_links=True),
+       0, 72, unit="currencyEUR", bars=True, stack=True, min_interval="5m", streamer_links=True),
     table("Status of selected streamers",
           'WITH cur AS ('
           '  SELECT twitch_id, ts, online, game, viewers FROM streamer_sample_v'
@@ -261,7 +267,7 @@ panels = [
           '       extract(epoch FROM c.ts - coalesce(ch.at, st.first_seen)) AS "Since", st.login AS login '
           'FROM cur c JOIN streamer_v st USING (twitch_id) LEFT JOIN changed ch USING (twitch_id) '
           'ORDER BY c.online DESC, c.viewers DESC',
-          12, 64, w=12, h=9, duration_cols=("Since",), streamer_links=True),
+          12, 72, w=12, h=9, duration_cols=("Since",), streamer_links=True),
 ]
 
 dashboard = {

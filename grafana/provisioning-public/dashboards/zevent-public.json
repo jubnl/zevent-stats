@@ -54,7 +54,7 @@
       "gridPos": {
         "x": 0,
         "y": 0,
-        "w": 4,
+        "w": 6,
         "h": 4
       },
       "targets": [
@@ -103,9 +103,9 @@
         "uid": "zevent-pg"
       },
       "gridPos": {
-        "x": 4,
+        "x": 6,
         "y": 0,
-        "w": 3,
+        "w": 6,
         "h": 4
       },
       "targets": [
@@ -154,9 +154,9 @@
         "uid": "zevent-pg"
       },
       "gridPos": {
-        "x": 7,
+        "x": 12,
         "y": 0,
-        "w": 4,
+        "w": 6,
         "h": 4
       },
       "targets": [
@@ -206,9 +206,9 @@
         "uid": "zevent-pg"
       },
       "gridPos": {
-        "x": 11,
+        "x": 18,
         "y": 0,
-        "w": 4,
+        "w": 6,
         "h": 4
       },
       "targets": [
@@ -258,9 +258,9 @@
         "uid": "zevent-pg"
       },
       "gridPos": {
-        "x": 15,
-        "y": 0,
-        "w": 3,
+        "x": 0,
+        "y": 4,
+        "w": 8,
         "h": 4
       },
       "targets": [
@@ -308,9 +308,9 @@
         "uid": "zevent-pg"
       },
       "gridPos": {
-        "x": 18,
-        "y": 0,
-        "w": 3,
+        "x": 8,
+        "y": 4,
+        "w": 8,
         "h": 4
       },
       "targets": [
@@ -358,9 +358,9 @@
         "uid": "zevent-pg"
       },
       "gridPos": {
-        "x": 21,
-        "y": 0,
-        "w": 3,
+        "x": 16,
+        "y": 4,
+        "w": 8,
         "h": 4
       },
       "targets": [
@@ -405,7 +405,7 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 4,
+        "y": 8,
         "w": 24,
         "h": 1
       },
@@ -421,7 +421,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 5,
+        "y": 9,
         "w": 12,
         "h": 9
       },
@@ -473,7 +473,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 5,
+        "y": 9,
         "w": 12,
         "h": 9
       },
@@ -525,7 +525,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 14,
+        "y": 18,
         "w": 12,
         "h": 9
       },
@@ -579,7 +579,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 14,
+        "y": 18,
         "w": 12,
         "h": 9
       },
@@ -631,7 +631,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 23,
+        "y": 27,
         "w": 12,
         "h": 9
       },
@@ -684,7 +684,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 23,
+        "y": 27,
         "w": 12,
         "h": 9
       },
@@ -739,7 +739,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 32,
+        "y": 36,
         "w": 12,
         "h": 9
       },
@@ -795,7 +795,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 32,
+        "y": 36,
         "w": 12,
         "h": 9
       },
@@ -848,7 +848,7 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 41,
+        "y": 45,
         "w": 24,
         "h": 1
       },
@@ -864,7 +864,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 42,
+        "y": 46,
         "w": 8,
         "h": 12
       },
@@ -953,7 +953,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 42,
+        "y": 46,
         "w": 8,
         "h": 12
       },
@@ -1042,7 +1042,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 42,
+        "y": 46,
         "w": 8,
         "h": 12
       },
@@ -1144,7 +1144,7 @@
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 54,
+        "y": 58,
         "w": 24,
         "h": 1
       },
@@ -1152,6 +1152,58 @@
     },
     {
       "id": 22,
+      "type": "stat",
+      "title": "Donations of selected streamers",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 59,
+        "w": 24,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT coalesce(sum(donation_total), 0) FROM streamer_sample_v WHERE ts = (SELECT max(ts) FROM snapshot) AND twitch_id IN ($streamer) AND NOT derived",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "green"
+          },
+          "unit": "currencyEUR",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "description": "Sum of the selected streamers' counters at the latest snapshot. The derived \"mistermv (private counter)\" entry is not real money and is left out even when selected."
+    },
+    {
+      "id": 23,
       "type": "timeseries",
       "title": "Donations per streamer",
       "datasource": {
@@ -1160,7 +1212,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 55,
+        "y": 63,
         "w": 12,
         "h": 9
       },
@@ -1215,7 +1267,7 @@
       }
     },
     {
-      "id": 23,
+      "id": 24,
       "type": "timeseries",
       "title": "Viewers per streamer",
       "datasource": {
@@ -1224,7 +1276,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 55,
+        "y": 63,
         "w": 12,
         "h": 9
       },
@@ -1279,7 +1331,7 @@
       }
     },
     {
-      "id": 24,
+      "id": 25,
       "type": "timeseries",
       "title": "Donations gained per streamer per interval",
       "datasource": {
@@ -1288,7 +1340,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 64,
+        "y": 72,
         "w": 12,
         "h": 9
       },
@@ -1345,7 +1397,7 @@
       "interval": "5m"
     },
     {
-      "id": 25,
+      "id": 26,
       "type": "table",
       "title": "Status of selected streamers",
       "datasource": {
@@ -1354,7 +1406,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 64,
+        "y": 72,
         "w": 12,
         "h": 9
       },
