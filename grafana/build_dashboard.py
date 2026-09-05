@@ -38,8 +38,9 @@ def panel(ptype, title, sql, x, y, w, h, fmt="time_series", **extra):
     return p
 
 
-def stat(title, sql, x, w=6, unit=None, decimals=None, color="green", text_mode="value"):
+def stat(title, sql, x, w=6, unit=None, decimals=None, color="green", text_mode="value", description=None):
     d = {"color": {"mode": "fixed", "fixedColor": color}}
+    extra = {"description": description} if description else {}
     if unit:
         d["unit"] = unit
     if decimals is not None:
@@ -51,11 +52,12 @@ def stat(title, sql, x, w=6, unit=None, decimals=None, color="green", text_mode=
             "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": False},
             "colorMode": "value", "graphMode": "none", "textMode": text_mode, "justifyMode": "center",
         },
+        **extra,
     )
 
 
 def ts(title, sql, x, y, w=12, h=9, unit=None, bars=False, legend=True, stack=False, min_interval=None,
-       streamer_links=False):
+       streamer_links=False, description=None):
     d = {"custom": {"lineWidth": 2, "fillOpacity": 10, "showPoints": "auto", "pointSize": 4, "spanNulls": True}}
     if unit:
         d["unit"] = unit
@@ -71,6 +73,8 @@ def ts(title, sql, x, y, w=12, h=9, unit=None, bars=False, legend=True, stack=Fa
     extra = {}
     if min_interval:
         extra["interval"] = min_interval
+    if description:
+        extra["description"] = description
     return panel(
         "timeseries", title, sql, x, y, w, h,
         fieldConfig={"defaults": d},
@@ -122,6 +126,33 @@ def gain_expr(col, partition=""):
     return f"{col} - lag({col}) OVER ({partition} ORDER BY ts)"
 
 
+# Upstream double count: since 01:08 UTC on 2026-09-05 mistermv's counter was rebased (+261K in one
+# minute while the global total moved 1.7K) and has since received every donation credited to
+# Domingo as well. The global total counts those once, so "global minus streamers" drifts negative.
+# Correction: treat everything mistermv's counter gained after MIRROR_SINCE as duplicated. His own
+# donations in that period (a few K) are lost in the correction; before MIRROR_SINCE nothing changes.
+MIRROR_LOGIN = "mistermv"
+MIRROR_SINCE = "2026-09-05 01:07:00+00"  # last sample before the rebase
+
+# duplicated amount per sample ts (rows only exist after MIRROR_SINCE; LEFT JOIN and coalesce to 0)
+DUP_SQL = (
+    "SELECT m.ts, greatest(m.donation_total - b.base, 0) AS dup "
+    "FROM streamer_sample m JOIN streamer ms USING (twitch_id), ("
+    "  SELECT s.donation_total AS base FROM streamer_sample s JOIN streamer st USING (twitch_id)"
+    f"  WHERE st.login = '{MIRROR_LOGIN}' AND s.ts <= '{MIRROR_SINCE}' ORDER BY s.ts DESC LIMIT 1"
+    f") b WHERE ms.login = '{MIRROR_LOGIN}' AND m.ts > '{MIRROR_SINCE}'"
+)
+# per-sample delta filter: drop mistermv's gains after MIRROR_SINCE (they are Domingo's, already counted)
+NOT_MIRRORED = (
+    f"NOT (twitch_id = (SELECT twitch_id FROM streamer WHERE login = '{MIRROR_LOGIN}') AND ts > '{MIRROR_SINCE}')"
+)
+MIRROR_NOTE = (
+    "Global total minus the sum of streamer counters. Since 01:08 UTC on Sept 5 mistermv's counter mirrors "
+    "Domingo's (every donation credited to both), so his gains after that are removed from the sum; "
+    "see the \"Duplicated (mistermv)\" tile for the amount removed."
+)
+
+
 def row(title, y):
     global _id
     _id += 1
@@ -133,19 +164,27 @@ panels = [
     stat("Total donations", "SELECT donation_total FROM snapshot ORDER BY ts DESC LIMIT 1", 0, w=4, unit="currencyEUR",
          decimals=2),
     stat("Donations, last hour",
-         "SELECT max(donation_total) - min(donation_total) FROM snapshot WHERE ts > now() - interval '1 hour'", 4, w=4,
+         "SELECT max(donation_total) - min(donation_total) FROM snapshot WHERE ts > now() - interval '1 hour'", 4, w=3,
          unit="currencyEUR", decimals=2, color="orange"),
     stat("External donations",
-         "SELECT sn.donation_total - sum(s.donation_total) FROM snapshot sn JOIN streamer_sample s USING (ts) "
+         "SELECT sn.donation_total - sum(s.donation_total) + coalesce(max(d.dup), 0) "
+         f"FROM snapshot sn JOIN streamer_sample s USING (ts) LEFT JOIN ({DUP_SQL}) d USING (ts) "
          "WHERE sn.ts = (SELECT max(ts) FROM snapshot) GROUP BY sn.donation_total",
-         8, w=4, unit="currencyEUR", decimals=2, color="yellow"),
-    stat("Viewers now", "SELECT viewers_total FROM snapshot ORDER BY ts DESC LIMIT 1", 12, w=4, unit="short",
+         7, w=4, unit="currencyEUR", decimals=2, color="yellow", description=MIRROR_NOTE),
+    stat("Duplicated (mistermv)",
+         f"SELECT coalesce(d.dup, 0) FROM snapshot sn LEFT JOIN ({DUP_SQL}) d USING (ts) "
+         "WHERE sn.ts = (SELECT max(ts) FROM snapshot)",
+         11, w=4, unit="currencyEUR", decimals=2, color="red",
+         description="Amount mistermv's counter gained since 01:08 UTC on Sept 5, when it started mirroring "
+                     "Domingo's. Counted once in the global total, twice in the streamer sum; removed from "
+                     "External donations."),
+    stat("Viewers now", "SELECT viewers_total FROM snapshot ORDER BY ts DESC LIMIT 1", 15, w=3, unit="short",
          color="purple"),
     # whole event, not the selected time range
-    stat("Peak viewers", "SELECT max(viewers_total) FROM snapshot", 16, w=4, unit="short", color="purple"),
+    stat("Peak viewers", "SELECT max(viewers_total) FROM snapshot", 18, w=3, unit="short", color="purple"),
     stat("Streamers online",
-         'SELECT streamers_online AS "Online", streamers_total AS "Total" FROM snapshot ORDER BY ts DESC LIMIT 1', 20,
-         w=4, color="blue", text_mode="value_and_name"),
+         'SELECT streamers_online AS "Online", streamers_total AS "Total" FROM snapshot ORDER BY ts DESC LIMIT 1', 21,
+         w=3, color="blue", text_mode="value_and_name"),
 
     row("Global", 4),
     ts("Total donations over time",
@@ -165,19 +204,20 @@ panels = [
        12, 14, unit="short", legend=False),
 
     ts("External donations over time (total minus all streamers)",
-       'SELECT sn.ts AS time, sn.donation_total - sum(s.donation_total) AS "External" '
-       'FROM snapshot sn JOIN streamer_sample s USING (ts) WHERE $__timeFilter(sn.ts) '
-       'GROUP BY sn.ts, sn.donation_total ORDER BY 1',
-       0, 23, unit="currencyEUR", legend=False),
+       'SELECT sn.ts AS time, sn.donation_total - sum(s.donation_total) + coalesce(max(d.dup), 0) AS "External", '
+       'coalesce(max(d.dup), 0) AS "Duplicated (mistermv)" '
+       f'FROM snapshot sn JOIN streamer_sample s USING (ts) LEFT JOIN ({DUP_SQL}) d USING (ts) '
+       'WHERE $__timeFilter(sn.ts) GROUP BY sn.ts, sn.donation_total ORDER BY 1',
+       0, 23, unit="currencyEUR", description=MIRROR_NOTE),
     ts("External donations per interval (global gain minus streamer gains)",
        'SELECT $__timeGroupAlias(ts, $__interval), sum(g) - sum(sg) AS "External" FROM ('
        f'  SELECT ts, {gain_expr("donation_total")} AS g FROM snapshot WHERE $__timeFilter(ts)'
        ') gl JOIN ('
        '  SELECT ts, sum(delta) AS sg FROM ('
-       f'    SELECT ts, {gain_expr("donation_total", "PARTITION BY twitch_id")} AS delta FROM streamer_sample WHERE $__timeFilter(ts)'
-       '  ) x GROUP BY ts'
+       f'    SELECT ts, twitch_id, {gain_expr("donation_total", "PARTITION BY twitch_id")} AS delta FROM streamer_sample WHERE $__timeFilter(ts)'
+       f'  ) x WHERE {NOT_MIRRORED} GROUP BY ts'
        ') st USING (ts) WHERE g IS NOT NULL GROUP BY 1 ORDER BY 1',
-       12, 23, unit="currencyEUR", bars=True, legend=False, min_interval="5m"),
+       12, 23, unit="currencyEUR", bars=True, legend=False, min_interval="5m", description=MIRROR_NOTE),
 
     ts("Streamers online per game",
        "WITH top AS (SELECT game FROM streamer_sample WHERE $__timeFilter(ts) AND online GROUP BY game ORDER BY count(*) DESC LIMIT 8) SELECT ts AS time, CASE WHEN game IN (SELECT game FROM top) THEN game ELSE 'Other' END AS metric, count(*) AS value FROM streamer_sample WHERE $__timeFilter(ts) AND online GROUP BY 1, 2 ORDER BY 1",
