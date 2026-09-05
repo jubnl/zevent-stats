@@ -8,6 +8,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./db/views.sql:/docker-entrypoint-initdb.d/views.sql:ro   # on an existing db apply by hand, see file header
     ports:
       - "127.0.0.1:5433:5432"
     healthcheck:

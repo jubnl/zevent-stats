@@ -24,8 +24,8 @@
           "type": "grafana-postgresql-datasource",
           "uid": "zevent-pg"
         },
-        "query": "SELECT display AS __text, twitch_id AS __value FROM streamer ORDER BY lower(display)",
-        "definition": "SELECT display AS __text, twitch_id AS __value FROM streamer ORDER BY lower(display)",
+        "query": "SELECT display AS __text, twitch_id AS __value FROM streamer_v ORDER BY lower(display)",
+        "definition": "SELECT display AS __text, twitch_id AS __value FROM streamer_v ORDER BY lower(display)",
         "multi": true,
         "includeAll": true,
         "refresh": 1,
@@ -166,7 +166,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT sn.donation_total - sum(s.donation_total) + coalesce(max(d.dup), 0) FROM snapshot sn JOIN streamer_sample s USING (ts) LEFT JOIN (SELECT ts, sum(dup_delta) OVER (ORDER BY ts) AS dup FROM (SELECT ts, CASE WHEN ts = '2026-09-05 01:08:00+00' THEN m ELSE greatest(least(m, dom), 0) END AS dup_delta FROM (  SELECT ts, max(delta) FILTER (WHERE login = 'mistermv') AS m,             max(delta) FILTER (WHERE login = 'domingo') AS dom FROM (    SELECT s.ts, st.login, s.donation_total - lag(s.donation_total) OVER (PARTITION BY s.twitch_id ORDER BY s.ts) AS delta    FROM streamer_sample s JOIN streamer st USING (twitch_id) WHERE st.login IN ('mistermv', 'domingo')  ) x WHERE ts >= '2026-09-05 01:08:00+00' GROUP BY ts) y WHERE m IS NOT NULL AND dom IS NOT NULL) dd) d USING (ts) WHERE sn.ts = (SELECT max(ts) FROM snapshot) GROUP BY sn.donation_total",
+          "rawSql": "SELECT sn.donation_total - sum(s.donation_total) FROM snapshot sn JOIN streamer_sample_v s USING (ts) WHERE NOT s.derived AND sn.ts = (SELECT max(ts) FROM snapshot) GROUP BY sn.donation_total",
           "format": "table",
           "refId": "A"
         }
@@ -195,7 +195,7 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Global total minus the sum of streamer counters. Since 01:08 UTC on Sept 5 mistermv's counter mirrors Domingo's (every donation to Domingo credited to both), so the part of his increments that matches Domingo's is removed from the sum; see the \"Duplicated (mistermv)\" tile for the amount removed."
+      "description": "Global total minus the sum of streamer counters, excluding the derived \"mistermv (private counter)\" row: since 01:08 UTC on Sept 5 mistermv's counter mirrors Domingo's (every donation to Domingo credited to both), and the global total counts those once. See the \"Duplicated (mistermv)\" tile for the amount."
     },
     {
       "id": 4,
@@ -218,7 +218,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT coalesce(d.dup, 0) FROM snapshot sn LEFT JOIN (SELECT ts, sum(dup_delta) OVER (ORDER BY ts) AS dup FROM (SELECT ts, CASE WHEN ts = '2026-09-05 01:08:00+00' THEN m ELSE greatest(least(m, dom), 0) END AS dup_delta FROM (  SELECT ts, max(delta) FILTER (WHERE login = 'mistermv') AS m,             max(delta) FILTER (WHERE login = 'domingo') AS dom FROM (    SELECT s.ts, st.login, s.donation_total - lag(s.donation_total) OVER (PARTITION BY s.twitch_id ORDER BY s.ts) AS delta    FROM streamer_sample s JOIN streamer st USING (twitch_id) WHERE st.login IN ('mistermv', 'domingo')  ) x WHERE ts >= '2026-09-05 01:08:00+00' GROUP BY ts) y WHERE m IS NOT NULL AND dom IS NOT NULL) dd) d USING (ts) WHERE sn.ts = (SELECT max(ts) FROM snapshot)",
+          "rawSql": "SELECT coalesce(sum(donation_total), 0) FROM streamer_sample_v WHERE derived AND ts = (SELECT max(ts) FROM snapshot)",
           "format": "table",
           "refId": "A"
         }
@@ -247,7 +247,7 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Part of mistermv's counter that mirrors Domingo's since 01:08 UTC on Sept 5: the initial jump plus, each minute, the increment matching Domingo's. Counted once in the global total, twice in the streamer sum; removed from External donations. His own donations stay credited to him."
+      "description": "The derived \"mistermv (private counter)\" row: the part of mistermv's counter that mirrors Domingo's since 01:08 UTC on Sept 5 (the initial jump plus, each minute, the increment matching Domingo's). Counted once in the global total, twice in the streamer sum; left out of External donations. His own donations stay under \"mistermv\"."
     },
     {
       "id": 5,
@@ -642,7 +642,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT sn.ts AS time, sn.donation_total - sum(s.donation_total) + coalesce(max(d.dup), 0) AS \"External\", coalesce(max(d.dup), 0) AS \"Duplicated (mistermv)\" FROM snapshot sn JOIN streamer_sample s USING (ts) LEFT JOIN (SELECT ts, sum(dup_delta) OVER (ORDER BY ts) AS dup FROM (SELECT ts, CASE WHEN ts = '2026-09-05 01:08:00+00' THEN m ELSE greatest(least(m, dom), 0) END AS dup_delta FROM (  SELECT ts, max(delta) FILTER (WHERE login = 'mistermv') AS m,             max(delta) FILTER (WHERE login = 'domingo') AS dom FROM (    SELECT s.ts, st.login, s.donation_total - lag(s.donation_total) OVER (PARTITION BY s.twitch_id ORDER BY s.ts) AS delta    FROM streamer_sample s JOIN streamer st USING (twitch_id) WHERE st.login IN ('mistermv', 'domingo')  ) x WHERE ts >= '2026-09-05 01:08:00+00' GROUP BY ts) y WHERE m IS NOT NULL AND dom IS NOT NULL) dd) d USING (ts) WHERE $__timeFilter(sn.ts) GROUP BY sn.ts, sn.donation_total ORDER BY 1",
+          "rawSql": "SELECT sn.ts AS time, sn.donation_total - sum(s.donation_total) FILTER (WHERE NOT s.derived) AS \"External\", coalesce(sum(s.donation_total) FILTER (WHERE s.derived), 0) AS \"Duplicated (mistermv)\" FROM snapshot sn JOIN streamer_sample_v s USING (ts) WHERE $__timeFilter(sn.ts) GROUP BY sn.ts, sn.donation_total ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }
@@ -672,7 +672,7 @@
           "sort": "desc"
         }
       },
-      "description": "Global total minus the sum of streamer counters. Since 01:08 UTC on Sept 5 mistermv's counter mirrors Domingo's (every donation to Domingo credited to both), so the part of his increments that matches Domingo's is removed from the sum; see the \"Duplicated (mistermv)\" tile for the amount removed."
+      "description": "Global total minus the sum of streamer counters, excluding the derived \"mistermv (private counter)\" row: since 01:08 UTC on Sept 5 mistermv's counter mirrors Domingo's (every donation to Domingo credited to both), and the global total counts those once. See the \"Duplicated (mistermv)\" tile for the amount."
     },
     {
       "id": 14,
@@ -695,7 +695,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroupAlias(ts, $__interval), sum(g) - sum(sg) + coalesce(sum(dd.dup_delta), 0) AS \"External\" FROM (  SELECT ts, donation_total - lag(donation_total) OVER ( ORDER BY ts) AS g FROM snapshot WHERE $__timeFilter(ts)) gl JOIN (  SELECT ts, sum(delta) AS sg FROM (    SELECT ts, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta FROM streamer_sample WHERE $__timeFilter(ts)  ) x GROUP BY ts) st USING (ts) LEFT JOIN (SELECT ts, CASE WHEN ts = '2026-09-05 01:08:00+00' THEN m ELSE greatest(least(m, dom), 0) END AS dup_delta FROM (  SELECT ts, max(delta) FILTER (WHERE login = 'mistermv') AS m,             max(delta) FILTER (WHERE login = 'domingo') AS dom FROM (    SELECT s.ts, st.login, s.donation_total - lag(s.donation_total) OVER (PARTITION BY s.twitch_id ORDER BY s.ts) AS delta    FROM streamer_sample s JOIN streamer st USING (twitch_id) WHERE st.login IN ('mistermv', 'domingo')  ) x WHERE ts >= '2026-09-05 01:08:00+00' GROUP BY ts) y WHERE m IS NOT NULL AND dom IS NOT NULL) dd USING (ts) WHERE g IS NOT NULL GROUP BY 1 ORDER BY 1",
+          "rawSql": "SELECT $__timeGroupAlias(ts, $__interval), sum(g) - sum(sg) AS \"External\" FROM (  SELECT ts, donation_total - lag(donation_total) OVER ( ORDER BY ts) AS g FROM snapshot WHERE $__timeFilter(ts)) gl JOIN (  SELECT ts, sum(delta) AS sg FROM (    SELECT ts, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta FROM streamer_sample_v WHERE NOT derived AND $__timeFilter(ts)  ) x GROUP BY ts) st USING (ts) WHERE g IS NOT NULL GROUP BY 1 ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }
@@ -727,7 +727,7 @@
         }
       },
       "interval": "5m",
-      "description": "Global total minus the sum of streamer counters. Since 01:08 UTC on Sept 5 mistermv's counter mirrors Domingo's (every donation to Domingo credited to both), so the part of his increments that matches Domingo's is removed from the sum; see the \"Duplicated (mistermv)\" tile for the amount removed."
+      "description": "Global total minus the sum of streamer counters, excluding the derived \"mistermv (private counter)\" row: since 01:08 UTC on Sept 5 mistermv's counter mirrors Domingo's (every donation to Domingo credited to both), and the global total counts those once. See the \"Duplicated (mistermv)\" tile for the amount."
     },
     {
       "id": 15,
@@ -750,7 +750,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH top AS (SELECT game FROM streamer_sample WHERE $__timeFilter(ts) AND online GROUP BY game ORDER BY count(*) DESC LIMIT 8) SELECT ts AS time, CASE WHEN game IN (SELECT game FROM top) THEN game ELSE 'Other' END AS metric, count(*) AS value FROM streamer_sample WHERE $__timeFilter(ts) AND online GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "WITH top AS (SELECT game FROM streamer_sample_v WHERE $__timeFilter(ts) AND online GROUP BY game ORDER BY count(*) DESC LIMIT 8) SELECT ts AS time, CASE WHEN game IN (SELECT game FROM top) THEN game ELSE 'Other' END AS metric, count(*) AS value FROM streamer_sample_v WHERE $__timeFilter(ts) AND online GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }
@@ -806,7 +806,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH top AS (SELECT game FROM streamer_sample WHERE $__timeFilter(ts) AND online GROUP BY game ORDER BY sum(viewers) DESC LIMIT 8) SELECT ts AS time, CASE WHEN game IN (SELECT game FROM top) THEN game ELSE 'Other' END AS metric, sum(viewers) AS value FROM streamer_sample WHERE $__timeFilter(ts) AND online GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "WITH top AS (SELECT game FROM streamer_sample_v WHERE $__timeFilter(ts) AND online GROUP BY game ORDER BY sum(viewers) DESC LIMIT 8) SELECT ts AS time, CASE WHEN game IN (SELECT game FROM top) THEN game ELSE 'Other' END AS metric, sum(viewers) AS value FROM streamer_sample_v WHERE $__timeFilter(ts) AND online GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }
@@ -875,7 +875,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT st.display AS \"Streamer\", s.donation_total AS \"Donations\", s.viewers AS \"Viewers\", s.online AS \"Online\", st.login AS login FROM streamer_sample s JOIN streamer st USING (twitch_id) WHERE s.ts = (SELECT max(ts) FROM snapshot) ORDER BY s.donation_total DESC LIMIT 25",
+          "rawSql": "SELECT st.display AS \"Streamer\", s.donation_total AS \"Donations\", s.viewers AS \"Viewers\", s.online AS \"Online\", st.login AS login FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE s.ts = (SELECT max(ts) FROM snapshot) ORDER BY s.donation_total DESC LIMIT 25",
           "format": "table",
           "refId": "A"
         }
@@ -964,7 +964,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT st.display AS \"Streamer\", s.viewers AS \"Viewers\", s.game AS \"Game\", s.donation_total AS \"Donations\", st.login AS login FROM streamer_sample s JOIN streamer st USING (twitch_id) WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.online ORDER BY s.viewers DESC LIMIT 25",
+          "rawSql": "SELECT st.display AS \"Streamer\", s.viewers AS \"Viewers\", s.game AS \"Game\", s.donation_total AS \"Donations\", st.login AS login FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.online ORDER BY s.viewers DESC LIMIT 25",
           "format": "table",
           "refId": "A"
         }
@@ -1053,7 +1053,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT st.display AS \"Streamer\", sum(d.delta) AS \"Gained\", (array_agg(d.donation_total ORDER BY d.ts DESC))[1] AS \"Donations\", st.login AS login FROM (  SELECT ts, twitch_id, donation_total, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta  FROM streamer_sample WHERE $__timeFilter(ts)) d JOIN streamer st USING (twitch_id) WHERE d.delta IS NOT NULL GROUP BY st.twitch_id, st.display, st.login ORDER BY 2 DESC LIMIT 25",
+          "rawSql": "SELECT st.display AS \"Streamer\", sum(d.delta) AS \"Gained\", (array_agg(d.donation_total ORDER BY d.ts DESC))[1] AS \"Donations\", st.login AS login FROM (  SELECT ts, twitch_id, donation_total, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta  FROM streamer_sample_v WHERE $__timeFilter(ts)) d JOIN streamer_v st USING (twitch_id) WHERE d.delta IS NOT NULL GROUP BY st.twitch_id, st.display, st.login ORDER BY 2 DESC LIMIT 25",
           "format": "table",
           "refId": "A"
         }
@@ -1171,7 +1171,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT s.ts AS time, st.display AS metric, st.login AS login, s.donation_total AS value FROM streamer_sample s JOIN streamer st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.twitch_id IN ($streamer) ORDER BY 1",
+          "rawSql": "SELECT s.ts AS time, st.display AS metric, st.login AS login, s.donation_total AS value FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.twitch_id IN ($streamer) ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }
@@ -1235,7 +1235,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT s.ts AS time, st.display AS metric, st.login AS login, s.viewers AS value FROM streamer_sample s JOIN streamer st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.twitch_id IN ($streamer) ORDER BY 1",
+          "rawSql": "SELECT s.ts AS time, st.display AS metric, st.login AS login, s.viewers AS value FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.twitch_id IN ($streamer) ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }
@@ -1299,7 +1299,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroupAlias(d.ts, $__interval), st.display AS metric, st.login AS login, sum(d.delta) AS value FROM (  SELECT ts, twitch_id, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta  FROM streamer_sample WHERE $__timeFilter(ts) AND twitch_id IN ($streamer)) d JOIN streamer st USING (twitch_id) WHERE d.delta IS NOT NULL GROUP BY 1, 2, 3 ORDER BY 1",
+          "rawSql": "SELECT $__timeGroupAlias(d.ts, $__interval), st.display AS metric, st.login AS login, sum(d.delta) AS value FROM (  SELECT ts, twitch_id, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta  FROM streamer_sample_v WHERE $__timeFilter(ts) AND twitch_id IN ($streamer)) d JOIN streamer_v st USING (twitch_id) WHERE d.delta IS NOT NULL GROUP BY 1, 2, 3 ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }
@@ -1365,7 +1365,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH cur AS (  SELECT twitch_id, ts, online, game, viewers FROM streamer_sample  WHERE ts = (SELECT max(ts) FROM snapshot) AND twitch_id IN ($streamer)), changed AS (  SELECT c.twitch_id, max(s.ts) AS at FROM cur c JOIN streamer_sample s USING (twitch_id)  WHERE s.online <> c.online OR s.game IS DISTINCT FROM c.game GROUP BY c.twitch_id) SELECT st.display AS \"Streamer\", c.online AS \"Online\", c.game AS \"Game\", c.viewers AS \"Viewers\",        extract(epoch FROM c.ts - coalesce(ch.at, st.first_seen)) AS \"Since\", st.login AS login FROM cur c JOIN streamer st USING (twitch_id) LEFT JOIN changed ch USING (twitch_id) ORDER BY c.online DESC, c.viewers DESC",
+          "rawSql": "WITH cur AS (  SELECT twitch_id, ts, online, game, viewers FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot) AND twitch_id IN ($streamer)), changed AS (  SELECT c.twitch_id, max(s.ts) AS at FROM cur c JOIN streamer_sample_v s USING (twitch_id)  WHERE s.online <> c.online OR s.game IS DISTINCT FROM c.game GROUP BY c.twitch_id) SELECT st.display AS \"Streamer\", c.online AS \"Online\", c.game AS \"Game\", c.viewers AS \"Viewers\",        extract(epoch FROM c.ts - coalesce(ch.at, st.first_seen)) AS \"Since\", st.login AS login FROM cur c JOIN streamer_v st USING (twitch_id) LEFT JOIN changed ch USING (twitch_id) ORDER BY c.online DESC, c.viewers DESC",
           "format": "table",
           "refId": "A"
         }

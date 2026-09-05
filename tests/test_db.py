@@ -29,3 +29,20 @@ def test_insert_twice_upserts_streamer():
         conn.execute("delete from snapshot where ts in (%s,%s)", (t1, t2))
     assert n == 2
     assert fs == t1 and ls == t2
+
+
+def test_insert_out_of_order_keeps_extremes_and_newest_fields():
+    """A backfill of older dumps after a live tick must not move first_seen forward or revert names."""
+    t1 = datetime(2030, 1, 2, tzinfo=timezone.utc)
+    t2 = datetime(2030, 1, 2, 0, 1, tzinfo=timezone.utc)
+    old = Parsed(Snapshot(t1, 100.0, 10, 1, 1), [StreamerSample(t1, "2", "old", "Old", None, None, True, "ZEVENT", 1, 1.0)])
+    new = Parsed(Snapshot(t2, 100.0, 10, 1, 1), [StreamerSample(t2, "2", "new", "New", None, None, True, "ZEVENT", 1, 2.0)])
+    with psycopg.connect(URL) as conn:
+        insert(conn, new)
+        insert(conn, old)  # arrives later, but is older
+        display, fs, ls = conn.execute("select display, first_seen, last_seen from streamer where twitch_id='2'").fetchone()
+        conn.execute("delete from streamer_sample where twitch_id='2'")
+        conn.execute("delete from streamer where twitch_id='2'")
+        conn.execute("delete from snapshot where ts in (%s,%s)", (t1, t2))
+    assert display == "New"
+    assert fs == t1 and ls == t2

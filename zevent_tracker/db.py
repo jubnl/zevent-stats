@@ -10,15 +10,20 @@ VALUES (%s, %s, %s, %s, %s)
 ON CONFLICT (ts) DO NOTHING
 """
 
+# Order-independent upsert: first_seen/last_seen are the extremes of every sample ever seen, and the
+# descriptive fields come from the newest sample. This keeps a backfill of old dumps running next to
+# the live collector (or after it, on a fresh database) from stamping the wrong first_seen or
+# overwriting a current display name with an older one.
 STREAMER_SQL = """
 INSERT INTO streamer (twitch_id, login, display, profile_url, donation_url, first_seen, last_seen)
 VALUES (%s, %s, %s, %s, %s, %s, %s)
 ON CONFLICT (twitch_id) DO UPDATE SET
-  login = EXCLUDED.login,
-  display = EXCLUDED.display,
-  profile_url = EXCLUDED.profile_url,
-  donation_url = EXCLUDED.donation_url,
-  last_seen = EXCLUDED.last_seen
+  login        = CASE WHEN EXCLUDED.last_seen >= streamer.last_seen THEN EXCLUDED.login        ELSE streamer.login        END,
+  display      = CASE WHEN EXCLUDED.last_seen >= streamer.last_seen THEN EXCLUDED.display      ELSE streamer.display      END,
+  profile_url  = CASE WHEN EXCLUDED.last_seen >= streamer.last_seen THEN EXCLUDED.profile_url  ELSE streamer.profile_url  END,
+  donation_url = CASE WHEN EXCLUDED.last_seen >= streamer.last_seen THEN EXCLUDED.donation_url ELSE streamer.donation_url END,
+  first_seen   = least(streamer.first_seen, EXCLUDED.first_seen),
+  last_seen    = greatest(streamer.last_seen, EXCLUDED.last_seen)
 """
 
 SAMPLE_SQL = """

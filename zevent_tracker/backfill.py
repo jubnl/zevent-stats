@@ -41,7 +41,11 @@ def backfill(raw_dir: Path, database_url: str) -> dict[str, int]:
     if not files:
         log.info("backfill: no raw files under %s", raw_dir)
         return counts
-    with psycopg.connect(database_url) as conn:
+    # autocommit so each file's insert() is its own committed transaction. Without it the first SELECT
+    # opens an implicit transaction, every insert() becomes a savepoint inside it, nothing is durable
+    # until the connection closes, and the 340-row streamer table bloats with one dead version per
+    # upsert per file (a full re-import went from minutes to tens of minutes at 100% CPU).
+    with psycopg.connect(database_url, autocommit=True) as conn:
         existing = {row[0] for row in conn.execute("SELECT ts FROM snapshot")}
         todo = [(ts, f) for ts, f in files if ts not in existing]
         counts["skipped"] = len(files) - len(todo)
