@@ -148,7 +148,7 @@
     {
       "id": 3,
       "type": "stat",
-      "title": "External donations",
+      "title": "Donations not tied to a streamer",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -195,7 +195,7 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Global total minus the sum of streamer counters: donations made on the Streamlabs Charity team page without a member id, which count for the event but for no streamer. The derived \"mistermv (private counter)\" row is left out of the sum: since 01:08 UTC on Sept 5 it mirrors Domingo's counter, which is already counted once."
+      "description": "All donations that could not be tied to a streamer: the event total minus the sum of the streamer counters. This holds donations made by people without picking a streamer (the Streamlabs Charity team page without a member), the tickets of the concert on Thursday, all shop donations, and so on. The derived \"mistermv (private counter)\" row is left out of the streamer sum: since 01:08 UTC on Sept 5 it mirrors Domingo's counter, which is already counted once."
     },
     {
       "id": 4,
@@ -247,7 +247,7 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "The part of mistermv's counter that mirrors Domingo's since 01:08 UTC on Sept 5: donations to Domingo credited to both. Shown as the \"mistermv (private counter)\" entry in the leaderboards and left out of External donations."
+      "description": "The part of mistermv's counter that mirrors Domingo's since 01:08 UTC on Sept 5: donations to Domingo credited to both. Shown as the \"mistermv (private counter)\" entry in the leaderboards and left out of \"Donations not tied to a streamer\"."
     },
     {
       "id": 5,
@@ -624,7 +624,7 @@
     {
       "id": 13,
       "type": "timeseries",
-      "title": "External donations over time (total minus all streamers)",
+      "title": "Donations not tied to a streamer, over time (total minus all streamers)",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -642,7 +642,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT sn.ts AS time, sn.donation_total - sum(s.donation_total) FILTER (WHERE NOT s.derived) AS \"External\", coalesce(sum(s.donation_total) FILTER (WHERE s.derived), 0) AS \"Mirrored (mistermv)\" FROM snapshot sn JOIN streamer_sample_v s USING (ts) WHERE $__timeFilter(sn.ts) GROUP BY sn.ts, sn.donation_total ORDER BY 1",
+          "rawSql": "SELECT sn.ts AS time, sn.donation_total - sum(s.donation_total) FILTER (WHERE NOT s.derived) AS \"Not tied to a streamer\", coalesce(sum(s.donation_total) FILTER (WHERE s.derived), 0) AS \"Mirrored (mistermv)\" FROM snapshot sn JOIN streamer_sample_v s USING (ts) WHERE $__timeFilter(sn.ts) GROUP BY sn.ts, sn.donation_total ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }
@@ -672,12 +672,12 @@
           "sort": "desc"
         }
       },
-      "description": "Global total minus the sum of streamer counters: donations made on the Streamlabs Charity team page without a member id, which count for the event but for no streamer. The derived \"mistermv (private counter)\" row is left out of the sum: since 01:08 UTC on Sept 5 it mirrors Domingo's counter, which is already counted once."
+      "description": "All donations that could not be tied to a streamer: the event total minus the sum of the streamer counters. This holds donations made by people without picking a streamer (the Streamlabs Charity team page without a member), the tickets of the concert on Thursday, all shop donations, and so on. The derived \"mistermv (private counter)\" row is left out of the streamer sum: since 01:08 UTC on Sept 5 it mirrors Domingo's counter, which is already counted once."
     },
     {
       "id": 14,
       "type": "timeseries",
-      "title": "External donations per interval (global gain minus streamer gains)",
+      "title": "Donations not tied to a streamer, per interval (total gain minus streamer gains)",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -695,7 +695,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroupAlias(ts, $__interval), sum(g) - sum(sg) AS \"External\" FROM (  SELECT ts, donation_total - lag(donation_total) OVER ( ORDER BY ts) AS g FROM snapshot WHERE $__timeFilter(ts)) gl JOIN (  SELECT ts, sum(delta) AS sg FROM (    SELECT ts, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta FROM streamer_sample_v WHERE NOT derived AND $__timeFilter(ts)  ) x GROUP BY ts) st USING (ts) WHERE g IS NOT NULL GROUP BY 1 ORDER BY 1",
+          "rawSql": "SELECT $__timeGroupAlias(ts, $__interval), sum(g) - sum(sg) AS \"Not tied to a streamer\" FROM (  SELECT ts, donation_total - lag(donation_total) OVER ( ORDER BY ts) AS g FROM snapshot WHERE $__timeFilter(ts)) gl JOIN (  SELECT ts, sum(delta) AS sg FROM (    SELECT ts, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta FROM streamer_sample_v WHERE NOT derived AND $__timeFilter(ts)  ) x GROUP BY ts) st USING (ts) WHERE g IS NOT NULL GROUP BY 1 ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }
@@ -727,7 +727,7 @@
         }
       },
       "interval": "5m",
-      "description": "Global total minus the sum of streamer counters: donations made on the Streamlabs Charity team page without a member id, which count for the event but for no streamer. The derived \"mistermv (private counter)\" row is left out of the sum: since 01:08 UTC on Sept 5 it mirrors Domingo's counter, which is already counted once."
+      "description": "All donations that could not be tied to a streamer: the event total minus the sum of the streamer counters. This holds donations made by people without picking a streamer (the Streamlabs Charity team page without a member), the tickets of the concert on Thursday, all shop donations, and so on. The derived \"mistermv (private counter)\" row is left out of the streamer sum: since 01:08 UTC on Sept 5 it mirrors Domingo's counter, which is already counted once."
     },
     {
       "id": 15,

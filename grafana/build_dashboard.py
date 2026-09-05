@@ -131,9 +131,11 @@ def gain_expr(col, partition=""):
 # holding the part that mirrors Domingo's counter (see the file header for the full story). Rows
 # with derived = true are not API entities and must be left out of sums compared to the global total.
 MIRROR_NOTE = (
-    "Global total minus the sum of streamer counters: donations made on the Streamlabs Charity team page without "
-    "a member id, which count for the event but for no streamer. The derived \"mistermv (private counter)\" row is "
-    "left out of the sum: since 01:08 UTC on Sept 5 it mirrors Domingo's counter, which is already counted once."
+    "All donations that could not be tied to a streamer: the event total minus the sum of the streamer counters. "
+    "This holds donations made by people without picking a streamer (the Streamlabs Charity team page without a "
+    "member), the tickets of the concert on Thursday, all shop donations, and so on. The derived "
+    "\"mistermv (private counter)\" row is left out of the streamer sum: since 01:08 UTC on Sept 5 it mirrors "
+    "Domingo's counter, which is already counted once."
 )
 
 
@@ -150,7 +152,7 @@ panels = [
     stat("Donations, last hour",
          "SELECT max(donation_total) - min(donation_total) FROM snapshot WHERE ts > now() - interval '1 hour'", 6, w=6,
          unit="currencyEUR", decimals=2, color="orange"),
-    stat("External donations",
+    stat("Donations not tied to a streamer",
          "SELECT sn.donation_total - sum(s.donation_total) FROM snapshot sn JOIN streamer_sample_v s USING (ts) "
          "WHERE NOT s.derived AND sn.ts = (SELECT max(ts) FROM snapshot) GROUP BY sn.donation_total",
          12, w=6, unit="currencyEUR", decimals=2, color="yellow", description=MIRROR_NOTE),
@@ -160,7 +162,7 @@ panels = [
          18, w=6, unit="currencyEUR", decimals=2, color="red",
          description="The part of mistermv's counter that mirrors Domingo's since 01:08 UTC on Sept 5: donations to "
                      "Domingo credited to both. Shown as the \"mistermv (private counter)\" entry in the leaderboards "
-                     "and left out of External donations."),
+                     "and left out of \"Donations not tied to a streamer\"."),
     stat("Viewers now", "SELECT viewers_total FROM snapshot ORDER BY ts DESC LIMIT 1", 0, w=8, y=4, unit="short",
          color="purple"),
     # whole event, not the selected time range
@@ -186,14 +188,14 @@ panels = [
        'SELECT ts AS time, streamers_online AS "Online" FROM snapshot WHERE $__timeFilter(ts) ORDER BY 1',
        12, 18, unit="short", legend=False),
 
-    ts("External donations over time (total minus all streamers)",
-       'SELECT sn.ts AS time, sn.donation_total - sum(s.donation_total) FILTER (WHERE NOT s.derived) AS "External", '
+    ts("Donations not tied to a streamer, over time (total minus all streamers)",
+       'SELECT sn.ts AS time, sn.donation_total - sum(s.donation_total) FILTER (WHERE NOT s.derived) AS "Not tied to a streamer", '
        'coalesce(sum(s.donation_total) FILTER (WHERE s.derived), 0) AS "Mirrored (mistermv)" '
        'FROM snapshot sn JOIN streamer_sample_v s USING (ts) '
        'WHERE $__timeFilter(sn.ts) GROUP BY sn.ts, sn.donation_total ORDER BY 1',
        0, 27, unit="currencyEUR", description=MIRROR_NOTE),
-    ts("External donations per interval (global gain minus streamer gains)",
-       'SELECT $__timeGroupAlias(ts, $__interval), sum(g) - sum(sg) AS "External" FROM ('
+    ts("Donations not tied to a streamer, per interval (total gain minus streamer gains)",
+       'SELECT $__timeGroupAlias(ts, $__interval), sum(g) - sum(sg) AS "Not tied to a streamer" FROM ('
        f'  SELECT ts, {gain_expr("donation_total")} AS g FROM snapshot WHERE $__timeFilter(ts)'
        ') gl JOIN ('
        '  SELECT ts, sum(delta) AS sg FROM ('
