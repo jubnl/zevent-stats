@@ -7,7 +7,7 @@
   "timezone": "browser",
   "editable": true,
   "graphTooltip": 1,
-  "refresh": "15s",
+  "refresh": "30s",
   "time": {
     "from": "2026-09-04T20:00:00.000Z",
     "to": "now"

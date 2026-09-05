@@ -7,7 +7,7 @@
   "timezone": "browser",
   "editable": false,
   "graphTooltip": 1,
-  "refresh": "15s",
+  "refresh": "30s",
   "time": {
     "from": "2026-09-04T20:58:40.000Z",
     "to": "now"
@@ -1485,7 +1485,8 @@
   "timepicker": {
     "hidden": true,
     "refresh_intervals": [
-      "15s"
+      "15s",
+      "30s"
     ]
   }
 }

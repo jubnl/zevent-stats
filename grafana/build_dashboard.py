@@ -275,7 +275,7 @@ dashboard = {
     "timezone": "browser",
     "editable": True,
     "graphTooltip": 1,
-    "refresh": "15s",
+    "refresh": "30s",
     "time": {"from": "2026-09-04T20:00:00.000Z", "to": "now"},  # event start until now; grows as data arrives
     "schemaVersion": 39,
     "version": 1,
@@ -308,9 +308,9 @@ public = copy.deepcopy(dashboard)
 public.update({
     "uid": "zevent-public",
     "editable": False,
-    "refresh": "15s",
+    "refresh": "30s",
     # hidden time picker also hides the refresh picker; from/to stay fixed at the values below
-    "timepicker": {"hidden": True, "refresh_intervals": ["15s"]},
+    "timepicker": {"hidden": True, "refresh_intervals": ["15s", "30s"]},
     "time": {"from": "2026-09-04T20:58:40.000Z", "to": "now"},
 })
 out_public = here / "provisioning-public" / "dashboards" / "zevent-public.json"
