@@ -199,6 +199,46 @@ HOURS_CTE = (
 )
 
 
+# Per-streamer gain within the selected range, as a CTE `g(twitch_id, gained)`.
+GAIN_CTE = (
+    "g AS ("
+    "  SELECT twitch_id, sum(delta) AS gained FROM ("
+    f"    SELECT ts, twitch_id, {gain_expr('donation_total', 'PARTITION BY twitch_id')} AS delta"
+    "    FROM streamer_sample_v WHERE $__timeFilter(ts)"
+    "  ) d WHERE delta IS NOT NULL GROUP BY twitch_id"
+    ") "
+)
+
+
+# Time to the streamer's next sample, capped so gaps in the data do not count; used for viewer-hours.
+DT = "extract(epoch FROM least(nxt - ts, interval '5 minutes'))"
+
+
+PER_VIEWER_HOUR_DESCRIPTION = (
+    "How much the community gives relative to its size: donations gained by the streamers matching the "
+    "Location and Streamer filters over the selected range, divided by their viewer-hours (the viewer count "
+    "summed minute by minute over the same range, in hours). One viewer watching for an hour is one "
+    "viewer-hour, so 5 \u20ac means 5 \u20ac raised for every hour watched by one viewer. Donations not tied to a "
+    "streamer (tickets, shop, anonymous) are not included."
+)
+
+
+# Gains of the matching streamers over the range divided by their viewer-hours. `loc` is the SQL location
+# filter (st = streamer_v); "true" when the dashboard has no Location filter.
+def per_viewer_hour_sql(loc):
+    return (
+        "WITH " + GAIN_CTE + ", v AS ("
+        f"  SELECT sum(x.viewers * {DT}) / 3600 AS viewer_hours FROM ("
+        "    SELECT s.ts, s.twitch_id, s.viewers, lead(s.ts) OVER (PARTITION BY s.twitch_id ORDER BY s.ts) AS nxt"
+        "    FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id)"
+        f"    WHERE $__timeFilter(s.ts) AND NOT st.derived AND s.twitch_id IN ($streamer) AND {loc}"
+        "  ) x WHERE x.nxt IS NOT NULL"
+        ") "
+        "SELECT (SELECT coalesce(sum(g.gained), 0) FROM g JOIN streamer_v st USING (twitch_id) "
+        f"        WHERE NOT st.derived AND g.twitch_id IN ($streamer) AND {loc}) / nullif(v.viewer_hours, 0) FROM v"
+    )
+
+
 def hours_stat(x, w, loc):
     return stat("Hours streamed", hours_streamed_sql(loc), x, w=w, y=4, unit="suffix: h", decimals=1,
                 color="green", description=HOURS_DESCRIPTION)
@@ -234,16 +274,6 @@ def reset_ids():
     global _id
     _id = 0
 
-
-# Per-streamer gain within the selected range, as a CTE `g(twitch_id, gained)`.
-GAIN_CTE = (
-    "g AS ("
-    "  SELECT twitch_id, sum(delta) AS gained FROM ("
-    f"    SELECT ts, twitch_id, {gain_expr('donation_total', 'PARTITION BY twitch_id')} AS delta"
-    "    FROM streamer_sample_v WHERE $__timeFilter(ts)"
-    "  ) d WHERE delta IS NOT NULL GROUP BY twitch_id"
-    ") "
-)
 
 
 def barchart(title, sql, x, y, w=12, h=9, x_field="", unit=None, description=None):
@@ -287,7 +317,7 @@ def main_panels():
         stat("Viewers now",
              "SELECT coalesce(sum(s.viewers), 0) FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) "
              "WHERE s.ts = (SELECT max(ts) FROM snapshot) AND NOT st.derived AND s.twitch_id IN ($streamer) AND " + LOC,
-             0, w=6, y=4, unit="short", color="purple",
+             0, w=5, y=4, unit="short", color="purple",
              description="Viewers of the streamers matching the Location and Streamer filters, at the latest sample."),
         stat("Peak viewers",
              "SELECT coalesce(max(v), 0) FROM ("
@@ -295,13 +325,15 @@ def main_panels():
              "  WHERE $__timeFilter(s.ts) AND NOT st.derived AND s.twitch_id IN ($streamer) AND " + LOC +
              "  GROUP BY s.ts"
              ") x",
-             6, w=6, y=4, unit="short", color="purple",
+             5, w=5, y=4, unit="short", color="purple",
              description="Highest combined viewer count of the streamers matching the Location and Streamer filters, "
                          "within the selected time range."),
         stat("Streamers online",
              'SELECT streamers_online AS "Online", streamers_total AS "Total" FROM snapshot ORDER BY ts DESC LIMIT 1',
-             12, w=6, y=4, color="blue", text_mode="value_and_name"),
-        hours_stat(18, 6, LOC),
+             10, w=4, y=4, color="blue", text_mode="value_and_name"),
+        hours_stat(14, 5, LOC),
+        stat("Donations per viewer-hour", per_viewer_hour_sql(LOC), 19, w=5, y=4, unit="currencyEUR", decimals=2,
+             color="green", description=PER_VIEWER_HOUR_DESCRIPTION),
 
         row("Global", 8),
         ts("Total donations over time",
@@ -343,9 +375,6 @@ BLIP_NOTE = (
     "coming back minutes later) is left out: rows whose streamer lost at least 90% of the amount in the "
     "previous 10 minutes are skipped."
 )
-
-# Time to the streamer's next sample, capped so gaps in the data do not count; used for viewer-hours.
-DT = "extract(epoch FROM least(nxt - ts, interval '5 minutes'))"
 
 
 def insights_panels():
@@ -586,14 +615,14 @@ def streamer_panels():
         stat("Share of the event total",
              f"SELECT coalesce(sum(s.donation_total), 0) / nullif((SELECT donation_total FROM snapshot ORDER BY ts DESC LIMIT 1), 0) "
              f"{sel} AND s.ts = (SELECT max(ts) FROM snapshot)",
-             0, w=8, y=8, unit="percentunit", decimals=2, color="blue",
+             0, w=6, y=8, unit="percentunit", decimals=2, color="blue",
              description="Selected streamers' counters divided by the event total, at the latest sample."),
         stat("Average viewers while live",
              f"SELECT sum(viewers * {DT}) / nullif(sum({DT}) FILTER (WHERE online), 0) FROM ("
              "  SELECT ts, twitch_id, online, viewers, lead(ts) OVER (PARTITION BY twitch_id ORDER BY ts) AS nxt"
              "  FROM streamer_sample_v WHERE $__timeFilter(ts) AND twitch_id IN ($streamer)"
              ") x WHERE nxt IS NOT NULL",
-             8, w=8, y=8, unit="short", decimals=0, color="purple",
+             6, w=6, y=8, unit="short", decimals=0, color="purple",
              description="Viewer-hours divided by hours live, over the selected range and streamers."),
         stat("In this state since",
              "WITH cur AS ("
@@ -606,8 +635,10 @@ def streamer_panels():
              ") "
              "SELECT extract(epoch FROM c.ts - coalesce(ch.at, (SELECT first_seen FROM streamer_v st WHERE st.twitch_id = c.twitch_id))) "
              "FROM cur c, changed ch",
-             16, w=8, y=8, unit="dtdurations", decimals=0, color="orange",
+             12, w=6, y=8, unit="dtdurations", decimals=0, color="orange",
              description="How long the featured streamer has been in the current live/offline state with the current game."),
+        stat("Donations per viewer-hour", per_viewer_hour_sql("true"), 18, w=6, y=8, unit="currencyEUR", decimals=2,
+             color="green", description=PER_VIEWER_HOUR_DESCRIPTION),
 
         ts("Donations over time",
            'SELECT s.ts AS time, st.display AS metric, st.login AS login, s.donation_total AS value '

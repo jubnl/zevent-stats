@@ -541,7 +541,7 @@
       "gridPos": {
         "x": 0,
         "y": 8,
-        "w": 8,
+        "w": 6,
         "h": 4
       },
       "targets": [
@@ -591,9 +591,9 @@
         "uid": "zevent-pg"
       },
       "gridPos": {
-        "x": 8,
+        "x": 6,
         "y": 8,
-        "w": 8,
+        "w": 6,
         "h": 4
       },
       "targets": [
@@ -643,9 +643,9 @@
         "uid": "zevent-pg"
       },
       "gridPos": {
-        "x": 16,
+        "x": 12,
         "y": 8,
-        "w": 8,
+        "w": 6,
         "h": 4
       },
       "targets": [
@@ -688,6 +688,58 @@
     },
     {
       "id": 11,
+      "type": "stat",
+      "title": "Donations per viewer-hour",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 8,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "WITH g AS (  SELECT twitch_id, sum(delta) AS gained FROM (    SELECT ts, twitch_id, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta    FROM streamer_sample_v WHERE $__timeFilter(ts)  ) d WHERE delta IS NOT NULL GROUP BY twitch_id) , v AS (  SELECT sum(x.viewers * extract(epoch FROM least(nxt - ts, interval '5 minutes'))) / 3600 AS viewer_hours FROM (    SELECT s.ts, s.twitch_id, s.viewers, lead(s.ts) OVER (PARTITION BY s.twitch_id ORDER BY s.ts) AS nxt    FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id)    WHERE $__timeFilter(s.ts) AND NOT st.derived AND s.twitch_id IN ($streamer) AND true  ) x WHERE x.nxt IS NOT NULL) SELECT (SELECT coalesce(sum(g.gained), 0) FROM g JOIN streamer_v st USING (twitch_id)         WHERE NOT st.derived AND g.twitch_id IN ($streamer) AND true) / nullif(v.viewer_hours, 0) FROM v",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "green"
+          },
+          "unit": "currencyEUR",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "description": "How much the community gives relative to its size: donations gained by the streamers matching the Location and Streamer filters over the selected range, divided by their viewer-hours (the viewer count summed minute by minute over the same range, in hours). One viewer watching for an hour is one viewer-hour, so 5 \u20ac means 5 \u20ac raised for every hour watched by one viewer. Donations not tied to a streamer (tickets, shop, anonymous) are not included."
+    },
+    {
+      "id": 12,
       "type": "timeseries",
       "title": "Donations over time",
       "datasource": {
@@ -747,7 +799,7 @@
       }
     },
     {
-      "id": 12,
+      "id": 13,
       "type": "timeseries",
       "title": "Viewers over time",
       "datasource": {
@@ -807,7 +859,7 @@
       }
     },
     {
-      "id": 13,
+      "id": 14,
       "type": "timeseries",
       "title": "Donations gained per interval",
       "datasource": {
@@ -873,7 +925,7 @@
       "interval": "5m"
     },
     {
-      "id": 14,
+      "id": 15,
       "type": "timeseries",
       "title": "Rank in the donation leaderboard over time",
       "datasource": {
@@ -934,7 +986,7 @@
       "description": "1 is the top; lower is better."
     },
     {
-      "id": 15,
+      "id": 16,
       "type": "state-timeline",
       "title": "Games played",
       "datasource": {
