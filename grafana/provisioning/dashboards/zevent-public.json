@@ -973,7 +973,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH h AS (  SELECT twitch_id, sum(extract(epoch FROM least(nxt - ts, interval '5 minutes'))) / 3600 AS hours FROM (    SELECT ts, twitch_id, online, lead(ts) OVER (PARTITION BY twitch_id ORDER BY ts) AS nxt    FROM streamer_sample_v WHERE $__timeFilter(ts)  ) x WHERE online AND nxt IS NOT NULL GROUP BY twitch_id) SELECT st.display AS \"Streamer\", s.donation_total AS \"Donations\", s.viewers AS \"Viewers\", s.online AS \"Online\", coalesce(h.hours, 0) AS \"Hours\", st.login AS login FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) WHERE s.ts = (SELECT max(ts) FROM snapshot) AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY s.donation_total DESC LIMIT 25",
+          "rawSql": "WITH h AS (  SELECT twitch_id, sum(extract(epoch FROM least(nxt - ts, interval '5 minutes'))) / 3600 AS hours FROM (    SELECT ts, twitch_id, online, lead(ts) OVER (PARTITION BY twitch_id ORDER BY ts) AS nxt    FROM streamer_sample_v WHERE $__timeFilter(ts)  ) x WHERE online AND nxt IS NOT NULL GROUP BY twitch_id) , cur AS (  SELECT twitch_id, donation_total, viewers, online FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot)) SELECT st.display AS \"Streamer\", cur.donation_total AS \"Donations\", cur.viewers AS \"Viewers\", coalesce(h.hours, 0) AS \"Hours\", st.login AS login FROM cur JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) WHERE true AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY cur.donation_total DESC LIMIT 25",
           "format": "table",
           "refId": "A"
         }
@@ -1001,7 +1001,7 @@
               },
               {
                 "id": "decimals",
-                "value": 0
+                "value": 2
               }
             ]
           },
@@ -1079,7 +1079,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH h AS (  SELECT twitch_id, sum(extract(epoch FROM least(nxt - ts, interval '5 minutes'))) / 3600 AS hours FROM (    SELECT ts, twitch_id, online, lead(ts) OVER (PARTITION BY twitch_id ORDER BY ts) AS nxt    FROM streamer_sample_v WHERE $__timeFilter(ts)  ) x WHERE online AND nxt IS NOT NULL GROUP BY twitch_id) SELECT st.display AS \"Streamer\", s.viewers AS \"Viewers\", s.game AS \"Game\", s.donation_total AS \"Donations\", coalesce(h.hours, 0) AS \"Hours\", st.login AS login FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.online AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY s.viewers DESC LIMIT 25",
+          "rawSql": "WITH h AS (  SELECT twitch_id, sum(extract(epoch FROM least(nxt - ts, interval '5 minutes'))) / 3600 AS hours FROM (    SELECT ts, twitch_id, online, lead(ts) OVER (PARTITION BY twitch_id ORDER BY ts) AS nxt    FROM streamer_sample_v WHERE $__timeFilter(ts)  ) x WHERE online AND nxt IS NOT NULL GROUP BY twitch_id) , cur AS (  SELECT twitch_id, donation_total, viewers, online FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot)) SELECT st.display AS \"Streamer\", cur.donation_total AS \"Donations\", cur.viewers AS \"Viewers\", coalesce(h.hours, 0) AS \"Hours\", st.login AS login FROM cur JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) WHERE cur.online AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY cur.viewers DESC LIMIT 25",
           "format": "table",
           "refId": "A"
         }
@@ -1107,7 +1107,7 @@
               },
               {
                 "id": "decimals",
-                "value": 0
+                "value": 2
               }
             ]
           },
@@ -1185,7 +1185,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH h AS (  SELECT twitch_id, sum(extract(epoch FROM least(nxt - ts, interval '5 minutes'))) / 3600 AS hours FROM (    SELECT ts, twitch_id, online, lead(ts) OVER (PARTITION BY twitch_id ORDER BY ts) AS nxt    FROM streamer_sample_v WHERE $__timeFilter(ts)  ) x WHERE online AND nxt IS NOT NULL GROUP BY twitch_id) SELECT st.display AS \"Streamer\", sum(d.delta) AS \"Gained\", (array_agg(d.donation_total ORDER BY d.ts DESC))[1] AS \"Donations\", coalesce(min(h.hours), 0) AS \"Hours\", st.login AS login FROM (  SELECT ts, twitch_id, donation_total, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta  FROM streamer_sample_v WHERE $__timeFilter(ts)) d JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) WHERE d.delta IS NOT NULL AND coalesce(st.location, '') ~ '^(${location:regex})$' GROUP BY st.twitch_id, st.display, st.login ORDER BY 2 DESC LIMIT 25",
+          "rawSql": "WITH h AS (  SELECT twitch_id, sum(extract(epoch FROM least(nxt - ts, interval '5 minutes'))) / 3600 AS hours FROM (    SELECT ts, twitch_id, online, lead(ts) OVER (PARTITION BY twitch_id ORDER BY ts) AS nxt    FROM streamer_sample_v WHERE $__timeFilter(ts)  ) x WHERE online AND nxt IS NOT NULL GROUP BY twitch_id) , cur AS (  SELECT twitch_id, donation_total, viewers, online FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot)) , g AS (  SELECT twitch_id, sum(delta) AS gained FROM (    SELECT ts, twitch_id, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta    FROM streamer_sample_v WHERE $__timeFilter(ts)  ) d WHERE delta IS NOT NULL GROUP BY twitch_id) SELECT st.display AS \"Streamer\", g.gained AS \"Gained\", cur.donation_total AS \"Donations\", cur.viewers AS \"Viewers\", coalesce(h.hours, 0) AS \"Hours\", st.login AS login FROM cur JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) JOIN g USING (twitch_id) WHERE true AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY g.gained DESC LIMIT 25",
           "format": "table",
           "refId": "A"
         }
@@ -1213,7 +1213,7 @@
               },
               {
                 "id": "decimals",
-                "value": 0
+                "value": 2
               }
             ]
           },
@@ -1229,7 +1229,7 @@
               },
               {
                 "id": "decimals",
-                "value": 0
+                "value": 2
               }
             ]
           },

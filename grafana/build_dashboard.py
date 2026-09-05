@@ -99,7 +99,7 @@ def twitch_link(var):
 def table(title, sql, x, y, w=8, h=12, money_cols=(), duration_cols=(), hour_cols=(), streamer_links=False):
     overrides = [
                     {"matcher": {"id": "byName", "options": c},
-                     "properties": [{"id": "unit", "value": "currencyEUR"}, {"id": "decimals", "value": 0}]}
+                     "properties": [{"id": "unit", "value": "currencyEUR"}, {"id": "decimals", "value": 2}]}
                     for c in money_cols
                 ] + [
                     {"matcher": {"id": "byName", "options": c}, "properties": [{"id": "unit", "value": "dtdurations"}]}
@@ -191,6 +191,24 @@ def hours_stat(x, w, loc):
                 color="green", description=HOURS_DESCRIPTION)
 
 
+# Leaderboards share one shape: Streamer (linked to Twitch), Donations and Viewers at the latest snapshot,
+# Hours live within the selected range (same rule as the "Hours streamed" stat). `extra_col` goes right
+# after the name (the "Gained" column of the top-gained board) and needs its CTE and join.
+def leaderboard(title, x, order_by, where="true", extra_cte="", extra_col="", extra_join="", money_cols=()):
+    sql = (
+        HOURS_CTE +
+        ", cur AS ("
+        "  SELECT twitch_id, donation_total, viewers, online FROM streamer_sample_v"
+        "  WHERE ts = (SELECT max(ts) FROM snapshot)"
+        ") " + extra_cte +
+        f'SELECT st.display AS "Streamer", {extra_col}cur.donation_total AS "Donations", cur.viewers AS "Viewers", '
+        'coalesce(h.hours, 0) AS "Hours", st.login AS login '
+        "FROM cur JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) " + extra_join +
+        f"WHERE {where} AND " + LOC + f" ORDER BY {order_by} LIMIT 25"
+    )
+    return table(title, sql, x, 46, money_cols=money_cols + ("Donations",), hour_cols=("Hours",), streamer_links=True)
+
+
 def row(title, y):
     global _id
     _id += 1
@@ -265,30 +283,16 @@ panels = [
        12, 36, unit="short", stack=True),
 
     row("Leaderboards (latest snapshot, $location)", 45),
-    # "Hours" is the time live within the selected range (same rule as the "Hours streamed" stat)
-    table("Top by donations",
-          HOURS_CTE +
-          'SELECT st.display AS "Streamer", s.donation_total AS "Donations", s.viewers AS "Viewers", s.online AS "Online", '
-          'coalesce(h.hours, 0) AS "Hours", st.login AS login '
-          'FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) '
-          'WHERE s.ts = (SELECT max(ts) FROM snapshot) AND ' + LOC + ' ORDER BY s.donation_total DESC LIMIT 25',
-          0, 46, money_cols=("Donations",), hour_cols=("Hours",), streamer_links=True),
-    table("Top by viewers",
-          HOURS_CTE +
-          'SELECT st.display AS "Streamer", s.viewers AS "Viewers", s.game AS "Game", s.donation_total AS "Donations", '
-          'coalesce(h.hours, 0) AS "Hours", st.login AS login '
-          'FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) '
-          'WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.online AND ' + LOC + ' ORDER BY s.viewers DESC LIMIT 25',
-          8, 46, money_cols=("Donations",), hour_cols=("Hours",), streamer_links=True),
-    table("Top gained in selected range",
-          HOURS_CTE +
-          'SELECT st.display AS "Streamer", sum(d.delta) AS "Gained", (array_agg(d.donation_total ORDER BY d.ts DESC))[1] AS "Donations", '
-          'coalesce(min(h.hours), 0) AS "Hours", st.login AS login FROM ('
-          f'  SELECT ts, twitch_id, donation_total, {gain_expr("donation_total", "PARTITION BY twitch_id")} AS delta'
-          '  FROM streamer_sample_v WHERE $__timeFilter(ts)'
-          ') d JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) WHERE d.delta IS NOT NULL AND ' + LOC + ' '
-          'GROUP BY st.twitch_id, st.display, st.login ORDER BY 2 DESC LIMIT 25',
-          16, 46, money_cols=("Gained", "Donations"), hour_cols=("Hours",), streamer_links=True),
+    leaderboard("Top by donations", 0, order_by="cur.donation_total DESC"),
+    leaderboard("Top by viewers", 8, order_by="cur.viewers DESC", where="cur.online"),
+    leaderboard("Top gained in selected range", 16, order_by="g.gained DESC",
+                extra_cte=", g AS ("
+                          "  SELECT twitch_id, sum(delta) AS gained FROM ("
+                          f"    SELECT ts, twitch_id, {gain_expr('donation_total', 'PARTITION BY twitch_id')} AS delta"
+                          "    FROM streamer_sample_v WHERE $__timeFilter(ts)"
+                          "  ) d WHERE delta IS NOT NULL GROUP BY twitch_id"
+                          ") ",
+                extra_col='g.gained AS "Gained", ', extra_join="JOIN g USING (twitch_id) ", money_cols=("Gained",)),
 
     row("Per streamer ($streamer, $location)", 58),
     stat("Donations of selected streamers",
