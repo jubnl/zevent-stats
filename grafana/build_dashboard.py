@@ -582,59 +582,54 @@ def streamer_panels():
              f"SELECT coalesce(max(v), 0) FROM (SELECT s.ts, sum(s.viewers) AS v {sel} AND $__timeFilter(s.ts) GROUP BY s.ts) x",
              19, w=5, y=4, unit="short", color="purple", description="Highest combined viewer count in the selected range."),
 
-        table("Selected streamers",
-              HOURS_CTE + ", " + GAIN_CTE + ", "
-              "cur AS ("
-              "  SELECT twitch_id, ts, online, game, viewers, donation_total, "
-              "         rank() OVER (ORDER BY donation_total DESC) AS rank, "
-              "         donation_total / nullif((SELECT donation_total FROM snapshot ORDER BY ts DESC LIMIT 1), 0) AS share"
-              "  FROM streamer_sample_v WHERE ts = (SELECT max(ts) FROM snapshot) AND NOT derived"
-              "), v AS ("
-              f"  SELECT twitch_id, max(viewers) AS peak, sum(viewers * {DT}) / nullif(sum({DT}) FILTER (WHERE online), 0) AS avg_live"
-              "  FROM (SELECT ts, twitch_id, online, viewers, lead(ts) OVER (PARTITION BY twitch_id ORDER BY ts) AS nxt"
-              "        FROM streamer_sample_v WHERE $__timeFilter(ts) AND twitch_id IN ($streamer)) x"
-              "  WHERE nxt IS NOT NULL GROUP BY twitch_id"
-              "), changed AS ("
-              "  SELECT c.twitch_id, max(s.ts) AS at FROM cur c JOIN streamer_sample_v s USING (twitch_id)"
-              "  WHERE c.twitch_id IN ($streamer) AND (s.online <> c.online OR s.game IS DISTINCT FROM c.game) GROUP BY c.twitch_id"
-              ") "
-              'SELECT st.profile_url AS "Avatar", st.display AS "Streamer", '
-              "       CASE st.location WHEN 'LAN' THEN 'On site' WHEN 'Online' THEN 'Remote' END AS \"Location\", "
-              '       c.online AS "Live", c.game AS "Game", '
-              '       extract(epoch FROM c.ts - coalesce(ch.at, st.first_seen)) AS "Since", '
-              '       c.rank AS "Rank", c.donation_total AS "Donations", c.share AS "Share of total", '
-              '       coalesce(g.gained, 0) AS "Gained", c.viewers AS "Viewers", v.peak AS "Peak viewers", '
-              '       v.avg_live AS "Avg viewers", coalesce(h.hours, 0) AS "Hours", st.login AS login '
-              "FROM cur c JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) LEFT JOIN g USING (twitch_id) "
-              "LEFT JOIN v USING (twitch_id) LEFT JOIN changed ch USING (twitch_id) "
-              "WHERE c.twitch_id IN ($streamer) ORDER BY c.donation_total DESC",
-              0, 8, w=24, h=7, money_cols=("Donations", "Gained"), duration_cols=("Since",), hour_cols=("Hours",),
-              image_cols=("Avatar",), percent_cols=("Share of total",), streamer_links=True,
-              description="Rank and share are of the event total at the latest sample; Gained, Peak viewers, Avg viewers "
-                          "(average while live) and Hours are within the selected range. Since: time in the current "
-                          "live/game state."),
+        # third row of tiles, y=8
+        stat("Share of the event total",
+             f"SELECT coalesce(sum(s.donation_total), 0) / nullif((SELECT donation_total FROM snapshot ORDER BY ts DESC LIMIT 1), 0) "
+             f"{sel} AND s.ts = (SELECT max(ts) FROM snapshot)",
+             0, w=8, y=8, unit="percentunit", decimals=2, color="blue",
+             description="Selected streamers' counters divided by the event total, at the latest sample."),
+        stat("Average viewers while live",
+             f"SELECT sum(viewers * {DT}) / nullif(sum({DT}) FILTER (WHERE online), 0) FROM ("
+             "  SELECT ts, twitch_id, online, viewers, lead(ts) OVER (PARTITION BY twitch_id ORDER BY ts) AS nxt"
+             "  FROM streamer_sample_v WHERE $__timeFilter(ts) AND twitch_id IN ($streamer)"
+             ") x WHERE nxt IS NOT NULL",
+             8, w=8, y=8, unit="short", decimals=0, color="purple",
+             description="Viewer-hours divided by hours live, over the selected range and streamers."),
+        stat("In this state since",
+             "WITH cur AS ("
+             "  SELECT twitch_id, ts, online, game FROM streamer_sample_v"
+             "  WHERE ts = (SELECT max(ts) FROM snapshot) AND twitch_id IN ($streamer) AND NOT derived"
+             "  ORDER BY donation_total DESC LIMIT 1"
+             "), changed AS ("
+             "  SELECT max(s.ts) AS at FROM cur c JOIN streamer_sample_v s USING (twitch_id)"
+             "  WHERE s.online <> c.online OR s.game IS DISTINCT FROM c.game"
+             ") "
+             "SELECT extract(epoch FROM c.ts - coalesce(ch.at, (SELECT first_seen FROM streamer_v st WHERE st.twitch_id = c.twitch_id))) "
+             "FROM cur c, changed ch",
+             16, w=8, y=8, unit="dtdurations", decimals=0, color="orange",
+             description="How long the featured streamer has been in the current live/offline state with the current game."),
 
         ts("Donations over time",
            'SELECT s.ts AS time, st.display AS metric, st.login AS login, s.donation_total AS value '
            f'{sel} AND $__timeFilter(s.ts) ORDER BY 1',
-           0, 15, unit="currencyEUR", streamer_links=True),
+           0, 12, unit="currencyEUR", streamer_links=True),
         ts("Viewers over time",
            'SELECT s.ts AS time, st.display AS metric, st.login AS login, s.viewers AS value '
            f'{sel} AND $__timeFilter(s.ts) ORDER BY 1',
-           12, 15, unit="short", streamer_links=True),
+           12, 12, unit="short", streamer_links=True),
         ts("Donations gained per interval",
            'SELECT $__timeGroupAlias(d.ts, $__interval), st.display AS metric, st.login AS login, sum(d.delta) AS value FROM ('
            f'  SELECT ts, twitch_id, {gain_expr("donation_total", "PARTITION BY twitch_id")} AS delta'
            '  FROM streamer_sample_v WHERE $__timeFilter(ts) AND twitch_id IN ($streamer)'
            ') d JOIN streamer_v st USING (twitch_id) WHERE d.delta IS NOT NULL GROUP BY 1, 2, 3 ORDER BY 1',
-           0, 24, unit="currencyEUR", bars=True, stack=True, min_interval="5m", streamer_links=True),
+           0, 21, unit="currencyEUR", bars=True, stack=True, min_interval="5m", streamer_links=True),
         ts("Rank in the donation leaderboard over time",
            "SELECT r.ts AS time, st.display AS metric, st.login AS login, r.rank AS value FROM ("
            "  SELECT ts, twitch_id, rank() OVER (PARTITION BY ts ORDER BY donation_total DESC) AS rank"
            "  FROM streamer_sample_v WHERE $__timeFilter(ts) AND NOT derived"
            ") r JOIN streamer_v st USING (twitch_id) WHERE r.twitch_id IN ($streamer) ORDER BY 1",
-           12, 24, unit="short", streamer_links=True, description="1 is the top; lower is better."),
-        game_timeline(0, 33),
+           12, 21, unit="short", streamer_links=True, description="1 is the top; lower is better."),
+        game_timeline(0, 30),
     ]
 
 

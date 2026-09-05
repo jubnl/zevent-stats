@@ -532,8 +532,8 @@
     },
     {
       "id": 8,
-      "type": "table",
-      "title": "Selected streamers",
+      "type": "stat",
+      "title": "Share of the event total",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -541,8 +541,8 @@
       "gridPos": {
         "x": 0,
         "y": 8,
-        "w": 24,
-        "h": 7
+        "w": 8,
+        "h": 4
       },
       "targets": [
         {
@@ -551,160 +551,143 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH h AS (  SELECT twitch_id, sum(extract(epoch FROM least(nxt - ts, interval '5 minutes'))) / 3600 AS hours FROM (    SELECT ts, twitch_id, online, lead(ts) OVER (PARTITION BY twitch_id ORDER BY ts) AS nxt    FROM streamer_sample_v WHERE $__timeFilter(ts)  ) x WHERE online AND nxt IS NOT NULL GROUP BY twitch_id) , g AS (  SELECT twitch_id, sum(delta) AS gained FROM (    SELECT ts, twitch_id, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta    FROM streamer_sample_v WHERE $__timeFilter(ts)  ) d WHERE delta IS NOT NULL GROUP BY twitch_id) , cur AS (  SELECT twitch_id, ts, online, game, viewers, donation_total,          rank() OVER (ORDER BY donation_total DESC) AS rank,          donation_total / nullif((SELECT donation_total FROM snapshot ORDER BY ts DESC LIMIT 1), 0) AS share  FROM streamer_sample_v WHERE ts = (SELECT max(ts) FROM snapshot) AND NOT derived), v AS (  SELECT twitch_id, max(viewers) AS peak, sum(viewers * extract(epoch FROM least(nxt - ts, interval '5 minutes'))) / nullif(sum(extract(epoch FROM least(nxt - ts, interval '5 minutes'))) FILTER (WHERE online), 0) AS avg_live  FROM (SELECT ts, twitch_id, online, viewers, lead(ts) OVER (PARTITION BY twitch_id ORDER BY ts) AS nxt        FROM streamer_sample_v WHERE $__timeFilter(ts) AND twitch_id IN ($streamer)) x  WHERE nxt IS NOT NULL GROUP BY twitch_id), changed AS (  SELECT c.twitch_id, max(s.ts) AS at FROM cur c JOIN streamer_sample_v s USING (twitch_id)  WHERE c.twitch_id IN ($streamer) AND (s.online <> c.online OR s.game IS DISTINCT FROM c.game) GROUP BY c.twitch_id) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\",        CASE st.location WHEN 'LAN' THEN 'On site' WHEN 'Online' THEN 'Remote' END AS \"Location\",        c.online AS \"Live\", c.game AS \"Game\",        extract(epoch FROM c.ts - coalesce(ch.at, st.first_seen)) AS \"Since\",        c.rank AS \"Rank\", c.donation_total AS \"Donations\", c.share AS \"Share of total\",        coalesce(g.gained, 0) AS \"Gained\", c.viewers AS \"Viewers\", v.peak AS \"Peak viewers\",        v.avg_live AS \"Avg viewers\", coalesce(h.hours, 0) AS \"Hours\", st.login AS login FROM cur c JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) LEFT JOIN g USING (twitch_id) LEFT JOIN v USING (twitch_id) LEFT JOIN changed ch USING (twitch_id) WHERE c.twitch_id IN ($streamer) ORDER BY c.donation_total DESC",
+          "rawSql": "SELECT coalesce(sum(s.donation_total), 0) / nullif((SELECT donation_total FROM snapshot ORDER BY ts DESC LIMIT 1), 0) FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND s.twitch_id IN ($streamer) AND s.ts = (SELECT max(ts) FROM snapshot)",
           "format": "table",
           "refId": "A"
         }
       ],
       "fieldConfig": {
         "defaults": {
-          "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "auto"
-            },
-            "minWidth": 50
-          }
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "unit": "percentunit",
+          "decimals": 2
         },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Avatar"
-            },
-            "properties": [
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "image"
-                }
-              },
-              {
-                "id": "custom.width",
-                "value": 44
-              },
-              {
-                "id": "displayName",
-                "value": " "
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Share of total"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "percentunit"
-              },
-              {
-                "id": "decimals",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Donations"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "currencyEUR"
-              },
-              {
-                "id": "decimals",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Gained"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "currencyEUR"
-              },
-              {
-                "id": "decimals",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Since"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "dtdurations"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Hours"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "suffix: h"
-              },
-              {
-                "id": "decimals",
-                "value": 1
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Streamer"
-            },
-            "properties": [
-              {
-                "id": "links",
-                "value": [
-                  {
-                    "title": "Open on Twitch",
-                    "url": "https://twitch.tv/${__data.fields.login}",
-                    "targetBlank": true
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "login"
-            },
-            "properties": [
-              {
-                "id": "custom.hidden",
-                "value": true
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "options": {
-        "showHeader": true,
-        "sortBy": []
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
       },
-      "description": "Rank and share are of the event total at the latest sample; Gained, Peak viewers, Avg viewers (average while live) and Hours are within the selected range. Since: time in the current live/game state."
+      "description": "Selected streamers' counters divided by the event total, at the latest sample."
     },
     {
       "id": 9,
+      "type": "stat",
+      "title": "Average viewers while live",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 8,
+        "w": 8,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT sum(viewers * extract(epoch FROM least(nxt - ts, interval '5 minutes'))) / nullif(sum(extract(epoch FROM least(nxt - ts, interval '5 minutes'))) FILTER (WHERE online), 0) FROM (  SELECT ts, twitch_id, online, viewers, lead(ts) OVER (PARTITION BY twitch_id ORDER BY ts) AS nxt  FROM streamer_sample_v WHERE $__timeFilter(ts) AND twitch_id IN ($streamer)) x WHERE nxt IS NOT NULL",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "purple"
+          },
+          "unit": "short",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "description": "Viewer-hours divided by hours live, over the selected range and streamers."
+    },
+    {
+      "id": 10,
+      "type": "stat",
+      "title": "In this state since",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 8,
+        "w": 8,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "WITH cur AS (  SELECT twitch_id, ts, online, game FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot) AND twitch_id IN ($streamer) AND NOT derived  ORDER BY donation_total DESC LIMIT 1), changed AS (  SELECT max(s.ts) AS at FROM cur c JOIN streamer_sample_v s USING (twitch_id)  WHERE s.online <> c.online OR s.game IS DISTINCT FROM c.game) SELECT extract(epoch FROM c.ts - coalesce(ch.at, (SELECT first_seen FROM streamer_v st WHERE st.twitch_id = c.twitch_id))) FROM cur c, changed ch",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "orange"
+          },
+          "unit": "dtdurations",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "description": "How long the featured streamer has been in the current live/offline state with the current game."
+    },
+    {
+      "id": 11,
       "type": "timeseries",
       "title": "Donations over time",
       "datasource": {
@@ -713,7 +696,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 15,
+        "y": 12,
         "w": 12,
         "h": 9
       },
@@ -764,7 +747,7 @@
       }
     },
     {
-      "id": 10,
+      "id": 12,
       "type": "timeseries",
       "title": "Viewers over time",
       "datasource": {
@@ -773,7 +756,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 15,
+        "y": 12,
         "w": 12,
         "h": 9
       },
@@ -824,7 +807,7 @@
       }
     },
     {
-      "id": 11,
+      "id": 13,
       "type": "timeseries",
       "title": "Donations gained per interval",
       "datasource": {
@@ -833,7 +816,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 24,
+        "y": 21,
         "w": 12,
         "h": 9
       },
@@ -890,7 +873,7 @@
       "interval": "5m"
     },
     {
-      "id": 12,
+      "id": 14,
       "type": "timeseries",
       "title": "Rank in the donation leaderboard over time",
       "datasource": {
@@ -899,7 +882,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 24,
+        "y": 21,
         "w": 12,
         "h": 9
       },
@@ -951,7 +934,7 @@
       "description": "1 is the top; lower is better."
     },
     {
-      "id": 13,
+      "id": 15,
       "type": "state-timeline",
       "title": "Games played",
       "datasource": {
@@ -960,7 +943,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 33,
+        "y": 30,
         "w": 24,
         "h": 8
       },
