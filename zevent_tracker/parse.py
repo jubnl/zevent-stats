@@ -25,6 +25,7 @@ class StreamerSample:
     game: str | None
     viewers: int
     donation_total: float
+    location: str | None = None  # "LAN" (on site) or "Online" (streaming from home)
 
 
 @dataclass(frozen=True)
@@ -55,6 +56,7 @@ def parse(payload: dict, ts: datetime) -> Parsed:
             game=s.get("game"),
             viewers=int(_num(s, "viewersAmount")),
             donation_total=float(_num(s, "donationAmount")),
+            location=s.get("location"),
         )
         for s in live
     ]

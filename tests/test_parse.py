@@ -32,3 +32,14 @@ def test_streamer_sample():
     assert a.donation_total == 815.49
     assert a.donation_url == "https://zevent.fr/don/aducine"
     assert a.profile_url.startswith("https://")
+
+
+def test_location():
+    payload = load()
+    payload["live"][0]["location"] = "LAN"
+    payload["live"][1]["location"] = "Online"
+    p = parse(payload, TS)
+    by_id = {s.twitch_id: s for s in p.samples}
+    assert by_id[str(payload["live"][0]["twitch_id"])].location == "LAN"
+    assert by_id[str(payload["live"][1]["twitch_id"])].location == "Online"
+    assert by_id[str(payload["live"][2]["twitch_id"])].location is None  # data-shape.json predates the field

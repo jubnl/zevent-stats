@@ -1,6 +1,6 @@
 apiVersion: 1
 providers:
-  - name: zevent
+  - name: zevent-public
     folder: ""
     type: file
     allowUiUpdates: false

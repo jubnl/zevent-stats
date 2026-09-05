@@ -1,0 +1,403 @@
+{
+  "uid": "zevent-live-public",
+  "title": "ZEVENT live (on site)",
+  "tags": [
+    "zevent"
+  ],
+  "timezone": "browser",
+  "editable": false,
+  "graphTooltip": 1,
+  "refresh": "30s",
+  "timepicker": {
+    "hidden": false,
+    "refresh_intervals": [
+      "15s",
+      "30s"
+    ]
+  },
+  "time": {
+    "from": "2026-09-04T20:58:40.000Z",
+    "to": "now"
+  },
+  "schemaVersion": 39,
+  "version": 1,
+  "templating": {
+    "list": [
+      {
+        "name": "streamer",
+        "label": "Streamer",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "zevent-pg"
+        },
+        "query": "SELECT display AS __text, twitch_id AS __value FROM streamer_v st WHERE st.location = 'LAN' ORDER BY lower(display)",
+        "definition": "SELECT display AS __text, twitch_id AS __value FROM streamer_v st WHERE st.location = 'LAN' ORDER BY lower(display)",
+        "multi": true,
+        "includeAll": true,
+        "refresh": 1,
+        "sort": 0,
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        }
+      }
+    ]
+  },
+  "links": [
+    {
+      "type": "link",
+      "title": "Main stats",
+      "url": "/d/zevent-public?kiosk",
+      "icon": "dashboard",
+      "keepTime": true,
+      "includeVars": false,
+      "targetBlank": false,
+      "asDropdown": false,
+      "tags": [],
+      "tooltip": ""
+    }
+  ],
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Streamers online (on site)",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT count(*) FILTER (WHERE s.online) AS \"Online\", count(*) AS \"Total\" FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND st.location = 'LAN' AND s.ts = (SELECT max(ts) FROM snapshot)",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Peak streamers online (on site)",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT max(n) FROM (SELECT count(*) AS n FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND st.location = 'LAN' AND s.online GROUP BY s.ts) x",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Streamers online over time (on site)",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT s.ts AS time, count(*) FILTER (WHERE s.online) AS \"Online\" FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND st.location = 'LAN' AND $__timeFilter(s.ts) GROUP BY 1 ORDER BY 1",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 10,
+            "showPoints": "auto",
+            "pointSize": 4,
+            "spanNulls": true
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": false,
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "state-timeline",
+      "title": "Selected streamers ($streamer)",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 24,
+        "h": 10
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "WITH s AS (\n  SELECT s.ts, s.twitch_id, st.display, CASE WHEN s.online THEN coalesce(s.game, '(no game)') END AS state\n  FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id)\n  WHERE $__timeFilter(s.ts) AND NOT st.derived AND st.location = 'LAN' AND s.twitch_id IN ($streamer)\n), d AS (\n  SELECT *, lag(state) OVER w AS prev, lead(ts) OVER w AS next,\n         min(ts) FILTER (WHERE state IS NOT NULL) OVER (PARTITION BY twitch_id) AS first_live\n  FROM s WINDOW w AS (PARTITION BY twitch_id ORDER BY ts)\n), r AS (\n  SELECT ts, display, state, first_live FROM d WHERE state IS DISTINCT FROM prev OR next IS NULL\n  UNION ALL\n  SELECT max(ts) + interval '1 minute', display, NULL, min(first_live) FROM d GROUP BY twitch_id, display\n)\nSELECT ts AS time, display AS \"Streamer\", state AS \"State\", first_live\nFROM r ORDER BY first_live NULLS LAST, lower(display), ts",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 0,
+            "fillOpacity": 85,
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "green"
+          },
+          "mappings": [
+            {
+              "type": "regex",
+              "options": {
+                "pattern": ".+",
+                "result": {
+                  "color": "green",
+                  "index": 0
+                }
+              }
+            }
+          ],
+          "displayName": "${__field.labels.Streamer}"
+        },
+        "overrides": []
+      },
+      "options": {
+        "mergeValues": true,
+        "showValue": "never",
+        "alignValue": "left",
+        "rowHeight": 0.8,
+        "perPage": 15,
+        "legend": {
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "first_live": true
+            }
+          }
+        },
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "Streamer"
+            ],
+            "keepFields": false,
+            "naming": {
+              "asLabels": true
+            }
+          }
+        }
+      ],
+      "description": "Green while live. Hover a bar for the game. Rows are sorted by the first time the streamer went live in the selected range; streamers that were not live in the range are at the bottom. Pick streamers in the Streamer filter to compare a few; the full list is in the panel below."
+    },
+    {
+      "id": 5,
+      "type": "state-timeline",
+      "title": "All streamers (on site)",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 14,
+        "w": 24,
+        "h": 34
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "WITH s AS (\n  SELECT s.ts, s.twitch_id, st.display, CASE WHEN s.online THEN coalesce(s.game, '(no game)') END AS state\n  FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id)\n  WHERE $__timeFilter(s.ts) AND NOT st.derived AND st.location = 'LAN'\n), d AS (\n  SELECT *, lag(state) OVER w AS prev, lead(ts) OVER w AS next,\n         min(ts) FILTER (WHERE state IS NOT NULL) OVER (PARTITION BY twitch_id) AS first_live\n  FROM s WINDOW w AS (PARTITION BY twitch_id ORDER BY ts)\n), r AS (\n  SELECT ts, display, state, first_live FROM d WHERE state IS DISTINCT FROM prev OR next IS NULL\n  UNION ALL\n  SELECT max(ts) + interval '1 minute', display, NULL, min(first_live) FROM d GROUP BY twitch_id, display\n)\nSELECT ts AS time, display AS \"Streamer\", state AS \"State\", first_live\nFROM r ORDER BY first_live NULLS LAST, lower(display), ts",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 0,
+            "fillOpacity": 85,
+            "spanNulls": false,
+            "insertNulls": false
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "green"
+          },
+          "mappings": [
+            {
+              "type": "regex",
+              "options": {
+                "pattern": ".+",
+                "result": {
+                  "color": "green",
+                  "index": 0
+                }
+              }
+            }
+          ],
+          "displayName": "${__field.labels.Streamer}"
+        },
+        "overrides": []
+      },
+      "options": {
+        "mergeValues": true,
+        "showValue": "never",
+        "alignValue": "left",
+        "rowHeight": 0.8,
+        "perPage": 50,
+        "legend": {
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "first_live": true
+            }
+          }
+        },
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "Streamer"
+            ],
+            "keepFields": false,
+            "naming": {
+              "asLabels": true
+            }
+          }
+        }
+      ],
+      "description": "Green while live. Hover a bar for the game. Rows are sorted by the first time the streamer went live in the selected range; streamers that were not live in the range are at the bottom."
+    }
+  ]
+}

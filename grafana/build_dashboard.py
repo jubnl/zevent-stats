@@ -1,9 +1,10 @@
 """Generate the Grafana dashboards. Run: uv run python grafana/build_dashboard.py
 
-Writes two variants of the same dashboard:
-  provisioning/dashboards/zevent.json               internal instance (full Grafana)
-  provisioning-public/dashboards/zevent-public.json public instance: time picker hidden
-                                                    (fixed range + 30s refresh), variables usable
+Both are served by the single anonymous, read-only Grafana instance (fixed time range, 30s refresh):
+  provisioning/dashboards/zevent-public.json       ZEVENT: totals, graphs, leaderboards, per-streamer panels,
+                                                   with a Location filter (LAN = on site, Online = from home)
+  provisioning/dashboards/zevent-live-public.json  ZEVENT live: one row per on-site streamer, green while live
+The "-public" uid suffix is kept because the URLs are published (the proxy redirects / to /d/zevent-public).
 """
 import copy
 import json
@@ -139,6 +140,14 @@ MIRROR_NOTE = (
 )
 
 
+# Location filter of the `location` dashboard variable: "LAN" (on site) or "Online" (streaming from
+# home). Matched as a regex so "All" (allValue ".*") also keeps streamers whose location is unknown,
+# e.g. one that left the API list before the column existed. `st` is the streamer_v alias.
+LOC = "coalesce(st.location, '') ~ '^(${location:regex})$'"
+LOC_QUERY = ("SELECT CASE location WHEN 'LAN' THEN 'On site (LAN)' ELSE 'Remote (online)' END AS __text, "
+             "location AS __value FROM streamer_v WHERE location IS NOT NULL GROUP BY location ORDER BY location")
+
+
 def row(title, y):
     global _id
     _id += 1
@@ -204,54 +213,54 @@ panels = [
        ') st USING (ts) WHERE g IS NOT NULL GROUP BY 1 ORDER BY 1',
        12, 27, unit="currencyEUR", bars=True, legend=False, min_interval="5m", description=MIRROR_NOTE),
 
-    ts("Streamers online per game",
-       "WITH top AS (SELECT game FROM streamer_sample_v WHERE $__timeFilter(ts) AND online GROUP BY game ORDER BY count(*) DESC LIMIT 8) SELECT ts AS time, CASE WHEN game IN (SELECT game FROM top) THEN game ELSE 'Other' END AS metric, count(*) AS value FROM streamer_sample_v WHERE $__timeFilter(ts) AND online GROUP BY 1, 2 ORDER BY 1",
+    ts("Streamers online per game ($location)",
+       "WITH top AS (SELECT game FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.online AND " + LOC + " GROUP BY game ORDER BY count(*) DESC LIMIT 8) SELECT ts AS time, CASE WHEN game IN (SELECT game FROM top) THEN game ELSE 'Other' END AS metric, count(*) AS value FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.online AND " + LOC + " GROUP BY 1, 2 ORDER BY 1",
        0, 36, unit="short", stack=True),
-    ts("Viewers per game",
-       "WITH top AS (SELECT game FROM streamer_sample_v WHERE $__timeFilter(ts) AND online GROUP BY game ORDER BY sum(viewers) DESC LIMIT 8) SELECT ts AS time, CASE WHEN game IN (SELECT game FROM top) THEN game ELSE 'Other' END AS metric, sum(viewers) AS value FROM streamer_sample_v WHERE $__timeFilter(ts) AND online GROUP BY 1, 2 ORDER BY 1",
+    ts("Viewers per game ($location)",
+       "WITH top AS (SELECT game FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.online AND " + LOC + " GROUP BY game ORDER BY sum(viewers) DESC LIMIT 8) SELECT ts AS time, CASE WHEN game IN (SELECT game FROM top) THEN game ELSE 'Other' END AS metric, sum(viewers) AS value FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.online AND " + LOC + " GROUP BY 1, 2 ORDER BY 1",
        12, 36, unit="short", stack=True),
 
-    row("Leaderboards (latest snapshot)", 45),
+    row("Leaderboards (latest snapshot, $location)", 45),
     table("Top by donations",
           'SELECT st.display AS "Streamer", s.donation_total AS "Donations", s.viewers AS "Viewers", s.online AS "Online", st.login AS login '
           'FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) '
-          'WHERE s.ts = (SELECT max(ts) FROM snapshot) ORDER BY s.donation_total DESC LIMIT 25',
+          'WHERE s.ts = (SELECT max(ts) FROM snapshot) AND ' + LOC + ' ORDER BY s.donation_total DESC LIMIT 25',
           0, 46, money_cols=("Donations",), streamer_links=True),
     table("Top by viewers",
           'SELECT st.display AS "Streamer", s.viewers AS "Viewers", s.game AS "Game", s.donation_total AS "Donations", st.login AS login '
           'FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) '
-          'WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.online ORDER BY s.viewers DESC LIMIT 25',
+          'WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.online AND ' + LOC + ' ORDER BY s.viewers DESC LIMIT 25',
           8, 46, money_cols=("Donations",), streamer_links=True),
     table("Top gained in selected range",
           'SELECT st.display AS "Streamer", sum(d.delta) AS "Gained", (array_agg(d.donation_total ORDER BY d.ts DESC))[1] AS "Donations", st.login AS login FROM ('
           f'  SELECT ts, twitch_id, donation_total, {gain_expr("donation_total", "PARTITION BY twitch_id")} AS delta'
           '  FROM streamer_sample_v WHERE $__timeFilter(ts)'
-          ') d JOIN streamer_v st USING (twitch_id) WHERE d.delta IS NOT NULL '
+          ') d JOIN streamer_v st USING (twitch_id) WHERE d.delta IS NOT NULL AND ' + LOC + ' '
           'GROUP BY st.twitch_id, st.display, st.login ORDER BY 2 DESC LIMIT 25',
           16, 46, money_cols=("Gained", "Donations"), streamer_links=True),
 
-    row("Per streamer ($streamer)", 58),
+    row("Per streamer ($streamer, $location)", 58),
     stat("Donations of selected streamers",
-         "SELECT coalesce(sum(donation_total), 0) FROM streamer_sample_v "
-         "WHERE ts = (SELECT max(ts) FROM snapshot) AND twitch_id IN ($streamer) AND NOT derived",
+         "SELECT coalesce(sum(s.donation_total), 0) FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) "
+         "WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.twitch_id IN ($streamer) AND NOT s.derived AND " + LOC,
          0, w=24, y=59, unit="currencyEUR", decimals=2,
          description="Sum of the selected streamers' counters at the latest snapshot. The derived "
                      "\"mistermv (private counter)\" entry is not real money and is left out even when selected."),
     ts("Donations per streamer",
        'SELECT s.ts AS time, st.display AS metric, st.login AS login, s.donation_total AS value '
        'FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) '
-       'WHERE $__timeFilter(s.ts) AND s.twitch_id IN ($streamer) ORDER BY 1',
+       'WHERE $__timeFilter(s.ts) AND s.twitch_id IN ($streamer) AND ' + LOC + ' ORDER BY 1',
        0, 63, unit="currencyEUR", stack=True, streamer_links=True),
     ts("Viewers per streamer",
        'SELECT s.ts AS time, st.display AS metric, st.login AS login, s.viewers AS value '
        'FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) '
-       'WHERE $__timeFilter(s.ts) AND s.twitch_id IN ($streamer) ORDER BY 1',
+       'WHERE $__timeFilter(s.ts) AND s.twitch_id IN ($streamer) AND ' + LOC + ' ORDER BY 1',
        12, 63, unit="short", stack=True, streamer_links=True),
     ts("Donations gained per streamer per interval",
        'SELECT $__timeGroupAlias(d.ts, $__interval), st.display AS metric, st.login AS login, sum(d.delta) AS value FROM ('
        f'  SELECT ts, twitch_id, {gain_expr("donation_total", "PARTITION BY twitch_id")} AS delta'
        '  FROM streamer_sample_v WHERE $__timeFilter(ts) AND twitch_id IN ($streamer)'
-       ') d JOIN streamer_v st USING (twitch_id) WHERE d.delta IS NOT NULL GROUP BY 1, 2, 3 ORDER BY 1',
+       ') d JOIN streamer_v st USING (twitch_id) WHERE d.delta IS NOT NULL AND ' + LOC + ' GROUP BY 1, 2, 3 ORDER BY 1',
        0, 72, unit="currencyEUR", bars=True, stack=True, min_interval="5m", streamer_links=True),
     table("Status of selected streamers",
           'WITH cur AS ('
@@ -264,55 +273,163 @@ panels = [
           'SELECT st.display AS "Streamer", c.online AS "Online", c.game AS "Game", c.viewers AS "Viewers", '
           '       extract(epoch FROM c.ts - coalesce(ch.at, st.first_seen)) AS "Since", st.login AS login '
           'FROM cur c JOIN streamer_v st USING (twitch_id) LEFT JOIN changed ch USING (twitch_id) '
-          'ORDER BY c.online DESC, c.viewers DESC',
+          'WHERE ' + LOC + ' ORDER BY c.online DESC, c.viewers DESC',
           12, 72, w=12, h=9, duration_cols=("Since",), streamer_links=True),
 ]
 
-dashboard = {
-    "uid": "zevent",
-    "title": "ZEVENT",
-    "tags": ["zevent"],
-    "timezone": "browser",
-    "editable": True,
-    "graphTooltip": 1,
-    "refresh": "30s",
-    "time": {"from": "2026-09-04T20:00:00.000Z", "to": "now"},  # event start until now; grows as data arrives
-    "schemaVersion": 39,
-    "version": 1,
-    "templating": {
-        "list": [
-            {
-                "name": "streamer",
-                "label": "Streamer",
-                "type": "query",
-                "datasource": DS,
-                "query": "SELECT display AS __text, twitch_id AS __value FROM streamer_v ORDER BY lower(display)",
-                "definition": "SELECT display AS __text, twitch_id AS __value FROM streamer_v ORDER BY lower(display)",
-                "multi": True,
-                "includeAll": True,
-                "refresh": 1,
-                "sort": 0,
-                "current": {"selected": True, "text": ["All"], "value": ["$__all"]},
-            }
-        ]
-    },
-    "panels": panels,
-}
+def query_var(name, label, query, all_value=None):
+    v = {
+        "name": name, "label": label, "type": "query", "datasource": DS,
+        "query": query, "definition": query,
+        "multi": True, "includeAll": True, "refresh": 1, "sort": 0,
+        "current": {"selected": True, "text": ["All"], "value": ["$__all"]},
+    }
+    if all_value is not None:
+        v["allValue"] = all_value
+    return v
+
+
+def streamer_var(where):
+    return query_var("streamer", "Streamer",
+                     f"SELECT display AS __text, twitch_id AS __value FROM streamer_v st WHERE {where} ORDER BY lower(display)")
+
+
+LOCATION_VAR = query_var("location", "Location", LOC_QUERY, all_value=".*")
+
+# event start until now; grows as data arrives
+TIME_RANGE = {"from": "2026-09-04T20:58:40.000Z", "to": "now"}
+
+
+# Button in the controls bar (also shown in kiosk mode) to jump to the other dashboard. The explicit
+# "?kiosk" keeps the chrome hidden after the jump; keepTime carries the selected time range over.
+def link_to(uid, title):
+    return {"type": "link", "title": title, "url": f"/d/{uid}?kiosk", "icon": "dashboard",
+            "keepTime": True, "includeVars": False, "targetBlank": False, "asDropdown": False, "tags": [],
+            "tooltip": ""}
+
+
+def dashboard_base(uid, title, variables, panels_, links=()):
+    return {
+        "uid": uid,
+        "title": title,
+        "tags": ["zevent"],
+        "timezone": "browser",
+        "editable": False,
+        "graphTooltip": 1,
+        "refresh": "30s",
+        # hidden time picker also hides the refresh picker; from/to stay fixed at the values below
+        "timepicker": {"hidden": False, "refresh_intervals": ["15s", "30s"]},
+        "time": TIME_RANGE,
+        "schemaVersion": 39,
+        "version": 1,
+        "templating": {"list": copy.deepcopy(variables)},
+        "links": list(links),
+        "panels": panels_,
+    }
+
+
+dashboard = dashboard_base("zevent-public", "ZEVENT", [LOCATION_VAR, streamer_var(LOC)], panels,
+                           links=[link_to("zevent-live-public", "Live timeline (on site)")])
+
+# One row per streamer, a green bar while they are live, the game on hover. The query returns only
+# the samples where a streamer's state changed (plus the last sample of each, so the final bar reaches
+# the latest data) instead of every minute for every streamer, which keeps it at a few thousand rows.
+# The state timeline holds the last value until the end of the time range, so each streamer also gets
+# a NULL terminator one poll interval after their last sample: bars end where the data ends, not at
+# "now", and a stalled collector does not show everyone as live.
+# The partitionByValues transformation splits the table into one frame per streamer; the state
+# timeline draws each frame as a row. Rows are sorted by first time live in the selected range,
+# streamers never live in the range last. The sort column first_live is dropped by the organize
+# transformation so it does not become a second row per streamer.
+LIVE_SQL = """
+WITH s AS (
+  SELECT s.ts, s.twitch_id, st.display, CASE WHEN s.online THEN coalesce(s.game, '(no game)') END AS state
+  FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id)
+  WHERE $__timeFilter(s.ts) AND NOT st.derived AND {loc}{filter}
+), d AS (
+  SELECT *, lag(state) OVER w AS prev, lead(ts) OVER w AS next,
+         min(ts) FILTER (WHERE state IS NOT NULL) OVER (PARTITION BY twitch_id) AS first_live
+  FROM s WINDOW w AS (PARTITION BY twitch_id ORDER BY ts)
+), r AS (
+  SELECT ts, display, state, first_live FROM d WHERE state IS DISTINCT FROM prev OR next IS NULL
+  UNION ALL
+  SELECT max(ts) + interval '1 minute', display, NULL, min(first_live) FROM d GROUP BY twitch_id, display
+)
+SELECT ts AS time, display AS "Streamer", state AS "State", first_live
+FROM r ORDER BY first_live NULLS LAST, lower(display), ts
+"""
+
+LIVE_DESCRIPTION = (
+    "Green while live. Hover a bar for the game. Rows are sorted by the first time the streamer went live in "
+    "the selected range; streamers that were not live in the range are at the bottom."
+)
+
+
+def live_timeline(title, y, h, loc, filtered, description, per_page):
+    sql = LIVE_SQL.format(loc=loc, filter=" AND s.twitch_id IN ($streamer)" if filtered else "")
+    return panel(
+        "state-timeline", title, sql, 0, y, 24, h, fmt="table",
+        fieldConfig={"defaults": {
+            "custom": {"lineWidth": 0, "fillOpacity": 85, "spanNulls": False, "insertNulls": False},
+            "color": {"mode": "fixed", "fixedColor": "green"},
+            "mappings": [{"type": "regex", "options": {"pattern": ".+", "result": {"color": "green", "index": 0}}}],
+            "displayName": "${__field.labels.Streamer}",
+        }},
+        options={
+            # perPage: the list is paginated so the panel height does not depend on the number of streamers
+            "mergeValues": True, "showValue": "never", "alignValue": "left", "rowHeight": 0.8, "perPage": per_page,
+            "legend": {"showLegend": False},
+            "tooltip": {"mode": "single", "sort": "none"},
+        },
+        transformations=[
+            {"id": "organize", "options": {"excludeByName": {"first_live": True}}},
+            {"id": "partitionByValues",
+             "options": {"fields": ["Streamer"], "keepFields": False, "naming": {"asLabels": True}}},
+        ],
+        description=description,
+    )
+
+
+def live_panels(loc, scope):
+    """Panels of the live dashboard. `loc` is the SQL location filter (st = streamer_v), `scope` a label."""
+    global _id
+    _id = 0
+    latest = "FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND " + loc
+    return [
+        stat(f"Streamers online ({scope})",
+             f'SELECT count(*) FILTER (WHERE s.online) AS "Online", count(*) AS "Total" {latest} '
+             "AND s.ts = (SELECT max(ts) FROM snapshot)",
+             0, w=6, color="blue", text_mode="value_and_name"),
+        stat(f"Peak streamers online ({scope})",
+             f"SELECT max(n) FROM (SELECT count(*) AS n {latest} AND s.online GROUP BY s.ts) x",
+             6, w=6, unit="short", color="blue"),
+        ts(f"Streamers online over time ({scope})",
+           f'SELECT s.ts AS time, count(*) FILTER (WHERE s.online) AS "Online" {latest} AND $__timeFilter(s.ts) '
+           "GROUP BY 1 ORDER BY 1",
+           12, 0, w=12, h=4, unit="short", legend=False),
+        # The filtered view is a separate compact panel so that narrowing the filter to a few streamers
+        # gives normal-sized rows; the full list below is paginated.
+        live_timeline("Selected streamers ($streamer)", 4, 10, loc, filtered=True, per_page=15,
+                      description=LIVE_DESCRIPTION + " Pick streamers in the Streamer filter to compare a few; "
+                                                     "the full list is in the panel below."),
+        live_timeline(f"All streamers ({scope})", 14, 34, loc, filtered=False, per_page=50,
+                      description=LIVE_DESCRIPTION),
+    ]
+
+
+# Only the streamers physically at the event (location LAN); no location filter.
+LAN = "st.location = 'LAN'"
+live_dashboard = dashboard_base("zevent-live-public", "ZEVENT live (on site)", [streamer_var(LAN)],
+                                live_panels(LAN, "on site"), links=[link_to("zevent-public", "Main stats")])
 
 here = Path(__file__).parent
-out = here / "provisioning" / "dashboards" / "zevent.json"
-out.write_text(json.dumps(dashboard, indent=2) + "\n")
-print(f"wrote {out} ({len(panels)} panels)")
 
-public = copy.deepcopy(dashboard)
-public.update({
-    "uid": "zevent-public",
-    "editable": False,
-    "refresh": "30s",
-    # hidden time picker also hides the refresh picker; from/to stay fixed at the values below
-    "timepicker": {"hidden": False, "refresh_intervals": ["15s", "30s"]},
-    "time": {"from": "2026-09-04T20:58:40.000Z", "to": "now"},
-})
-out_public = here / "provisioning-public" / "dashboards" / "zevent-public.json"
-out_public.write_text(json.dumps(public, indent=2) + "\n")
-print(f"wrote {out_public}")
+
+def write(dash):
+    out = here / "provisioning" / "dashboards" / f"{dash['uid']}.json"
+    out.write_text(json.dumps(dash, indent=2) + "\n")
+    print(f"wrote {out} ({len(dash['panels'])} panels)")
+
+
+write(dashboard)
+write(live_dashboard)

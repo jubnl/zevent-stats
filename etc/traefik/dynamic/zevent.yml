@@ -1,0 +1,17 @@
+http:
+  middlewares:
+    # bare host or bare dashboard path (no query) -> kiosk URL of that dashboard.
+    # Dashboards: zevent-public (main stats) and zevent-live-public (live timeline). The optional
+    # "live-" capture selects the dashboard; the bare host has no capture and lands on the main one.
+    zevent-public-home:
+      redirectRegex:
+        regex: "^https?://zevent\\.jubnl\\.ch(?:/|/d/zevent-(live-)?public(?:/[^?]*)?)?$"
+        replacement: "https://zevent.jubnl.ch/d/zevent-${1}public?kiosk=1"
+        permanent: false
+    # dashboard path with a query that has no "kiosk" in it -> same query plus kiosk.
+    # Go regexp has no lookahead, so "no kiosk substring" is spelled out token by token.
+    zevent-force-kiosk:
+      redirectRegex:
+        regex: "^(https?://zevent\\.jubnl\\.ch/d/zevent-(?:live-)?public(?:/[^?]*)?)\\?((?:[^k]|k[^i]|ki[^o]|kio[^s]|kios[^k])*(?:k|ki|kio|kios)?)$"
+        replacement: "${1}?kiosk=1&${2}"
+        permanent: false

@@ -61,11 +61,12 @@ dd AS (
 SELECT ts, dup_delta, sum(dup_delta) OVER (ORDER BY ts) AS dup FROM dd;
 
 -- streamer plus the derived row. `derived` marks rows that are not API entities.
+-- `location` (added 2026-09-05, needs the collector to have run once) is 'LAN' or 'Online'.
 CREATE VIEW streamer_v AS
-SELECT twitch_id, login, display, profile_url, donation_url, first_seen, last_seen, false AS derived
+SELECT twitch_id, login, display, profile_url, donation_url, location, first_seen, last_seen, false AS derived
 FROM streamer
 UNION ALL
-SELECT c.derived_id, st.login, c.derived_display, st.profile_url, st.donation_url, c.rebase_ts, st.last_seen, true
+SELECT c.derived_id, st.login, c.derived_display, st.profile_url, st.donation_url, st.location, c.rebase_ts, st.last_seen, true
 FROM streamer st JOIN mirror_config c ON st.login = c.login;
 
 -- streamer_sample with mistermv's counter split: his row minus the mirrored amount, plus a derived row

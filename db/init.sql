@@ -12,6 +12,7 @@ CREATE TABLE streamer (
   display      text NOT NULL,
   profile_url  text,
   donation_url text,
+  location     text,          -- 'LAN' (on site) or 'Online' (streaming from home)
   first_seen   timestamptz NOT NULL,
   last_seen    timestamptz NOT NULL
 );

@@ -14,7 +14,7 @@ import psycopg
 
 from .api import fetch
 from .backfill import backfill
-from .db import insert
+from .db import ensure_schema, insert
 from .parse import parse
 
 log = logging.getLogger("zevent")
@@ -94,6 +94,8 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     logging.getLogger("httpx").setLevel(logging.WARNING)
     cfg = Config.from_env()
+    with psycopg.connect(cfg.database_url) as conn:
+        ensure_schema(conn)
     if sys.argv[1:] == ["backfill"]:
         backfill(cfg.raw_dir, cfg.database_url)
         return
