@@ -166,7 +166,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT sn.donation_total - sum(s.donation_total) + coalesce(max(d.dup), 0) FROM snapshot sn JOIN streamer_sample s USING (ts) LEFT JOIN (SELECT m.ts, greatest(m.donation_total - b.base, 0) AS dup FROM streamer_sample m JOIN streamer ms USING (twitch_id), (  SELECT s.donation_total AS base FROM streamer_sample s JOIN streamer st USING (twitch_id)  WHERE st.login = 'mistermv' AND s.ts <= '2026-09-05 01:07:00+00' ORDER BY s.ts DESC LIMIT 1) b WHERE ms.login = 'mistermv' AND m.ts > '2026-09-05 01:07:00+00') d USING (ts) WHERE sn.ts = (SELECT max(ts) FROM snapshot) GROUP BY sn.donation_total",
+          "rawSql": "SELECT sn.donation_total - sum(s.donation_total) + coalesce(max(d.dup), 0) FROM snapshot sn JOIN streamer_sample s USING (ts) LEFT JOIN (SELECT ts, sum(dup_delta) OVER (ORDER BY ts) AS dup FROM (SELECT ts, CASE WHEN ts = '2026-09-05 01:08:00+00' THEN m ELSE greatest(least(m, dom), 0) END AS dup_delta FROM (  SELECT ts, max(delta) FILTER (WHERE login = 'mistermv') AS m,             max(delta) FILTER (WHERE login = 'domingo') AS dom FROM (    SELECT s.ts, st.login, s.donation_total - lag(s.donation_total) OVER (PARTITION BY s.twitch_id ORDER BY s.ts) AS delta    FROM streamer_sample s JOIN streamer st USING (twitch_id) WHERE st.login IN ('mistermv', 'domingo')  ) x WHERE ts >= '2026-09-05 01:08:00+00' GROUP BY ts) y WHERE m IS NOT NULL AND dom IS NOT NULL) dd) d USING (ts) WHERE sn.ts = (SELECT max(ts) FROM snapshot) GROUP BY sn.donation_total",
           "format": "table",
           "refId": "A"
         }
@@ -195,7 +195,7 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Global total minus the sum of streamer counters. Since 01:08 UTC on Sept 5 mistermv's counter mirrors Domingo's (every donation credited to both), so his gains after that are removed from the sum; see the \"Duplicated (mistermv)\" tile for the amount removed."
+      "description": "Global total minus the sum of streamer counters. Since 01:08 UTC on Sept 5 mistermv's counter mirrors Domingo's (every donation to Domingo credited to both), so the part of his increments that matches Domingo's is removed from the sum; see the \"Duplicated (mistermv)\" tile for the amount removed."
     },
     {
       "id": 4,
@@ -218,7 +218,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT coalesce(d.dup, 0) FROM snapshot sn LEFT JOIN (SELECT m.ts, greatest(m.donation_total - b.base, 0) AS dup FROM streamer_sample m JOIN streamer ms USING (twitch_id), (  SELECT s.donation_total AS base FROM streamer_sample s JOIN streamer st USING (twitch_id)  WHERE st.login = 'mistermv' AND s.ts <= '2026-09-05 01:07:00+00' ORDER BY s.ts DESC LIMIT 1) b WHERE ms.login = 'mistermv' AND m.ts > '2026-09-05 01:07:00+00') d USING (ts) WHERE sn.ts = (SELECT max(ts) FROM snapshot)",
+          "rawSql": "SELECT coalesce(d.dup, 0) FROM snapshot sn LEFT JOIN (SELECT ts, sum(dup_delta) OVER (ORDER BY ts) AS dup FROM (SELECT ts, CASE WHEN ts = '2026-09-05 01:08:00+00' THEN m ELSE greatest(least(m, dom), 0) END AS dup_delta FROM (  SELECT ts, max(delta) FILTER (WHERE login = 'mistermv') AS m,             max(delta) FILTER (WHERE login = 'domingo') AS dom FROM (    SELECT s.ts, st.login, s.donation_total - lag(s.donation_total) OVER (PARTITION BY s.twitch_id ORDER BY s.ts) AS delta    FROM streamer_sample s JOIN streamer st USING (twitch_id) WHERE st.login IN ('mistermv', 'domingo')  ) x WHERE ts >= '2026-09-05 01:08:00+00' GROUP BY ts) y WHERE m IS NOT NULL AND dom IS NOT NULL) dd) d USING (ts) WHERE sn.ts = (SELECT max(ts) FROM snapshot)",
           "format": "table",
           "refId": "A"
         }
@@ -247,7 +247,7 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Amount mistermv's counter gained since 01:08 UTC on Sept 5, when it started mirroring Domingo's. Counted once in the global total, twice in the streamer sum; removed from External donations."
+      "description": "Part of mistermv's counter that mirrors Domingo's since 01:08 UTC on Sept 5: the initial jump plus, each minute, the increment matching Domingo's. Counted once in the global total, twice in the streamer sum; removed from External donations. His own donations stay credited to him."
     },
     {
       "id": 5,
@@ -642,7 +642,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT sn.ts AS time, sn.donation_total - sum(s.donation_total) + coalesce(max(d.dup), 0) AS \"External\", coalesce(max(d.dup), 0) AS \"Duplicated (mistermv)\" FROM snapshot sn JOIN streamer_sample s USING (ts) LEFT JOIN (SELECT m.ts, greatest(m.donation_total - b.base, 0) AS dup FROM streamer_sample m JOIN streamer ms USING (twitch_id), (  SELECT s.donation_total AS base FROM streamer_sample s JOIN streamer st USING (twitch_id)  WHERE st.login = 'mistermv' AND s.ts <= '2026-09-05 01:07:00+00' ORDER BY s.ts DESC LIMIT 1) b WHERE ms.login = 'mistermv' AND m.ts > '2026-09-05 01:07:00+00') d USING (ts) WHERE $__timeFilter(sn.ts) GROUP BY sn.ts, sn.donation_total ORDER BY 1",
+          "rawSql": "SELECT sn.ts AS time, sn.donation_total - sum(s.donation_total) + coalesce(max(d.dup), 0) AS \"External\", coalesce(max(d.dup), 0) AS \"Duplicated (mistermv)\" FROM snapshot sn JOIN streamer_sample s USING (ts) LEFT JOIN (SELECT ts, sum(dup_delta) OVER (ORDER BY ts) AS dup FROM (SELECT ts, CASE WHEN ts = '2026-09-05 01:08:00+00' THEN m ELSE greatest(least(m, dom), 0) END AS dup_delta FROM (  SELECT ts, max(delta) FILTER (WHERE login = 'mistermv') AS m,             max(delta) FILTER (WHERE login = 'domingo') AS dom FROM (    SELECT s.ts, st.login, s.donation_total - lag(s.donation_total) OVER (PARTITION BY s.twitch_id ORDER BY s.ts) AS delta    FROM streamer_sample s JOIN streamer st USING (twitch_id) WHERE st.login IN ('mistermv', 'domingo')  ) x WHERE ts >= '2026-09-05 01:08:00+00' GROUP BY ts) y WHERE m IS NOT NULL AND dom IS NOT NULL) dd) d USING (ts) WHERE $__timeFilter(sn.ts) GROUP BY sn.ts, sn.donation_total ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }
@@ -672,7 +672,7 @@
           "sort": "desc"
         }
       },
-      "description": "Global total minus the sum of streamer counters. Since 01:08 UTC on Sept 5 mistermv's counter mirrors Domingo's (every donation credited to both), so his gains after that are removed from the sum; see the \"Duplicated (mistermv)\" tile for the amount removed."
+      "description": "Global total minus the sum of streamer counters. Since 01:08 UTC on Sept 5 mistermv's counter mirrors Domingo's (every donation to Domingo credited to both), so the part of his increments that matches Domingo's is removed from the sum; see the \"Duplicated (mistermv)\" tile for the amount removed."
     },
     {
       "id": 14,
@@ -695,7 +695,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroupAlias(ts, $__interval), sum(g) - sum(sg) AS \"External\" FROM (  SELECT ts, donation_total - lag(donation_total) OVER ( ORDER BY ts) AS g FROM snapshot WHERE $__timeFilter(ts)) gl JOIN (  SELECT ts, sum(delta) AS sg FROM (    SELECT ts, twitch_id, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta FROM streamer_sample WHERE $__timeFilter(ts)  ) x WHERE NOT (twitch_id = (SELECT twitch_id FROM streamer WHERE login = 'mistermv') AND ts > '2026-09-05 01:07:00+00') GROUP BY ts) st USING (ts) WHERE g IS NOT NULL GROUP BY 1 ORDER BY 1",
+          "rawSql": "SELECT $__timeGroupAlias(ts, $__interval), sum(g) - sum(sg) + coalesce(sum(dd.dup_delta), 0) AS \"External\" FROM (  SELECT ts, donation_total - lag(donation_total) OVER ( ORDER BY ts) AS g FROM snapshot WHERE $__timeFilter(ts)) gl JOIN (  SELECT ts, sum(delta) AS sg FROM (    SELECT ts, donation_total - lag(donation_total) OVER (PARTITION BY twitch_id ORDER BY ts) AS delta FROM streamer_sample WHERE $__timeFilter(ts)  ) x GROUP BY ts) st USING (ts) LEFT JOIN (SELECT ts, CASE WHEN ts = '2026-09-05 01:08:00+00' THEN m ELSE greatest(least(m, dom), 0) END AS dup_delta FROM (  SELECT ts, max(delta) FILTER (WHERE login = 'mistermv') AS m,             max(delta) FILTER (WHERE login = 'domingo') AS dom FROM (    SELECT s.ts, st.login, s.donation_total - lag(s.donation_total) OVER (PARTITION BY s.twitch_id ORDER BY s.ts) AS delta    FROM streamer_sample s JOIN streamer st USING (twitch_id) WHERE st.login IN ('mistermv', 'domingo')  ) x WHERE ts >= '2026-09-05 01:08:00+00' GROUP BY ts) y WHERE m IS NOT NULL AND dom IS NOT NULL) dd USING (ts) WHERE g IS NOT NULL GROUP BY 1 ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }
@@ -727,7 +727,7 @@
         }
       },
       "interval": "5m",
-      "description": "Global total minus the sum of streamer counters. Since 01:08 UTC on Sept 5 mistermv's counter mirrors Domingo's (every donation credited to both), so his gains after that are removed from the sum; see the \"Duplicated (mistermv)\" tile for the amount removed."
+      "description": "Global total minus the sum of streamer counters. Since 01:08 UTC on Sept 5 mistermv's counter mirrors Domingo's (every donation to Domingo credited to both), so the part of his increments that matches Domingo's is removed from the sum; see the \"Duplicated (mistermv)\" tile for the amount removed."
     },
     {
       "id": 15,

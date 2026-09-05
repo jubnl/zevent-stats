@@ -126,30 +126,34 @@ def gain_expr(col, partition=""):
     return f"{col} - lag({col}) OVER ({partition} ORDER BY ts)"
 
 
-# Upstream double count: since 01:08 UTC on 2026-09-05 mistermv's counter was rebased (+261K in one
-# minute while the global total moved 1.7K) and has since received every donation credited to
-# Domingo as well. The global total counts those once, so "global minus streamers" drifts negative.
-# Correction: treat everything mistermv's counter gained after MIRROR_SINCE as duplicated. His own
-# donations in that period (a few K) are lost in the correction; before MIRROR_SINCE nothing changes.
+# Upstream double count: at 01:08 UTC on 2026-09-05 mistermv's counter jumped by 261K (Domingo's total
+# as of ~00:47 UTC) while the global total moved 1.7K, and since then it moves in lockstep with
+# Domingo's counter: every donation to Domingo is credited to both. The global total counts those
+# once, so "global minus streamers" drifts negative. mistermv's own donations (before the rebase and
+# the small extra on top of Domingo's increments after it) are real and stay credited to him.
+# Correction per sample minute, from MIRROR_REBASE on:
+#   rebase minute            -> the whole jump is duplicated
+#   any later minute         -> least(mistermv delta, Domingo delta), floored at 0; the excess is his own
 MIRROR_LOGIN = "mistermv"
-MIRROR_SINCE = "2026-09-05 01:07:00+00"  # last sample before the rebase
+MIRROR_SOURCE = "domingo"
+MIRROR_REBASE = "2026-09-05 01:08:00+00"  # first sample with the mirrored counter
 
-# duplicated amount per sample ts (rows only exist after MIRROR_SINCE; LEFT JOIN and coalesce to 0)
-DUP_SQL = (
-    "SELECT m.ts, greatest(m.donation_total - b.base, 0) AS dup "
-    "FROM streamer_sample m JOIN streamer ms USING (twitch_id), ("
-    "  SELECT s.donation_total AS base FROM streamer_sample s JOIN streamer st USING (twitch_id)"
-    f"  WHERE st.login = '{MIRROR_LOGIN}' AND s.ts <= '{MIRROR_SINCE}' ORDER BY s.ts DESC LIMIT 1"
-    f") b WHERE ms.login = '{MIRROR_LOGIN}' AND m.ts > '{MIRROR_SINCE}'"
+# duplicated increment per sample ts (rows only exist from MIRROR_REBASE on; LEFT JOIN and coalesce to 0)
+DUP_DELTA_SQL = (
+    "SELECT ts, CASE WHEN ts = '" + MIRROR_REBASE + "' THEN m ELSE greatest(least(m, dom), 0) END AS dup_delta FROM ("
+    f"  SELECT ts, max(delta) FILTER (WHERE login = '{MIRROR_LOGIN}') AS m,"
+    f"             max(delta) FILTER (WHERE login = '{MIRROR_SOURCE}') AS dom FROM ("
+    "    SELECT s.ts, st.login, s.donation_total - lag(s.donation_total) OVER (PARTITION BY s.twitch_id ORDER BY s.ts) AS delta"
+    f"    FROM streamer_sample s JOIN streamer st USING (twitch_id) WHERE st.login IN ('{MIRROR_LOGIN}', '{MIRROR_SOURCE}')"
+    f"  ) x WHERE ts >= '{MIRROR_REBASE}' GROUP BY ts"
+    ") y WHERE m IS NOT NULL AND dom IS NOT NULL"
 )
-# per-sample delta filter: drop mistermv's gains after MIRROR_SINCE (they are Domingo's, already counted)
-NOT_MIRRORED = (
-    f"NOT (twitch_id = (SELECT twitch_id FROM streamer WHERE login = '{MIRROR_LOGIN}') AND ts > '{MIRROR_SINCE}')"
-)
+# cumulative duplicated amount per sample ts
+DUP_SQL = f"SELECT ts, sum(dup_delta) OVER (ORDER BY ts) AS dup FROM ({DUP_DELTA_SQL}) dd"
 MIRROR_NOTE = (
     "Global total minus the sum of streamer counters. Since 01:08 UTC on Sept 5 mistermv's counter mirrors "
-    "Domingo's (every donation credited to both), so his gains after that are removed from the sum; "
-    "see the \"Duplicated (mistermv)\" tile for the amount removed."
+    "Domingo's (every donation to Domingo credited to both), so the part of his increments that matches "
+    "Domingo's is removed from the sum; see the \"Duplicated (mistermv)\" tile for the amount removed."
 )
 
 
@@ -175,9 +179,10 @@ panels = [
          f"SELECT coalesce(d.dup, 0) FROM snapshot sn LEFT JOIN ({DUP_SQL}) d USING (ts) "
          "WHERE sn.ts = (SELECT max(ts) FROM snapshot)",
          11, w=4, unit="currencyEUR", decimals=2, color="red",
-         description="Amount mistermv's counter gained since 01:08 UTC on Sept 5, when it started mirroring "
-                     "Domingo's. Counted once in the global total, twice in the streamer sum; removed from "
-                     "External donations."),
+         description="Part of mistermv's counter that mirrors Domingo's since 01:08 UTC on Sept 5: the initial "
+                     "jump plus, each minute, the increment matching Domingo's. Counted once in the global "
+                     "total, twice in the streamer sum; removed from External donations. His own donations "
+                     "stay credited to him."),
     stat("Viewers now", "SELECT viewers_total FROM snapshot ORDER BY ts DESC LIMIT 1", 15, w=3, unit="short",
          color="purple"),
     # whole event, not the selected time range
@@ -210,13 +215,13 @@ panels = [
        'WHERE $__timeFilter(sn.ts) GROUP BY sn.ts, sn.donation_total ORDER BY 1',
        0, 23, unit="currencyEUR", description=MIRROR_NOTE),
     ts("External donations per interval (global gain minus streamer gains)",
-       'SELECT $__timeGroupAlias(ts, $__interval), sum(g) - sum(sg) AS "External" FROM ('
+       'SELECT $__timeGroupAlias(ts, $__interval), sum(g) - sum(sg) + coalesce(sum(dd.dup_delta), 0) AS "External" FROM ('
        f'  SELECT ts, {gain_expr("donation_total")} AS g FROM snapshot WHERE $__timeFilter(ts)'
        ') gl JOIN ('
        '  SELECT ts, sum(delta) AS sg FROM ('
-       f'    SELECT ts, twitch_id, {gain_expr("donation_total", "PARTITION BY twitch_id")} AS delta FROM streamer_sample WHERE $__timeFilter(ts)'
-       f'  ) x WHERE {NOT_MIRRORED} GROUP BY ts'
-       ') st USING (ts) WHERE g IS NOT NULL GROUP BY 1 ORDER BY 1',
+       f'    SELECT ts, {gain_expr("donation_total", "PARTITION BY twitch_id")} AS delta FROM streamer_sample WHERE $__timeFilter(ts)'
+       '  ) x GROUP BY ts'
+       f') st USING (ts) LEFT JOIN ({DUP_DELTA_SQL}) dd USING (ts) WHERE g IS NOT NULL GROUP BY 1 ORDER BY 1',
        12, 23, unit="currencyEUR", bars=True, legend=False, min_interval="5m", description=MIRROR_NOTE),
 
     ts("Streamers online per game",
