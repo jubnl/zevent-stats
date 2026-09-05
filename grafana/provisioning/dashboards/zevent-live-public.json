@@ -1,6 +1,6 @@
 {
   "uid": "zevent-live-public",
-  "title": "ZEVENT live (on site)",
+  "title": "ZEVENT live",
   "tags": [
     "zevent"
   ],
@@ -24,6 +24,31 @@
   "templating": {
     "list": [
       {
+        "name": "location",
+        "label": "Location",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "zevent-pg"
+        },
+        "query": "SELECT CASE location WHEN 'LAN' THEN 'On site (LAN)' ELSE 'Remote (online)' END AS __text, location AS __value FROM streamer_v WHERE location IS NOT NULL GROUP BY location ORDER BY location",
+        "definition": "SELECT CASE location WHEN 'LAN' THEN 'On site (LAN)' ELSE 'Remote (online)' END AS __text, location AS __value FROM streamer_v WHERE location IS NOT NULL GROUP BY location ORDER BY location",
+        "multi": true,
+        "includeAll": true,
+        "refresh": 1,
+        "sort": 0,
+        "current": {
+          "selected": true,
+          "text": [
+            "On site (LAN)"
+          ],
+          "value": [
+            "LAN"
+          ]
+        },
+        "allValue": ".*"
+      },
+      {
         "name": "streamer",
         "label": "Streamer",
         "type": "query",
@@ -31,8 +56,8 @@
           "type": "grafana-postgresql-datasource",
           "uid": "zevent-pg"
         },
-        "query": "SELECT display AS __text, twitch_id AS __value FROM streamer_v st WHERE st.location = 'LAN' ORDER BY lower(display)",
-        "definition": "SELECT display AS __text, twitch_id AS __value FROM streamer_v st WHERE st.location = 'LAN' ORDER BY lower(display)",
+        "query": "SELECT display AS __text, twitch_id AS __value FROM streamer_v st WHERE coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY lower(display)",
+        "definition": "SELECT display AS __text, twitch_id AS __value FROM streamer_v st WHERE coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY lower(display)",
         "multi": true,
         "includeAll": true,
         "refresh": 1,
@@ -53,7 +78,7 @@
     {
       "type": "link",
       "title": "Main stats",
-      "url": "/d/zevent-public?kiosk",
+      "url": "/d/zevent-public?kiosk=1",
       "icon": "dashboard",
       "keepTime": true,
       "includeVars": false,
@@ -67,7 +92,7 @@
     {
       "id": 1,
       "type": "stat",
-      "title": "Streamers online (on site)",
+      "title": "Streamers online ($location)",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -85,7 +110,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT count(*) FILTER (WHERE s.online) AS \"Online\", count(*) AS \"Total\" FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND st.location = 'LAN' AND s.ts = (SELECT max(ts) FROM snapshot)",
+          "rawSql": "SELECT count(*) FILTER (WHERE s.online) AS \"Online\", count(*) AS \"Total\" FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' AND s.ts = (SELECT max(ts) FROM snapshot)",
           "format": "table",
           "refId": "A"
         }
@@ -116,7 +141,7 @@
     {
       "id": 2,
       "type": "stat",
-      "title": "Peak streamers online (on site)",
+      "title": "Peak streamers online ($location)",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -134,7 +159,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT max(n) FROM (SELECT count(*) AS n FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND st.location = 'LAN' AND s.online GROUP BY s.ts) x",
+          "rawSql": "SELECT max(n) FROM (SELECT count(*) AS n FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' AND s.online GROUP BY s.ts) x",
           "format": "table",
           "refId": "A"
         }
@@ -166,7 +191,7 @@
     {
       "id": 3,
       "type": "timeseries",
-      "title": "Streamers online over time (on site)",
+      "title": "Streamers online over time ($location)",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -184,7 +209,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT s.ts AS time, count(*) FILTER (WHERE s.online) AS \"Online\" FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND st.location = 'LAN' AND $__timeFilter(s.ts) GROUP BY 1 ORDER BY 1",
+          "rawSql": "SELECT s.ts AS time, count(*) FILTER (WHERE s.online) AS \"Online\" FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' AND $__timeFilter(s.ts) GROUP BY 1 ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }
@@ -236,7 +261,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH s AS (\n  SELECT s.ts, s.twitch_id, st.display, CASE WHEN s.online THEN coalesce(s.game, '(no game)') END AS state\n  FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id)\n  WHERE $__timeFilter(s.ts) AND NOT st.derived AND st.location = 'LAN' AND s.twitch_id IN ($streamer)\n), d AS (\n  SELECT *, lag(state) OVER w AS prev, lead(ts) OVER w AS next,\n         min(ts) FILTER (WHERE state IS NOT NULL) OVER (PARTITION BY twitch_id) AS first_live\n  FROM s WINDOW w AS (PARTITION BY twitch_id ORDER BY ts)\n), r AS (\n  SELECT ts, display, state, first_live FROM d WHERE state IS DISTINCT FROM prev OR next IS NULL\n  UNION ALL\n  SELECT max(ts) + interval '1 minute', display, NULL, min(first_live) FROM d GROUP BY twitch_id, display\n)\nSELECT ts AS time, display AS \"Streamer\", state AS \"State\", first_live\nFROM r ORDER BY first_live NULLS LAST, lower(display), ts",
+          "rawSql": "WITH s AS (\n  SELECT s.ts, s.twitch_id, st.display, CASE WHEN s.online THEN coalesce(s.game, '(no game)') END AS state\n  FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id)\n  WHERE $__timeFilter(s.ts) AND NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' AND s.twitch_id IN ($streamer)\n), d AS (\n  SELECT *, lag(state) OVER w AS prev, lead(ts) OVER w AS next,\n         min(ts) FILTER (WHERE state IS NOT NULL) OVER (PARTITION BY twitch_id) AS first_live\n  FROM s WINDOW w AS (PARTITION BY twitch_id ORDER BY ts)\n), r AS (\n  SELECT ts, display, state, first_live FROM d WHERE state IS DISTINCT FROM prev OR next IS NULL\n  UNION ALL\n  SELECT max(ts) + interval '1 minute', display, NULL, min(first_live) FROM d GROUP BY twitch_id, display\n)\nSELECT ts AS time, display AS \"Streamer\", state AS \"State\", first_live\nFROM r ORDER BY first_live NULLS LAST, lower(display), ts",
           "format": "table",
           "refId": "A"
         }
@@ -310,7 +335,7 @@
     {
       "id": 5,
       "type": "state-timeline",
-      "title": "All streamers (on site)",
+      "title": "All streamers ($location)",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -328,7 +353,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH s AS (\n  SELECT s.ts, s.twitch_id, st.display, CASE WHEN s.online THEN coalesce(s.game, '(no game)') END AS state\n  FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id)\n  WHERE $__timeFilter(s.ts) AND NOT st.derived AND st.location = 'LAN'\n), d AS (\n  SELECT *, lag(state) OVER w AS prev, lead(ts) OVER w AS next,\n         min(ts) FILTER (WHERE state IS NOT NULL) OVER (PARTITION BY twitch_id) AS first_live\n  FROM s WINDOW w AS (PARTITION BY twitch_id ORDER BY ts)\n), r AS (\n  SELECT ts, display, state, first_live FROM d WHERE state IS DISTINCT FROM prev OR next IS NULL\n  UNION ALL\n  SELECT max(ts) + interval '1 minute', display, NULL, min(first_live) FROM d GROUP BY twitch_id, display\n)\nSELECT ts AS time, display AS \"Streamer\", state AS \"State\", first_live\nFROM r ORDER BY first_live NULLS LAST, lower(display), ts",
+          "rawSql": "WITH s AS (\n  SELECT s.ts, s.twitch_id, st.display, CASE WHEN s.online THEN coalesce(s.game, '(no game)') END AS state\n  FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id)\n  WHERE $__timeFilter(s.ts) AND NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$'\n), d AS (\n  SELECT *, lag(state) OVER w AS prev, lead(ts) OVER w AS next,\n         min(ts) FILTER (WHERE state IS NOT NULL) OVER (PARTITION BY twitch_id) AS first_live\n  FROM s WINDOW w AS (PARTITION BY twitch_id ORDER BY ts)\n), r AS (\n  SELECT ts, display, state, first_live FROM d WHERE state IS DISTINCT FROM prev OR next IS NULL\n  UNION ALL\n  SELECT max(ts) + interval '1 minute', display, NULL, min(first_live) FROM d GROUP BY twitch_id, display\n)\nSELECT ts AS time, display AS \"Streamer\", state AS \"State\", first_live\nFROM r ORDER BY first_live NULLS LAST, lower(display), ts",
           "format": "table",
           "refId": "A"
         }

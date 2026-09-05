@@ -77,8 +77,8 @@
   "links": [
     {
       "type": "link",
-      "title": "Live timeline (on site)",
-      "url": "/d/zevent-live-public?kiosk",
+      "title": "Live timeline",
+      "url": "/d/zevent-live-public?kiosk=1",
       "icon": "dashboard",
       "keepTime": true,
       "includeVars": false,

@@ -1,17 +1,21 @@
 http:
   middlewares:
-    # bare host or bare dashboard path (no query) -> kiosk URL of that dashboard.
-    # Dashboards: zevent-public (main stats) and zevent-live-public (live timeline). The optional
-    # "live-" capture selects the dashboard; the bare host has no capture and lands on the main one.
+    # Every request to the dashboards must carry kiosk=1: Grafana only hides its chrome for the exact
+    # value "1", and it rewrites the URL to "kiosk=" (empty) while running, which shows the header,
+    # search, sign-in and share buttons again on reload. Dashboards: zevent-public (main stats) and
+    # zevent-live-public (live timeline). The optional "live-" capture selects the dashboard; the bare
+    # host has no capture and lands on the main one. Go regexp has no lookahead, so "no kiosk in the
+    # query" is spelled out token by token.
+    #
+    # 1. bare host, or dashboard path whose query has no "kiosk" at all -> add kiosk=1
     zevent-public-home:
       redirectRegex:
-        regex: "^https?://zevent\\.jubnl\\.ch(?:/|/d/zevent-(live-)?public(?:/[^?]*)?)?$"
-        replacement: "https://zevent.jubnl.ch/d/zevent-${1}public?kiosk=1"
+        regex: "^https?://zevent\\.jubnl\\.ch(?:/|/d/zevent-(live-)?public(?:/[^?]*)?)?(?:\\?((?:[^k]|k[^i]|ki[^o]|kio[^s]|kios[^k])*(?:k|ki|kio|kios)?))?$"
+        replacement: "https://zevent.jubnl.ch/d/zevent-${1}public?kiosk=1&${2}"
         permanent: false
-    # dashboard path with a query that has no "kiosk" in it -> same query plus kiosk.
-    # Go regexp has no lookahead, so "no kiosk substring" is spelled out token by token.
+    # 2. dashboard path whose query has a "kiosk" param with any value but 1 ("kiosk", "kiosk=", "kiosk=tv") -> kiosk=1
     zevent-force-kiosk:
       redirectRegex:
-        regex: "^(https?://zevent\\.jubnl\\.ch/d/zevent-(?:live-)?public(?:/[^?]*)?)\\?((?:[^k]|k[^i]|ki[^o]|kio[^s]|kios[^k])*(?:k|ki|kio|kios)?)$"
-        replacement: "${1}?kiosk=1&${2}"
+        regex: "^(https?://zevent\\.jubnl\\.ch/d/zevent-(?:live-)?public(?:/[^?]*)?\\?(?:.*&)?)kiosk(?:=(?:[^1&][^&]*|1[^&]+)?)?(&.*)?$"
+        replacement: "${1}kiosk=1${2}"
         permanent: false

@@ -3,7 +3,8 @@
 Both are served by the single anonymous, read-only Grafana instance (fixed time range, 30s refresh):
   provisioning/dashboards/zevent-public.json       ZEVENT: totals, graphs, leaderboards, per-streamer panels,
                                                    with a Location filter (LAN = on site, Online = from home)
-  provisioning/dashboards/zevent-live-public.json  ZEVENT live: one row per on-site streamer, green while live
+  provisioning/dashboards/zevent-live-public.json  ZEVENT live: one row per streamer, green while live, same
+                                                   Location filter defaulting to on-site streamers
 The "-public" uid suffix is kept because the URLs are published (the proxy redirects / to /d/zevent-public).
 """
 import copy
@@ -301,9 +302,9 @@ TIME_RANGE = {"from": "2026-09-04T20:58:40.000Z", "to": "now"}
 
 
 # Button in the controls bar (also shown in kiosk mode) to jump to the other dashboard. The explicit
-# "?kiosk" keeps the chrome hidden after the jump; keepTime carries the selected time range over.
+# "?kiosk=1" keeps the chrome hidden after the jump; keepTime carries the selected time range over.
 def link_to(uid, title):
-    return {"type": "link", "title": title, "url": f"/d/{uid}?kiosk", "icon": "dashboard",
+    return {"type": "link", "title": title, "url": f"/d/{uid}?kiosk=1", "icon": "dashboard",
             "keepTime": True, "includeVars": False, "targetBlank": False, "asDropdown": False, "tags": [],
             "tooltip": ""}
 
@@ -329,7 +330,7 @@ def dashboard_base(uid, title, variables, panels_, links=()):
 
 
 dashboard = dashboard_base("zevent-public", "ZEVENT", [LOCATION_VAR, streamer_var(LOC)], panels,
-                           links=[link_to("zevent-live-public", "Live timeline (on site)")])
+                           links=[link_to("zevent-live-public", "Live timeline")])
 
 # One row per streamer, a green bar while they are live, the game on hover. The query returns only
 # the samples where a streamer's state changed (plus the last sample of each, so the final bar reaches
@@ -417,10 +418,11 @@ def live_panels(loc, scope):
     ]
 
 
-# Only the streamers physically at the event (location LAN); no location filter.
-LAN = "st.location = 'LAN'"
-live_dashboard = dashboard_base("zevent-live-public", "ZEVENT live (on site)", [streamer_var(LAN)],
-                                live_panels(LAN, "on site"), links=[link_to("zevent-public", "Main stats")])
+# Same Location filter as the main dashboard, but "On site (LAN)" is selected by default.
+LOCATION_VAR_LAN = copy.deepcopy(LOCATION_VAR)
+LOCATION_VAR_LAN["current"] = {"selected": True, "text": ["On site (LAN)"], "value": ["LAN"]}
+live_dashboard = dashboard_base("zevent-live-public", "ZEVENT live", [LOCATION_VAR_LAN, streamer_var(LOC)],
+                                live_panels(LOC, "$location"), links=[link_to("zevent-public", "Main stats")])
 
 here = Path(__file__).parent
 
