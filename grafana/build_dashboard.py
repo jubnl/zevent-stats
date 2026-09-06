@@ -369,14 +369,25 @@ RANGE_GAIN = "(array_agg(donation_total ORDER BY ts DESC))[1] - (array_agg(donat
 EVENT_END = "2026-09-07 00:00:00+00"
 
 
+# One-minute jumps of the event total at or above this are one-off payments (the shop: 3.7M in one minute on
+# 2026-09-05 20:04 UTC), not a pace that will continue; the projections leave those minutes out. Organic peak
+# minutes stay well below (p99.9 of 2,300 minutes was 68K; two evening minutes of ~100K are the borderline).
+BIG_DONATION = 300000
+
+
 def projection_sql(hours):
-    """Current total plus the pace of the last `hours` hours held until EVENT_END."""
+    """Current total plus the pace of the last `hours` hours held until EVENT_END. The pace is the sum of the
+    per-minute gains of the window, minutes with a jump of BIG_DONATION or more left out, over the time those
+    minutes cover (gaps capped at 5 minutes, like everywhere else)."""
     return (
         "WITH cur AS (SELECT ts, donation_total FROM snapshot ORDER BY ts DESC LIMIT 1), "
-        f"past AS (SELECT sn.ts, sn.donation_total FROM snapshot sn, cur WHERE sn.ts <= cur.ts - interval '{hours} hours' "
-        "         ORDER BY sn.ts DESC LIMIT 1) "
-        "SELECT cur.donation_total + (cur.donation_total - past.donation_total) / extract(epoch FROM cur.ts - past.ts) "
-        f"* greatest(extract(epoch FROM '{EVENT_END}'::timestamptz - cur.ts), 0) FROM cur, past"
+        "d AS (SELECT ts, donation_total - lag(donation_total) OVER (ORDER BY ts) AS delta, "
+        "             extract(epoch FROM ts - lag(ts) OVER (ORDER BY ts)) AS dt "
+        f"      FROM snapshot WHERE ts >= (SELECT ts FROM cur) - interval '{hours} hours' - interval '5 minutes'), "
+        "pace AS (SELECT sum(d.delta) / nullif(sum(d.dt), 0) AS per_s FROM d, cur "
+        f"         WHERE d.ts > cur.ts - interval '{hours} hours' AND d.delta IS NOT NULL AND d.delta < {BIG_DONATION} AND d.dt <= 300) "
+        "SELECT cur.donation_total + coalesce(pace.per_s, 0) "
+        f"* greatest(extract(epoch FROM '{EVENT_END}'::timestamptz - cur.ts), 0) FROM cur, pace"
     )
 
 
@@ -501,10 +512,10 @@ def insights_panels():
              description="Au rythme des dons des 10 dernières minutes."),
         stat("Total projeté à la fin (rythme 1 h)", projection_sql(1), 0, w=6, y=4, unit="currencyEUR", decimals=2,
              color="green", description="Total actuel plus le rythme de la dernière heure tenu jusqu'à la fin de "
-                                        "l'événement (lundi 02h00, heure de Paris)."),
+                                        "l'événement (lundi 02h00, heure de Paris). Les minutes avec un versement de 100 K€ ou plus (boutique, gros dons ponctuels) ne comptent pas dans le rythme."),
         stat("Total projeté à la fin (rythme 6 h)", projection_sql(6), 6, w=6, y=4, unit="currencyEUR", decimals=2,
              color="green", description="Total actuel plus le rythme des 6 dernières heures tenu jusqu'à la fin de "
-                                        "l'événement (lundi 02h00, heure de Paris)."),
+                                        "l'événement (lundi 02h00, heure de Paris). Les minutes avec un versement de 100 K€ ou plus (boutique, gros dons ponctuels) ne comptent pas dans le rythme."),
         stat("Dernière heure, et hier à la même heure",
              "WITH cur AS (SELECT max(ts) AS at FROM snapshot) "
              f"SELECT (SELECT {RANGE_GAIN} FROM snapshot WHERE ts > cur.at - interval '1 hour') AS \"Dernière heure\", "

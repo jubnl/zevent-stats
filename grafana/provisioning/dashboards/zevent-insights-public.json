@@ -320,7 +320,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH cur AS (SELECT ts, donation_total FROM snapshot ORDER BY ts DESC LIMIT 1), past AS (SELECT sn.ts, sn.donation_total FROM snapshot sn, cur WHERE sn.ts <= cur.ts - interval '1 hours'          ORDER BY sn.ts DESC LIMIT 1) SELECT cur.donation_total + (cur.donation_total - past.donation_total) / extract(epoch FROM cur.ts - past.ts) * greatest(extract(epoch FROM '2026-09-07 00:00:00+00'::timestamptz - cur.ts), 0) FROM cur, past",
+          "rawSql": "WITH cur AS (SELECT ts, donation_total FROM snapshot ORDER BY ts DESC LIMIT 1), d AS (SELECT ts, donation_total - lag(donation_total) OVER (ORDER BY ts) AS delta,              extract(epoch FROM ts - lag(ts) OVER (ORDER BY ts)) AS dt       FROM snapshot WHERE ts >= (SELECT ts FROM cur) - interval '1 hours' - interval '5 minutes'), pace AS (SELECT sum(d.delta) / nullif(sum(d.dt), 0) AS per_s FROM d, cur          WHERE d.ts > cur.ts - interval '1 hours' AND d.delta IS NOT NULL AND d.delta < 300000 AND d.dt <= 300) SELECT cur.donation_total + coalesce(pace.per_s, 0) * greatest(extract(epoch FROM '2026-09-07 00:00:00+00'::timestamptz - cur.ts), 0) FROM cur, pace",
           "format": "table",
           "refId": "A"
         }
@@ -349,7 +349,7 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Total actuel plus le rythme de la derni\u00e8re heure tenu jusqu'\u00e0 la fin de l'\u00e9v\u00e9nement (lundi 02h00, heure de Paris)."
+      "description": "Total actuel plus le rythme de la derni\u00e8re heure tenu jusqu'\u00e0 la fin de l'\u00e9v\u00e9nement (lundi 02h00, heure de Paris). Les minutes avec un versement de 100 K\u20ac ou plus (boutique, gros dons ponctuels) ne comptent pas dans le rythme."
     },
     {
       "id": 6,
@@ -372,7 +372,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH cur AS (SELECT ts, donation_total FROM snapshot ORDER BY ts DESC LIMIT 1), past AS (SELECT sn.ts, sn.donation_total FROM snapshot sn, cur WHERE sn.ts <= cur.ts - interval '6 hours'          ORDER BY sn.ts DESC LIMIT 1) SELECT cur.donation_total + (cur.donation_total - past.donation_total) / extract(epoch FROM cur.ts - past.ts) * greatest(extract(epoch FROM '2026-09-07 00:00:00+00'::timestamptz - cur.ts), 0) FROM cur, past",
+          "rawSql": "WITH cur AS (SELECT ts, donation_total FROM snapshot ORDER BY ts DESC LIMIT 1), d AS (SELECT ts, donation_total - lag(donation_total) OVER (ORDER BY ts) AS delta,              extract(epoch FROM ts - lag(ts) OVER (ORDER BY ts)) AS dt       FROM snapshot WHERE ts >= (SELECT ts FROM cur) - interval '6 hours' - interval '5 minutes'), pace AS (SELECT sum(d.delta) / nullif(sum(d.dt), 0) AS per_s FROM d, cur          WHERE d.ts > cur.ts - interval '6 hours' AND d.delta IS NOT NULL AND d.delta < 300000 AND d.dt <= 300) SELECT cur.donation_total + coalesce(pace.per_s, 0) * greatest(extract(epoch FROM '2026-09-07 00:00:00+00'::timestamptz - cur.ts), 0) FROM cur, pace",
           "format": "table",
           "refId": "A"
         }
@@ -401,7 +401,7 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Total actuel plus le rythme des 6 derni\u00e8res heures tenu jusqu'\u00e0 la fin de l'\u00e9v\u00e9nement (lundi 02h00, heure de Paris)."
+      "description": "Total actuel plus le rythme des 6 derni\u00e8res heures tenu jusqu'\u00e0 la fin de l'\u00e9v\u00e9nement (lundi 02h00, heure de Paris). Les minutes avec un versement de 100 K\u20ac ou plus (boutique, gros dons ponctuels) ne comptent pas dans le rythme."
     },
     {
       "id": 7,
