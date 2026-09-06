@@ -349,7 +349,7 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Total actuel plus le rythme de la derni\u00e8re heure tenu jusqu'\u00e0 la fin de l'\u00e9v\u00e9nement (lundi 02h00, heure de Paris). Les minutes avec un versement de 100 K\u20ac ou plus (boutique, gros dons ponctuels) ne comptent pas dans le rythme."
+      "description": "Total actuel plus le rythme de la derni\u00e8re heure tenu jusqu'\u00e0 la fin de l'\u00e9v\u00e9nement (lundi 02h00, heure de Paris). Les minutes avec un versement de 300 K\u20ac ou plus (boutique, gros dons ponctuels) ne comptent pas dans le rythme."
     },
     {
       "id": 6,
@@ -401,7 +401,7 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Total actuel plus le rythme des 6 derni\u00e8res heures tenu jusqu'\u00e0 la fin de l'\u00e9v\u00e9nement (lundi 02h00, heure de Paris). Les minutes avec un versement de 100 K\u20ac ou plus (boutique, gros dons ponctuels) ne comptent pas dans le rythme."
+      "description": "Total actuel plus le rythme des 6 derni\u00e8res heures tenu jusqu'\u00e0 la fin de l'\u00e9v\u00e9nement (lundi 02h00, heure de Paris). Les minutes avec un versement de 300 K\u20ac ou plus (boutique, gros dons ponctuels) ne comptent pas dans le rythme."
     },
     {
       "id": 7,

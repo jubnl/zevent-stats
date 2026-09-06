@@ -512,10 +512,12 @@ def insights_panels():
              description="Au rythme des dons des 10 dernières minutes."),
         stat("Total projeté à la fin (rythme 1 h)", projection_sql(1), 0, w=6, y=4, unit="currencyEUR", decimals=2,
              color="green", description="Total actuel plus le rythme de la dernière heure tenu jusqu'à la fin de "
-                                        "l'événement (lundi 02h00, heure de Paris). Les minutes avec un versement de 100 K€ ou plus (boutique, gros dons ponctuels) ne comptent pas dans le rythme."),
+                                        "l'événement (lundi 02h00, heure de Paris). Les minutes avec un versement de "
+                                        f"{BIG_DONATION // 1000} K€ ou plus (boutique, gros dons ponctuels) ne comptent pas dans le rythme."),
         stat("Total projeté à la fin (rythme 6 h)", projection_sql(6), 6, w=6, y=4, unit="currencyEUR", decimals=2,
              color="green", description="Total actuel plus le rythme des 6 dernières heures tenu jusqu'à la fin de "
-                                        "l'événement (lundi 02h00, heure de Paris). Les minutes avec un versement de 100 K€ ou plus (boutique, gros dons ponctuels) ne comptent pas dans le rythme."),
+                                        "l'événement (lundi 02h00, heure de Paris). Les minutes avec un versement de "
+                                        f"{BIG_DONATION // 1000} K€ ou plus (boutique, gros dons ponctuels) ne comptent pas dans le rythme."),
         stat("Dernière heure, et hier à la même heure",
              "WITH cur AS (SELECT max(ts) AS at FROM snapshot) "
              f"SELECT (SELECT {RANGE_GAIN} FROM snapshot WHERE ts > cur.at - interval '1 hour') AS \"Dernière heure\", "
@@ -869,6 +871,7 @@ HERO_VARS = {
     "hero_display": "SELECT st.display FROM cur JOIN streamer_v st USING (twitch_id)",
     "hero_login": "SELECT st.login FROM cur JOIN streamer_v st USING (twitch_id)",
     "hero_avatar": "SELECT coalesce(st.profile_url, '') FROM cur JOIN streamer_v st USING (twitch_id)",
+    "hero_donation": "SELECT 'https://zevent.fr/don/' || st.display FROM cur JOIN streamer_v st USING (twitch_id)",
     "hero_location": "SELECT CASE st.location WHEN 'LAN' THEN 'Sur place au ZEVENT' WHEN 'Online' THEN "
                      "'En stream à distance' ELSE '' END FROM cur JOIN streamer_v st USING (twitch_id)",
     "hero_status": "SELECT CASE WHEN cur.online THEN 'LIVE' ELSE 'HORS LIGNE' END FROM cur",
@@ -894,6 +897,7 @@ HERO_HTML = """
     </div>
     <div style="font-size:17px;opacity:.75;margin-top:6px">
       <a href="https://twitch.tv/${hero_login}" target="_blank" rel="noopener" style="color:inherit">twitch.tv/${hero_login}</a>
+      &middot; <a href="${hero_donation}" target="_blank" rel="noopener" style="color:#3fb950;font-weight:600">Faire un don &#10084;</a>
       &middot; ${hero_location}
     </div>
     <div style="font-size:22px;margin-top:14px;font-weight:700">
