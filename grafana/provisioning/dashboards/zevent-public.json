@@ -17,7 +17,7 @@
   },
   "time": {
     "from": "2026-09-03T17:01:00.000Z",
-    "to": "now"
+    "to": "2026-09-06T23:12:00.000Z"
   },
   "schemaVersion": 39,
   "version": 1,
@@ -205,7 +205,7 @@
     {
       "id": 2,
       "type": "stat",
-      "title": "Dons, derni\u00e8re heure",
+      "title": "Total final de l'\u00e9v\u00e9nement",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -223,7 +223,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT max(donation_total) - min(donation_total) FROM snapshot WHERE ts > now() - interval '1 hour'",
+          "rawSql": "SELECT donation_total FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz ORDER BY ts DESC LIMIT 1",
           "format": "table",
           "refId": "A"
         }
@@ -251,7 +251,8 @@
         "graphMode": "none",
         "textMode": "value",
         "justifyMode": "center"
-      }
+      },
+      "description": "Total de l'\u00e9v\u00e9nement au dernier relev\u00e9 avant la fin des dons, le lundi 7 septembre \u00e0 01h11 (heure de Paris)."
     },
     {
       "id": 3,

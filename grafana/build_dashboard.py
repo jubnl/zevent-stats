@@ -437,9 +437,13 @@ def main_panels():
     return [
         stat("Total des dons", "SELECT donation_total FROM snapshot ORDER BY ts DESC LIMIT 1", 0, w=6,
              unit="currencyEUR", decimals=2),
-        stat("Dons, dernière heure",
-             "SELECT max(donation_total) - min(donation_total) FROM snapshot WHERE ts > now() - interval '1 hour'", 6,
-             w=6, unit="currencyEUR", decimals=2, color="orange"),
+        # replaced "Dons, dernière heure" once the event ended: the total at the end of the fixed time range,
+        # frozen whatever the API does afterwards
+        stat("Total final de l'événement",
+             f"SELECT donation_total FROM snapshot WHERE ts <= '{TIME_RANGE['to']}'::timestamptz ORDER BY ts DESC LIMIT 1", 6,
+             w=6, unit="currencyEUR", decimals=2, color="orange",
+             description="Total de l'événement au dernier relevé avant la fin des dons, le lundi 7 septembre à 01h11 "
+                         "(heure de Paris)."),
         stat("Dons sans streamer",
              "SELECT sn.donation_total - sum(s.donation_total) FROM snapshot sn JOIN streamer_sample_v s USING (ts) "
              "WHERE NOT s.derived AND sn.ts = (SELECT max(ts) FROM snapshot) GROUP BY sn.donation_total",
@@ -1191,9 +1195,10 @@ LOCATION_VAR = query_var("location", "Lieu", LOC_QUERY, all_value=".*")
 LOCATION_VAR_LAN = copy.deepcopy(LOCATION_VAR)
 LOCATION_VAR_LAN["current"] = {"selected": True, "text": ["Sur place (LAN)"], "value": ["LAN"]}
 
-# First datapoint until now; grows as data arrives. Data before 2026-09-04 20:58 UTC is backfilled from
-# third-party sources (raw-backfill/, see zevent_tracker/external.py); its first tick is 17:01 UTC.
-TIME_RANGE = {"from": "2026-09-03T17:01:00.000Z", "to": "now"}
+# First datapoint to the end of the event. Data before 2026-09-04 20:58 UTC is backfilled from third-party
+# sources (raw-backfill/, see zevent_tracker/external.py); its first tick is 17:01 UTC. The event total last
+# moved at 23:11 UTC on 2026-09-06 (01:11 Paris time), so the range ends one minute after that.
+TIME_RANGE = {"from": "2026-09-03T17:01:00.000Z", "to": "2026-09-06T23:12:00.000Z"}
 
 DASHBOARDS = [  # (uid, button title)
     ("zevent-public", "Stats principales"),
