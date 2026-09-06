@@ -329,6 +329,10 @@ def barchart(title, sql, x, y, w=12, h=9, x_field="", unit=None, description=Non
     overrides = [{"matcher": {"id": "byName", "options": name},
                   "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": color}}]}
                  for name, color in (series_colors or {}).items()]
+    if x_field:
+        # the panel-wide unit would also format numeric-looking labels of the x field ("2016" -> "€2.02k")
+        overrides.append({"matcher": {"id": "byName", "options": x_field},
+                          "properties": [{"id": "unit", "value": "string"}]})
     return panel(
         "barchart", title, sql, x, y, w, h, fmt="table",
         fieldConfig={"defaults": d, "overrides": overrides},
