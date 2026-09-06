@@ -379,16 +379,16 @@ def insights_panels():
     reset_ids()
     rate = (
         "WITH cur AS (SELECT ts, donation_total FROM snapshot ORDER BY ts DESC LIMIT 1), "
-        "past AS (SELECT sn.donation_total FROM snapshot sn, cur WHERE sn.ts <= cur.ts - interval '30 minutes' "
+        "past AS (SELECT sn.donation_total FROM snapshot sn, cur WHERE sn.ts <= cur.ts - interval '10 minutes' "
         "         ORDER BY sn.ts DESC LIMIT 1) "
     )
     by_loc = ("FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) "
               "WHERE $__timeFilter(s.ts) AND NOT st.derived AND " + LOC)
     return [
-        stat("Donation rate, last 30 min",
-             rate + "SELECT (cur.donation_total - past.donation_total) / 30 FROM cur, past",
+        stat("Donation rate, last 10 min",
+             rate + "SELECT (cur.donation_total - past.donation_total) / 10 FROM cur, past",
              0, w=6, unit="currencyEUR", decimals=0, color="orange",
-             description="Event total gained per minute over the last 30 minutes of data."),
+             description="Event total gained per minute over the last 10 minutes of data."),
         stat("Average rate since the start",
              "SELECT (max(donation_total) - min(donation_total)) / greatest(extract(epoch FROM max(ts) - min(ts)) / 60, 1) "
              "FROM snapshot",
@@ -399,9 +399,9 @@ def insights_panels():
         stat("Next million in",
              rate + "SELECT CASE WHEN cur.donation_total > past.donation_total THEN "
                     "((floor(cur.donation_total / 1e6) + 1) * 1e6 - cur.donation_total) "
-                    "/ ((cur.donation_total - past.donation_total) / 1800.0) END FROM cur, past",
+                    "/ ((cur.donation_total - past.donation_total) / 600.0) END FROM cur, past",
              18, w=6, unit="dtdurations", decimals=0, color="green",
-             description="At the donation rate of the last 30 minutes."),
+             description="At the donation rate of the last 10 minutes."),
 
         row("Milestones and moments", 4),
         table("Millions, one by one",

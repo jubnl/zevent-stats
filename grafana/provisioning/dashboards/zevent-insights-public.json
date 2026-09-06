@@ -92,7 +92,7 @@
     {
       "id": 1,
       "type": "stat",
-      "title": "Donation rate, last 30 min",
+      "title": "Donation rate, last 10 min",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -110,7 +110,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH cur AS (SELECT ts, donation_total FROM snapshot ORDER BY ts DESC LIMIT 1), past AS (SELECT sn.donation_total FROM snapshot sn, cur WHERE sn.ts <= cur.ts - interval '30 minutes'          ORDER BY sn.ts DESC LIMIT 1) SELECT (cur.donation_total - past.donation_total) / 30 FROM cur, past",
+          "rawSql": "WITH cur AS (SELECT ts, donation_total FROM snapshot ORDER BY ts DESC LIMIT 1), past AS (SELECT sn.donation_total FROM snapshot sn, cur WHERE sn.ts <= cur.ts - interval '10 minutes'          ORDER BY sn.ts DESC LIMIT 1) SELECT (cur.donation_total - past.donation_total) / 10 FROM cur, past",
           "format": "table",
           "refId": "A"
         }
@@ -139,7 +139,7 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Event total gained per minute over the last 30 minutes of data."
+      "description": "Event total gained per minute over the last 10 minutes of data."
     },
     {
       "id": 2,
@@ -265,7 +265,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH cur AS (SELECT ts, donation_total FROM snapshot ORDER BY ts DESC LIMIT 1), past AS (SELECT sn.donation_total FROM snapshot sn, cur WHERE sn.ts <= cur.ts - interval '30 minutes'          ORDER BY sn.ts DESC LIMIT 1) SELECT CASE WHEN cur.donation_total > past.donation_total THEN ((floor(cur.donation_total / 1e6) + 1) * 1e6 - cur.donation_total) / ((cur.donation_total - past.donation_total) / 1800.0) END FROM cur, past",
+          "rawSql": "WITH cur AS (SELECT ts, donation_total FROM snapshot ORDER BY ts DESC LIMIT 1), past AS (SELECT sn.donation_total FROM snapshot sn, cur WHERE sn.ts <= cur.ts - interval '10 minutes'          ORDER BY sn.ts DESC LIMIT 1) SELECT CASE WHEN cur.donation_total > past.donation_total THEN ((floor(cur.donation_total / 1e6) + 1) * 1e6 - cur.donation_total) / ((cur.donation_total - past.donation_total) / 600.0) END FROM cur, past",
           "format": "table",
           "refId": "A"
         }
@@ -294,7 +294,7 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "At the donation rate of the last 30 minutes."
+      "description": "At the donation rate of the last 10 minutes."
     },
     {
       "id": 5,
