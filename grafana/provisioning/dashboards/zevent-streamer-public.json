@@ -201,7 +201,7 @@
         "x": 0,
         "y": 0,
         "w": 9,
-        "h": 8
+        "h": 12
       },
       "options": {
         "mode": "html",
@@ -523,9 +523,9 @@
         "uid": "zevent-pg"
       },
       "gridPos": {
-        "x": 0,
+        "x": 9,
         "y": 8,
-        "w": 6,
+        "w": 5,
         "h": 4
       },
       "targets": [
@@ -575,9 +575,9 @@
         "uid": "zevent-pg"
       },
       "gridPos": {
-        "x": 6,
+        "x": 14,
         "y": 8,
-        "w": 6,
+        "w": 5,
         "h": 4
       },
       "targets": [
@@ -621,15 +621,67 @@
     {
       "id": 10,
       "type": "stat",
+      "title": "Viewer-hours",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 19,
+        "y": 8,
+        "w": 5,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT coalesce(sum(x.viewers * least(x.gap_s, 300)), 0) / 3600.0 FROM streamer_sample_v x JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(x.ts) AND NOT st.derived AND x.twitch_id IN (${streamer:sqlstring}) AND true AND x.gap_s IS NOT NULL",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "purple"
+          },
+          "unit": "short",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "description": "Audience size over time, in viewer-hours: the viewer count of the streamers matching the Location and Streamer filters, summed minute by minute over the selected range (each sample counts the time since the previous one, capped at 5 minutes so gaps in the data do not count). One viewer watching for an hour is one viewer-hour; 1,000 viewers for 2 hours are 2,000 viewer-hours."
+    },
+    {
+      "id": 11,
+      "type": "stat",
       "title": "In this state since",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
       },
       "gridPos": {
-        "x": 12,
-        "y": 8,
-        "w": 6,
+        "x": 0,
+        "y": 12,
+        "w": 12,
         "h": 4
       },
       "targets": [
@@ -671,7 +723,7 @@
       "description": "How long the featured streamer has been in the current live/offline state with the current game."
     },
     {
-      "id": 11,
+      "id": 12,
       "type": "stat",
       "title": "Donations per viewer-hour",
       "datasource": {
@@ -679,9 +731,9 @@
         "uid": "zevent-pg"
       },
       "gridPos": {
-        "x": 18,
-        "y": 8,
-        "w": 6,
+        "x": 12,
+        "y": 12,
+        "w": 12,
         "h": 4
       },
       "targets": [
@@ -723,7 +775,7 @@
       "description": "How much the community gives relative to its size: donations gained by the streamers matching the Location and Streamer filters over the selected range, divided by their viewer-hours (the viewer count summed minute by minute over the same range, in hours). One viewer watching for an hour is one viewer-hour, so 5 \u20ac means 5 \u20ac raised for every hour watched by one viewer. Donations not tied to a streamer (tickets, shop, anonymous) are not included."
     },
     {
-      "id": 12,
+      "id": 13,
       "type": "timeseries",
       "title": "Donations over time",
       "datasource": {
@@ -732,7 +784,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 12,
+        "y": 16,
         "w": 12,
         "h": 9
       },
@@ -783,7 +835,7 @@
       }
     },
     {
-      "id": 13,
+      "id": 14,
       "type": "timeseries",
       "title": "Viewers over time",
       "datasource": {
@@ -792,7 +844,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 12,
+        "y": 16,
         "w": 12,
         "h": 9
       },
@@ -843,7 +895,7 @@
       }
     },
     {
-      "id": 14,
+      "id": 15,
       "type": "timeseries",
       "title": "Donations gained per interval",
       "datasource": {
@@ -852,7 +904,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 21,
+        "y": 25,
         "w": 12,
         "h": 9
       },
@@ -909,7 +961,7 @@
       "interval": "5m"
     },
     {
-      "id": 15,
+      "id": 16,
       "type": "timeseries",
       "title": "Rank in the donation leaderboard over time",
       "datasource": {
@@ -918,7 +970,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 21,
+        "y": 25,
         "w": 12,
         "h": 9
       },
@@ -970,7 +1022,7 @@
       "description": "1 is the top; lower is better."
     },
     {
-      "id": 16,
+      "id": 17,
       "type": "state-timeline",
       "title": "Games played",
       "datasource": {
@@ -979,7 +1031,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 30,
+        "y": 34,
         "w": 24,
         "h": 8
       },
