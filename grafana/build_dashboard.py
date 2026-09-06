@@ -517,8 +517,7 @@ def insights_panels():
 
 # ---------------------------------------------------------------------------------------------------
 # Hero header of the streamer dashboard: an HTML text panel fed by hidden query variables that follow the
-# Streamer filter (chained variables re-run when $streamer changes, and on every refresh). With several
-# streamers selected the hero shows the one with the largest counter.
+# Streamer filter (chained variables re-run when $streamer changes, and on every refresh).
 HERO_CUR = ("WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers FROM streamer_sample_v s "
             "WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.twitch_id IN ($streamer) AND NOT s.derived "
             "ORDER BY s.donation_total DESC LIMIT 1) ")
@@ -531,8 +530,6 @@ HERO_VARS = {
     "hero_status": "SELECT CASE WHEN cur.online THEN 'LIVE' ELSE 'OFFLINE' END FROM cur",
     "hero_color": "SELECT CASE WHEN cur.online THEN '#3fb950' ELSE '#8b949e' END FROM cur",
     "hero_game": "SELECT CASE WHEN cur.online THEN coalesce(cur.game, '') ELSE '' END FROM cur",
-    "hero_others": "SELECT CASE WHEN count(*) > 1 THEN '+ ' || (count(*) - 1) || ' other selected' ELSE '' END "
-                   "FROM streamer_v st WHERE st.twitch_id IN ($streamer) AND NOT st.derived",
 }
 
 
@@ -559,7 +556,6 @@ HERO_HTML = """
       <span style="color:${hero_color}">&#9679; ${hero_status}</span>
       <span style="font-weight:500;opacity:.9;margin-left:8px">${hero_game}</span>
     </div>
-    <div style="font-size:14px;opacity:.6;margin-top:10px">${hero_others}</div>
   </div>
 </div>
 """
@@ -692,14 +688,15 @@ def streamer_var(where):
                      f"SELECT display AS __text, twitch_id AS __value FROM streamer_v st WHERE {where} ORDER BY lower(display)")
 
 
-# Streamer filter of the streamer dashboard: no "All", ordered by donations so the first (default) entry
-# is the current leader; the derived mistermv row is not a streamer and is left out.
+# Streamer filter of the streamer dashboard: one streamer at a time, no "All", ordered by donations so
+# the first (default) entry is the current leader; the derived mistermv row is not a streamer and is
+# left out. A single-select value is inserted unquoted, so the queries use ${streamer:sqlstring}.
 STREAMER_VAR_DETAIL = query_var(
     "streamer", "Streamer",
     "SELECT st.display AS __text, st.twitch_id AS __value FROM streamer_v st "
     "JOIN streamer_sample_v s USING (twitch_id) WHERE s.ts = (SELECT max(ts) FROM snapshot) AND NOT st.derived "
     "ORDER BY s.donation_total DESC",
-    include_all=False,
+    multi=False, include_all=False,
 )
 
 LOCATION_VAR = query_var("location", "Location", LOC_QUERY, all_value=".*")
@@ -848,5 +845,18 @@ write(dashboard_base("zevent-public", "ZEVENT", [LOCATION_VAR, streamer_var(LOC)
 write(dashboard_base("zevent-live-public", "ZEVENT live", [LOCATION_VAR_LAN, streamer_var(LOC)],
                      live_panels(LOC, "$location")))
 write(dashboard_base("zevent-insights-public", "ZEVENT insights", [LOCATION_VAR], insights_panels()))
-write(dashboard_base("zevent-streamer-public", "ZEVENT streamer",
-                     [STREAMER_VAR_DETAIL] + [hidden_var(n, q) for n, q in HERO_VARS.items()], streamer_panels()))
+def single_select(dash, name):
+    """Rewrite IN ($name) as IN (${name:sqlstring}) in every query: a single-select value is inserted unquoted."""
+    a, b = f"IN (${name})", f"IN (${{{name}:sqlstring}})"
+    for pnl in dash["panels"]:
+        for t in pnl.get("targets", []):
+            t["rawSql"] = t["rawSql"].replace(a, b)
+    for v in dash["templating"]["list"]:
+        if v["name"] != name:
+            v["query"] = v["query"].replace(a, b)
+    return dash
+
+
+write(single_select(dashboard_base("zevent-streamer-public", "ZEVENT streamer",
+                                   [STREAMER_VAR_DETAIL] + [hidden_var(n, q) for n, q in HERO_VARS.items()],
+                                   streamer_panels()), "streamer"))

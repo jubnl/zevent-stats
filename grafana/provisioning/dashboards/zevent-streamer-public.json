@@ -33,7 +33,7 @@
         },
         "query": "SELECT st.display AS __text, st.twitch_id AS __value FROM streamer_v st JOIN streamer_sample_v s USING (twitch_id) WHERE s.ts = (SELECT max(ts) FROM snapshot) AND NOT st.derived ORDER BY s.donation_total DESC",
         "definition": "SELECT st.display AS __text, st.twitch_id AS __value FROM streamer_v st JOIN streamer_sample_v s USING (twitch_id) WHERE s.ts = (SELECT max(ts) FROM snapshot) AND NOT st.derived ORDER BY s.donation_total DESC",
-        "multi": true,
+        "multi": false,
         "includeAll": false,
         "refresh": 1,
         "sort": 0,
@@ -46,7 +46,7 @@
           "type": "grafana-postgresql-datasource",
           "uid": "zevent-pg"
         },
-        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.twitch_id IN ($streamer) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT st.display FROM cur JOIN streamer_v st USING (twitch_id)",
+        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.twitch_id IN (${streamer:sqlstring}) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT st.display FROM cur JOIN streamer_v st USING (twitch_id)",
         "definition": "hero_display",
         "hide": 2,
         "refresh": 2,
@@ -62,7 +62,7 @@
           "type": "grafana-postgresql-datasource",
           "uid": "zevent-pg"
         },
-        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.twitch_id IN ($streamer) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT st.login FROM cur JOIN streamer_v st USING (twitch_id)",
+        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.twitch_id IN (${streamer:sqlstring}) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT st.login FROM cur JOIN streamer_v st USING (twitch_id)",
         "definition": "hero_login",
         "hide": 2,
         "refresh": 2,
@@ -78,7 +78,7 @@
           "type": "grafana-postgresql-datasource",
           "uid": "zevent-pg"
         },
-        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.twitch_id IN ($streamer) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT coalesce(st.profile_url, '') FROM cur JOIN streamer_v st USING (twitch_id)",
+        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.twitch_id IN (${streamer:sqlstring}) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT coalesce(st.profile_url, '') FROM cur JOIN streamer_v st USING (twitch_id)",
         "definition": "hero_avatar",
         "hide": 2,
         "refresh": 2,
@@ -94,7 +94,7 @@
           "type": "grafana-postgresql-datasource",
           "uid": "zevent-pg"
         },
-        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.twitch_id IN ($streamer) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT CASE st.location WHEN 'LAN' THEN 'On site at the ZEVENT' WHEN 'Online' THEN 'Streaming from home' ELSE '' END FROM cur JOIN streamer_v st USING (twitch_id)",
+        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.twitch_id IN (${streamer:sqlstring}) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT CASE st.location WHEN 'LAN' THEN 'On site at the ZEVENT' WHEN 'Online' THEN 'Streaming from home' ELSE '' END FROM cur JOIN streamer_v st USING (twitch_id)",
         "definition": "hero_location",
         "hide": 2,
         "refresh": 2,
@@ -110,7 +110,7 @@
           "type": "grafana-postgresql-datasource",
           "uid": "zevent-pg"
         },
-        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.twitch_id IN ($streamer) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT CASE WHEN cur.online THEN 'LIVE' ELSE 'OFFLINE' END FROM cur",
+        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.twitch_id IN (${streamer:sqlstring}) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT CASE WHEN cur.online THEN 'LIVE' ELSE 'OFFLINE' END FROM cur",
         "definition": "hero_status",
         "hide": 2,
         "refresh": 2,
@@ -126,7 +126,7 @@
           "type": "grafana-postgresql-datasource",
           "uid": "zevent-pg"
         },
-        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.twitch_id IN ($streamer) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT CASE WHEN cur.online THEN '#3fb950' ELSE '#8b949e' END FROM cur",
+        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.twitch_id IN (${streamer:sqlstring}) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT CASE WHEN cur.online THEN '#3fb950' ELSE '#8b949e' END FROM cur",
         "definition": "hero_color",
         "hide": 2,
         "refresh": 2,
@@ -142,24 +142,8 @@
           "type": "grafana-postgresql-datasource",
           "uid": "zevent-pg"
         },
-        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.twitch_id IN ($streamer) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT CASE WHEN cur.online THEN coalesce(cur.game, '') ELSE '' END FROM cur",
+        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.twitch_id IN (${streamer:sqlstring}) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT CASE WHEN cur.online THEN coalesce(cur.game, '') ELSE '' END FROM cur",
         "definition": "hero_game",
-        "hide": 2,
-        "refresh": 2,
-        "multi": false,
-        "includeAll": false,
-        "sort": 0,
-        "current": {}
-      },
-      {
-        "name": "hero_others",
-        "type": "query",
-        "datasource": {
-          "type": "grafana-postgresql-datasource",
-          "uid": "zevent-pg"
-        },
-        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.twitch_id IN ($streamer) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT CASE WHEN count(*) > 1 THEN '+ ' || (count(*) - 1) || ' other selected' ELSE '' END FROM streamer_v st WHERE st.twitch_id IN ($streamer) AND NOT st.derived",
-        "definition": "hero_others",
         "hide": 2,
         "refresh": 2,
         "multi": false,
@@ -221,7 +205,7 @@
       },
       "options": {
         "mode": "html",
-        "content": "<div style=\"display:flex;align-items:center;gap:28px;height:100%;padding:8px 12px\">\n  <a href=\"https://twitch.tv/${hero_login}\" target=\"_blank\" rel=\"noopener\">\n    <img src=\"${hero_avatar}\" alt=\"${hero_display}\"\n         style=\"width:190px;height:190px;border-radius:50%;object-fit:cover;border:5px solid ${hero_color};display:block\">\n  </a>\n  <div style=\"min-width:0\">\n    <div style=\"font-size:44px;font-weight:800;line-height:1.05;letter-spacing:-0.5px\">\n      <a href=\"https://twitch.tv/${hero_login}\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit;text-decoration:none\">${hero_display}</a>\n    </div>\n    <div style=\"font-size:17px;opacity:.75;margin-top:6px\">\n      <a href=\"https://twitch.tv/${hero_login}\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit\">twitch.tv/${hero_login}</a>\n      &middot; ${hero_location}\n    </div>\n    <div style=\"font-size:22px;margin-top:14px;font-weight:700\">\n      <span style=\"color:${hero_color}\">&#9679; ${hero_status}</span>\n      <span style=\"font-weight:500;opacity:.9;margin-left:8px\">${hero_game}</span>\n    </div>\n    <div style=\"font-size:14px;opacity:.6;margin-top:10px\">${hero_others}</div>\n  </div>\n</div>"
+        "content": "<div style=\"display:flex;align-items:center;gap:28px;height:100%;padding:8px 12px\">\n  <a href=\"https://twitch.tv/${hero_login}\" target=\"_blank\" rel=\"noopener\">\n    <img src=\"${hero_avatar}\" alt=\"${hero_display}\"\n         style=\"width:190px;height:190px;border-radius:50%;object-fit:cover;border:5px solid ${hero_color};display:block\">\n  </a>\n  <div style=\"min-width:0\">\n    <div style=\"font-size:44px;font-weight:800;line-height:1.05;letter-spacing:-0.5px\">\n      <a href=\"https://twitch.tv/${hero_login}\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit;text-decoration:none\">${hero_display}</a>\n    </div>\n    <div style=\"font-size:17px;opacity:.75;margin-top:6px\">\n      <a href=\"https://twitch.tv/${hero_login}\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit\">twitch.tv/${hero_login}</a>\n      &middot; ${hero_location}\n    </div>\n    <div style=\"font-size:22px;margin-top:14px;font-weight:700\">\n      <span style=\"color:${hero_color}\">&#9679; ${hero_status}</span>\n      <span style=\"font-weight:500;opacity:.9;margin-left:8px\">${hero_game}</span>\n    </div>\n  </div>\n</div>"
       }
     },
     {
@@ -245,7 +229,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT coalesce(sum(s.donation_total), 0) FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND s.twitch_id IN ($streamer) AND s.ts = (SELECT max(ts) FROM snapshot)",
+          "rawSql": "SELECT coalesce(sum(s.donation_total), 0) FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND s.twitch_id IN (${streamer:sqlstring}) AND s.ts = (SELECT max(ts) FROM snapshot)",
           "format": "table",
           "refId": "A"
         }
@@ -296,7 +280,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT min(rank) FROM streamer_sample_v WHERE ts = (SELECT max(ts) FROM snapshot) AND NOT derived AND twitch_id IN ($streamer)",
+          "rawSql": "SELECT min(rank) FROM streamer_sample_v WHERE ts = (SELECT max(ts) FROM snapshot) AND NOT derived AND twitch_id IN (${streamer:sqlstring})",
           "format": "table",
           "refId": "A"
         }
@@ -347,7 +331,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT coalesce(sum(s.viewers), 0) FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND s.twitch_id IN ($streamer) AND s.ts = (SELECT max(ts) FROM snapshot)",
+          "rawSql": "SELECT coalesce(sum(s.viewers), 0) FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND s.twitch_id IN (${streamer:sqlstring}) AND s.ts = (SELECT max(ts) FROM snapshot)",
           "format": "table",
           "refId": "A"
         }
@@ -397,7 +381,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH g AS (  SELECT s.twitch_id, sum(s.gain) AS gained FROM streamer_sample_v s  WHERE $__timeFilter(s.ts) AND s.gain IS NOT NULL GROUP BY s.twitch_id) SELECT coalesce(sum(g.gained), 0) FROM g JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND g.twitch_id IN ($streamer)",
+          "rawSql": "WITH g AS (  SELECT s.twitch_id, sum(s.gain) AS gained FROM streamer_sample_v s  WHERE $__timeFilter(s.ts) AND s.gain IS NOT NULL GROUP BY s.twitch_id) SELECT coalesce(sum(g.gained), 0) FROM g JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND g.twitch_id IN (${streamer:sqlstring})",
           "format": "table",
           "refId": "A"
         }
@@ -448,7 +432,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT coalesce(sum(least(s.gap_s, 300)) FILTER (WHERE s.online), 0) / 3600.0 FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND true AND $__timeFilter(s.ts) AND s.twitch_id IN ($streamer) AND s.gap_s IS NOT NULL",
+          "rawSql": "SELECT coalesce(sum(least(s.gap_s, 300)) FILTER (WHERE s.online), 0) / 3600.0 FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND true AND $__timeFilter(s.ts) AND s.twitch_id IN (${streamer:sqlstring}) AND s.gap_s IS NOT NULL",
           "format": "table",
           "refId": "A"
         }
@@ -500,7 +484,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT coalesce(max(v), 0) FROM (SELECT s.ts, sum(s.viewers) AS v FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND s.twitch_id IN ($streamer) AND $__timeFilter(s.ts) GROUP BY s.ts) x",
+          "rawSql": "SELECT coalesce(max(v), 0) FROM (SELECT s.ts, sum(s.viewers) AS v FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND s.twitch_id IN (${streamer:sqlstring}) AND $__timeFilter(s.ts) GROUP BY s.ts) x",
           "format": "table",
           "refId": "A"
         }
@@ -551,7 +535,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT coalesce(sum(s.donation_total), 0) / nullif((SELECT donation_total FROM snapshot ORDER BY ts DESC LIMIT 1), 0) FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND s.twitch_id IN ($streamer) AND s.ts = (SELECT max(ts) FROM snapshot)",
+          "rawSql": "SELECT coalesce(sum(s.donation_total), 0) / nullif((SELECT donation_total FROM snapshot ORDER BY ts DESC LIMIT 1), 0) FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND s.twitch_id IN (${streamer:sqlstring}) AND s.ts = (SELECT max(ts) FROM snapshot)",
           "format": "table",
           "refId": "A"
         }
@@ -603,7 +587,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT sum(x.viewers * least(x.gap_s, 300)) / nullif(sum(least(x.gap_s, 300)) FILTER (WHERE x.online), 0) FROM streamer_sample_v x WHERE $__timeFilter(x.ts) AND x.twitch_id IN ($streamer) AND x.gap_s IS NOT NULL",
+          "rawSql": "SELECT sum(x.viewers * least(x.gap_s, 300)) / nullif(sum(least(x.gap_s, 300)) FILTER (WHERE x.online), 0) FROM streamer_sample_v x WHERE $__timeFilter(x.ts) AND x.twitch_id IN (${streamer:sqlstring}) AND x.gap_s IS NOT NULL",
           "format": "table",
           "refId": "A"
         }
@@ -655,7 +639,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH cur AS (  SELECT twitch_id, ts, online, game FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot) AND twitch_id IN ($streamer) AND NOT derived  ORDER BY donation_total DESC LIMIT 1), changed AS (  SELECT max(s.ts) AS at FROM cur c JOIN streamer_sample_v s USING (twitch_id)  WHERE s.online <> c.online OR s.game IS DISTINCT FROM c.game) SELECT extract(epoch FROM c.ts - coalesce(ch.at, (SELECT first_seen FROM streamer_v st WHERE st.twitch_id = c.twitch_id))) FROM cur c, changed ch",
+          "rawSql": "WITH cur AS (  SELECT twitch_id, ts, online, game FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot) AND twitch_id IN (${streamer:sqlstring}) AND NOT derived  ORDER BY donation_total DESC LIMIT 1), changed AS (  SELECT max(s.ts) AS at FROM cur c JOIN streamer_sample_v s USING (twitch_id)  WHERE s.online <> c.online OR s.game IS DISTINCT FROM c.game) SELECT extract(epoch FROM c.ts - coalesce(ch.at, (SELECT first_seen FROM streamer_v st WHERE st.twitch_id = c.twitch_id))) FROM cur c, changed ch",
           "format": "table",
           "refId": "A"
         }
@@ -707,7 +691,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH g AS (  SELECT s.twitch_id, sum(s.gain) AS gained FROM streamer_sample_v s  WHERE $__timeFilter(s.ts) AND s.gain IS NOT NULL GROUP BY s.twitch_id) , v AS (  SELECT sum(x.viewers * least(x.gap_s, 300)) / 3600.0 AS viewer_hours  FROM streamer_sample_v x JOIN streamer_v st USING (twitch_id)  WHERE $__timeFilter(x.ts) AND NOT st.derived AND x.twitch_id IN ($streamer) AND true AND x.gap_s IS NOT NULL) SELECT (SELECT coalesce(sum(g.gained), 0) FROM g JOIN streamer_v st USING (twitch_id)         WHERE NOT st.derived AND g.twitch_id IN ($streamer) AND true) / nullif(v.viewer_hours, 0) FROM v",
+          "rawSql": "WITH g AS (  SELECT s.twitch_id, sum(s.gain) AS gained FROM streamer_sample_v s  WHERE $__timeFilter(s.ts) AND s.gain IS NOT NULL GROUP BY s.twitch_id) , v AS (  SELECT sum(x.viewers * least(x.gap_s, 300)) / 3600.0 AS viewer_hours  FROM streamer_sample_v x JOIN streamer_v st USING (twitch_id)  WHERE $__timeFilter(x.ts) AND NOT st.derived AND x.twitch_id IN (${streamer:sqlstring}) AND true AND x.gap_s IS NOT NULL) SELECT (SELECT coalesce(sum(g.gained), 0) FROM g JOIN streamer_v st USING (twitch_id)         WHERE NOT st.derived AND g.twitch_id IN (${streamer:sqlstring}) AND true) / nullif(v.viewer_hours, 0) FROM v",
           "format": "table",
           "refId": "A"
         }
@@ -759,7 +743,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT s.ts AS time, st.display AS metric, st.login AS login, s.donation_total AS value FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND s.twitch_id IN ($streamer) AND $__timeFilter(s.ts) ORDER BY 1",
+          "rawSql": "SELECT s.ts AS time, st.display AS metric, st.login AS login, s.donation_total AS value FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND s.twitch_id IN (${streamer:sqlstring}) AND $__timeFilter(s.ts) ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }
@@ -819,7 +803,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT s.ts AS time, st.display AS metric, st.login AS login, s.viewers AS value FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND s.twitch_id IN ($streamer) AND $__timeFilter(s.ts) ORDER BY 1",
+          "rawSql": "SELECT s.ts AS time, st.display AS metric, st.login AS login, s.viewers AS value FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND s.twitch_id IN (${streamer:sqlstring}) AND $__timeFilter(s.ts) ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }
@@ -879,7 +863,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroupAlias(d.ts, $__interval), st.display AS metric, st.login AS login, sum(d.gain) AS value FROM streamer_sample_v d JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(d.ts) AND d.twitch_id IN ($streamer) AND d.gain IS NOT NULL GROUP BY 1, 2, 3 ORDER BY 1",
+          "rawSql": "SELECT $__timeGroupAlias(d.ts, $__interval), st.display AS metric, st.login AS login, sum(d.gain) AS value FROM streamer_sample_v d JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(d.ts) AND d.twitch_id IN (${streamer:sqlstring}) AND d.gain IS NOT NULL GROUP BY 1, 2, 3 ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }
@@ -945,7 +929,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT r.ts AS time, st.display AS metric, st.login AS login, r.rank AS value FROM streamer_sample_v r JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(r.ts) AND r.twitch_id IN ($streamer) AND r.rank IS NOT NULL ORDER BY 1",
+          "rawSql": "SELECT r.ts AS time, st.display AS metric, st.login AS login, r.rank AS value FROM streamer_sample_v r JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(r.ts) AND r.twitch_id IN (${streamer:sqlstring}) AND r.rank IS NOT NULL ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }
@@ -1006,7 +990,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH s AS (\n  SELECT s.ts, s.twitch_id, st.display, CASE WHEN s.online THEN coalesce(s.game, '(no game)') END AS state\n  FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id)\n  WHERE $__timeFilter(s.ts) AND NOT st.derived AND true AND s.twitch_id IN ($streamer)\n), d AS (\n  SELECT *, lag(state) OVER w AS prev, lead(ts) OVER w AS next,\n         min(ts) FILTER (WHERE state IS NOT NULL) OVER (PARTITION BY twitch_id) AS first_live\n  FROM s WINDOW w AS (PARTITION BY twitch_id ORDER BY ts)\n), r AS (\n  SELECT ts, display, state, first_live FROM d WHERE state IS DISTINCT FROM prev OR next IS NULL\n  UNION ALL\n  SELECT max(ts) + interval '1 minute', display, NULL, min(first_live) FROM d GROUP BY twitch_id, display\n)\nSELECT ts AS time, display AS \"Streamer\", state AS \"State\", first_live\nFROM r ORDER BY first_live NULLS LAST, lower(display), ts",
+          "rawSql": "WITH s AS (\n  SELECT s.ts, s.twitch_id, st.display, CASE WHEN s.online THEN coalesce(s.game, '(no game)') END AS state\n  FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id)\n  WHERE $__timeFilter(s.ts) AND NOT st.derived AND true AND s.twitch_id IN (${streamer:sqlstring})\n), d AS (\n  SELECT *, lag(state) OVER w AS prev, lead(ts) OVER w AS next,\n         min(ts) FILTER (WHERE state IS NOT NULL) OVER (PARTITION BY twitch_id) AS first_live\n  FROM s WINDOW w AS (PARTITION BY twitch_id ORDER BY ts)\n), r AS (\n  SELECT ts, display, state, first_live FROM d WHERE state IS DISTINCT FROM prev OR next IS NULL\n  UNION ALL\n  SELECT max(ts) + interval '1 minute', display, NULL, min(first_live) FROM d GROUP BY twitch_id, display\n)\nSELECT ts AS time, display AS \"Streamer\", state AS \"State\", first_live\nFROM r ORDER BY first_live NULLS LAST, lower(display), ts",
           "format": "table",
           "refId": "A"
         }
