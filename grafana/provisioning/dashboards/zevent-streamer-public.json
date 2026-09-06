@@ -94,7 +94,7 @@
           "type": "grafana-postgresql-datasource",
           "uid": "zevent-pg"
         },
-        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.twitch_id IN (${streamer:sqlstring}) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT CASE st.location WHEN 'LAN' THEN 'On site at the ZEVENT' WHEN 'Online' THEN 'Streaming from home' ELSE '' END FROM cur JOIN streamer_v st USING (twitch_id)",
+        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.twitch_id IN (${streamer:sqlstring}) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT CASE st.location WHEN 'LAN' THEN 'Sur place au ZEVENT' WHEN 'Online' THEN 'En stream \u00e0 distance' ELSE '' END FROM cur JOIN streamer_v st USING (twitch_id)",
         "definition": "hero_location",
         "hide": 2,
         "refresh": 2,
@@ -110,7 +110,7 @@
           "type": "grafana-postgresql-datasource",
           "uid": "zevent-pg"
         },
-        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.twitch_id IN (${streamer:sqlstring}) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT CASE WHEN cur.online THEN 'LIVE' ELSE 'OFFLINE' END FROM cur",
+        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.twitch_id IN (${streamer:sqlstring}) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT CASE WHEN cur.online THEN 'LIVE' ELSE 'HORS LIGNE' END FROM cur",
         "definition": "hero_status",
         "hide": 2,
         "refresh": 2,
@@ -156,7 +156,7 @@
   "links": [
     {
       "type": "link",
-      "title": "Main stats",
+      "title": "Stats principales",
       "url": "/d/zevent-public?kiosk=1",
       "icon": "dashboard",
       "keepTime": true,
@@ -168,7 +168,7 @@
     },
     {
       "type": "link",
-      "title": "Live timeline",
+      "title": "Timeline live",
       "url": "/d/zevent-live-public?kiosk=1",
       "icon": "dashboard",
       "keepTime": true,
@@ -180,7 +180,7 @@
     },
     {
       "type": "link",
-      "title": "Insights",
+      "title": "Analyses",
       "url": "/d/zevent-insights-public?kiosk=1",
       "icon": "dashboard",
       "keepTime": true,
@@ -211,7 +211,7 @@
     {
       "id": 2,
       "type": "stat",
-      "title": "Donations",
+      "title": "Dons",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -291,7 +291,7 @@
             "mode": "fixed",
             "fixedColor": "yellow"
           },
-          "unit": "short"
+          "unit": "sishort"
         },
         "overrides": []
       },
@@ -308,12 +308,12 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Position in the donation leaderboard at the latest sample (best of the selected streamers)."
+      "description": "Position au classement des dons au dernier relev\u00e9 (la meilleure des streamers s\u00e9lectionn\u00e9s)."
     },
     {
       "id": 4,
       "type": "stat",
-      "title": "Viewers now",
+      "title": "Viewers actuels",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -342,7 +342,7 @@
             "mode": "fixed",
             "fixedColor": "purple"
           },
-          "unit": "short"
+          "unit": "sishort"
         },
         "overrides": []
       },
@@ -363,7 +363,7 @@
     {
       "id": 5,
       "type": "stat",
-      "title": "Gained in selected range",
+      "title": "Gagn\u00e9 sur la p\u00e9riode",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -414,7 +414,7 @@
     {
       "id": 6,
       "type": "stat",
-      "title": "Hours streamed",
+      "title": "Heures de stream",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -461,12 +461,12 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Total time live, summed over the streamers matching the Location and Streamer filters, within the selected time range. Each live sample counts the minute since the previous sample (capped at 5 minutes, so gaps in the data do not count)."
+      "description": "Temps total en live, additionn\u00e9 sur les streamers correspondant aux filtres Lieu et Streamer, dans la plage de temps s\u00e9lectionn\u00e9e. Chaque relev\u00e9 en live compte la minute \u00e9coul\u00e9e depuis le relev\u00e9 pr\u00e9c\u00e9dent (plafonn\u00e9e \u00e0 5 minutes, pour que les trous dans les donn\u00e9es ne comptent pas)."
     },
     {
       "id": 7,
       "type": "stat",
-      "title": "Peak viewers",
+      "title": "Pic de viewers",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -495,7 +495,7 @@
             "mode": "fixed",
             "fixedColor": "purple"
           },
-          "unit": "short"
+          "unit": "sishort"
         },
         "overrides": []
       },
@@ -512,12 +512,12 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Highest combined viewer count in the selected range."
+      "description": "Plus grand nombre de viewers cumul\u00e9s sur la p\u00e9riode s\u00e9lectionn\u00e9e."
     },
     {
       "id": 8,
       "type": "stat",
-      "title": "Share of the event total",
+      "title": "Part du total de l'\u00e9v\u00e9nement",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -564,12 +564,12 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Selected streamers' counters divided by the event total, at the latest sample."
+      "description": "Compteurs des streamers s\u00e9lectionn\u00e9s divis\u00e9s par le total de l'\u00e9v\u00e9nement, au dernier relev\u00e9."
     },
     {
       "id": 9,
       "type": "stat",
-      "title": "Average viewers while live",
+      "title": "Viewers moyens en live",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -598,7 +598,7 @@
             "mode": "fixed",
             "fixedColor": "purple"
           },
-          "unit": "short",
+          "unit": "sishort",
           "decimals": 0
         },
         "overrides": []
@@ -616,12 +616,12 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Viewer-hours divided by hours live, over the selected range and streamers."
+      "description": "Viewer-heures divis\u00e9es par les heures en live, sur la p\u00e9riode et les streamers s\u00e9lectionn\u00e9s."
     },
     {
       "id": 10,
       "type": "stat",
-      "title": "Viewer-hours",
+      "title": "Viewer-heures",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -650,7 +650,7 @@
             "mode": "fixed",
             "fixedColor": "purple"
           },
-          "unit": "short",
+          "unit": "sishort",
           "decimals": 1
         },
         "overrides": []
@@ -668,12 +668,12 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Audience size over time, in viewer-hours: the viewer count of the streamers matching the Location and Streamer filters, summed minute by minute over the selected range (each sample counts the time since the previous one, capped at 5 minutes so gaps in the data do not count). One viewer watching for an hour is one viewer-hour; 1,000 viewers for 2 hours are 2,000 viewer-hours."
+      "description": "La taille de l'audience dans le temps, en viewer-heures : le nombre de viewers des streamers correspondant aux filtres Lieu et Streamer, additionn\u00e9 minute par minute sur la p\u00e9riode s\u00e9lectionn\u00e9e (chaque relev\u00e9 compte le temps \u00e9coul\u00e9 depuis le pr\u00e9c\u00e9dent, plafonn\u00e9 \u00e0 5 minutes pour que les trous dans les donn\u00e9es ne comptent pas). Un viewer qui regarde pendant une heure vaut une viewer-heure ; 1 000 viewers pendant 2 heures font 2 000 viewer-heures."
     },
     {
       "id": 11,
       "type": "stat",
-      "title": "In this state since",
+      "title": "Dans cet \u00e9tat depuis",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -702,7 +702,7 @@
             "mode": "fixed",
             "fixedColor": "orange"
           },
-          "unit": "dtdurations",
+          "unit": "dtdhms",
           "decimals": 0
         },
         "overrides": []
@@ -720,12 +720,12 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "How long the featured streamer has been in the current live/offline state with the current game."
+      "description": "Depuis combien de temps le streamer affich\u00e9 est dans son \u00e9tat actuel (live ou hors ligne) avec le jeu actuel."
     },
     {
       "id": 12,
       "type": "stat",
-      "title": "Donations per viewer-hour",
+      "title": "Dons par viewer-heure",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -772,12 +772,12 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "How much the community gives relative to its size: donations gained by the streamers matching the Location and Streamer filters over the selected range, divided by their viewer-hours (the viewer count summed minute by minute over the same range, in hours). One viewer watching for an hour is one viewer-hour, so 5 \u20ac means 5 \u20ac raised for every hour watched by one viewer. Donations not tied to a streamer (tickets, shop, anonymous) are not included."
+      "description": "Ce que la communaut\u00e9 donne par rapport \u00e0 sa taille : les dons gagn\u00e9s par les streamers correspondant aux filtres Lieu et Streamer sur la p\u00e9riode s\u00e9lectionn\u00e9e, divis\u00e9s par leurs viewer-heures (le nombre de viewers additionn\u00e9 minute par minute sur la m\u00eame p\u00e9riode, en heures). Un viewer qui regarde pendant une heure vaut une viewer-heure : 5 \u20ac signifie 5 \u20ac r\u00e9colt\u00e9s pour chaque heure regard\u00e9e par un viewer. Les dons sans streamer (billets, boutique, anonymes) ne sont pas compt\u00e9s."
     },
     {
       "id": 13,
       "type": "timeseries",
-      "title": "Donations over time",
+      "title": "Dons au fil du temps",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -813,7 +813,7 @@
           "displayName": "${__field.labels.metric}",
           "links": [
             {
-              "title": "Open on Twitch",
+              "title": "Ouvrir sur Twitch",
               "url": "https://twitch.tv/${__field.labels.login}",
               "targetBlank": true
             }
@@ -837,7 +837,7 @@
     {
       "id": 14,
       "type": "timeseries",
-      "title": "Viewers over time",
+      "title": "Viewers au fil du temps",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -869,11 +869,11 @@
             "pointSize": 4,
             "spanNulls": true
           },
-          "unit": "short",
+          "unit": "sishort",
           "displayName": "${__field.labels.metric}",
           "links": [
             {
-              "title": "Open on Twitch",
+              "title": "Ouvrir sur Twitch",
               "url": "https://twitch.tv/${__field.labels.login}",
               "targetBlank": true
             }
@@ -897,7 +897,7 @@
     {
       "id": 15,
       "type": "timeseries",
-      "title": "Donations gained per interval",
+      "title": "Dons gagn\u00e9s par intervalle",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -938,7 +938,7 @@
           "displayName": "${__field.labels.metric}",
           "links": [
             {
-              "title": "Open on Twitch",
+              "title": "Ouvrir sur Twitch",
               "url": "https://twitch.tv/${__field.labels.login}",
               "targetBlank": true
             }
@@ -963,7 +963,7 @@
     {
       "id": 16,
       "type": "timeseries",
-      "title": "Rank in the donation leaderboard over time",
+      "title": "Rank au classement des dons au fil du temps",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -995,11 +995,11 @@
             "pointSize": 4,
             "spanNulls": true
           },
-          "unit": "short",
+          "unit": "sishort",
           "displayName": "${__field.labels.metric}",
           "links": [
             {
-              "title": "Open on Twitch",
+              "title": "Ouvrir sur Twitch",
               "url": "https://twitch.tv/${__field.labels.login}",
               "targetBlank": true
             }
@@ -1019,12 +1019,12 @@
           "sort": "desc"
         }
       },
-      "description": "1 is the top; lower is better."
+      "description": "1 est la premi\u00e8re place ; plus c'est bas, mieux c'est."
     },
     {
       "id": 17,
       "type": "state-timeline",
-      "title": "Games played",
+      "title": "Jeux jou\u00e9s",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -1042,7 +1042,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH s AS (\n  SELECT s.ts, s.twitch_id, st.display, CASE WHEN s.online THEN coalesce(s.game, '(no game)') END AS state\n  FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id)\n  WHERE $__timeFilter(s.ts) AND NOT st.derived AND true AND s.twitch_id IN (${streamer:sqlstring})\n), d AS (\n  SELECT *, lag(state) OVER w AS prev, lead(ts) OVER w AS next,\n         min(ts) FILTER (WHERE state IS NOT NULL) OVER (PARTITION BY twitch_id) AS first_live\n  FROM s WINDOW w AS (PARTITION BY twitch_id ORDER BY ts)\n), r AS (\n  SELECT ts, display, state, first_live FROM d WHERE state IS DISTINCT FROM prev OR next IS NULL\n  UNION ALL\n  SELECT max(ts) + interval '1 minute', display, NULL, min(first_live) FROM d GROUP BY twitch_id, display\n)\nSELECT ts AS time, display AS \"Streamer\", state AS \"State\", first_live\nFROM r ORDER BY first_live NULLS LAST, lower(display), ts",
+          "rawSql": "WITH s AS (\n  SELECT s.ts, s.twitch_id, st.display, CASE WHEN s.online THEN coalesce(s.game, '(sans jeu)') END AS state\n  FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id)\n  WHERE $__timeFilter(s.ts) AND NOT st.derived AND true AND s.twitch_id IN (${streamer:sqlstring})\n), d AS (\n  SELECT *, lag(state) OVER w AS prev, lead(ts) OVER w AS next,\n         min(ts) FILTER (WHERE state IS NOT NULL) OVER (PARTITION BY twitch_id) AS first_live\n  FROM s WINDOW w AS (PARTITION BY twitch_id ORDER BY ts)\n), r AS (\n  SELECT ts, display, state, first_live FROM d WHERE state IS DISTINCT FROM prev OR next IS NULL\n  UNION ALL\n  SELECT max(ts) + interval '1 minute', display, NULL, min(first_live) FROM d GROUP BY twitch_id, display\n)\nSELECT ts AS time, display AS \"Streamer\", state AS \"\u00c9tat\", first_live\nFROM r ORDER BY first_live NULLS LAST, lower(display), ts",
           "format": "table",
           "refId": "A"
         }
@@ -1100,7 +1100,7 @@
           }
         }
       ],
-      "description": "What each selected streamer was playing while live; gaps are offline time."
+      "description": "Ce que chaque streamer s\u00e9lectionn\u00e9 jouait en live ; les trous sont du temps hors ligne."
     }
   ]
 }

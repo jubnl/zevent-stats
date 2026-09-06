@@ -12,7 +12,7 @@
 -- by 261K (Domingo's total as of ~00:47 UTC) while the global total moved 1.7K, and since then every
 -- donation to Domingo is credited to mistermv as well. The global total counts those once.
 -- These views split mistermv into two rows, "mistermv" (his own donations) and a derived
--- "mistermv (private counter)" (the mirrored part), so leaderboards show both and the derived row can
+-- "mistermv (compteur privé)" (the mirrored part), so leaderboards show both and the derived row can
 -- be excluded from sums that are compared to the global total.
 --
 -- Since 2026-09-06 the split is no longer computed here: the collector stores the mirrored amount on
@@ -38,7 +38,7 @@ SELECT 'mistermv'::text                         AS login,
        'domingo'::text                          AS source_login,
        '2026-09-05 01:08:00+00'::timestamptz    AS rebase_ts,     -- first sample with the mirrored counter
        'mistermv-private'::text                 AS derived_id,    -- twitch_id of the derived row
-       'mistermv (private counter)'::text       AS derived_display;
+       'dons spéciaux du vieux monsieur'::text        AS derived_display;
 
 -- streamer plus the derived row. `derived` marks rows that are not API entities.
 -- `location` is 'LAN' (on site) or 'Online' (from home).

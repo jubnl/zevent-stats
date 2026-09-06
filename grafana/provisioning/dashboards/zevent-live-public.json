@@ -25,14 +25,14 @@
     "list": [
       {
         "name": "location",
-        "label": "Location",
+        "label": "Lieu",
         "type": "query",
         "datasource": {
           "type": "grafana-postgresql-datasource",
           "uid": "zevent-pg"
         },
-        "query": "SELECT CASE location WHEN 'LAN' THEN 'On site (LAN)' ELSE 'Remote (online)' END AS __text, location AS __value FROM streamer_v WHERE location IS NOT NULL GROUP BY location ORDER BY location",
-        "definition": "SELECT CASE location WHEN 'LAN' THEN 'On site (LAN)' ELSE 'Remote (online)' END AS __text, location AS __value FROM streamer_v WHERE location IS NOT NULL GROUP BY location ORDER BY location",
+        "query": "SELECT CASE location WHEN 'LAN' THEN 'Sur place (LAN)' ELSE '\u00c0 distance (online)' END AS __text, location AS __value FROM streamer_v WHERE location IS NOT NULL GROUP BY location ORDER BY location",
+        "definition": "SELECT CASE location WHEN 'LAN' THEN 'Sur place (LAN)' ELSE '\u00c0 distance (online)' END AS __text, location AS __value FROM streamer_v WHERE location IS NOT NULL GROUP BY location ORDER BY location",
         "multi": true,
         "includeAll": true,
         "refresh": 1,
@@ -40,7 +40,7 @@
         "current": {
           "selected": true,
           "text": [
-            "On site (LAN)"
+            "Sur place (LAN)"
           ],
           "value": [
             "LAN"
@@ -77,7 +77,7 @@
   "links": [
     {
       "type": "link",
-      "title": "Main stats",
+      "title": "Stats principales",
       "url": "/d/zevent-public?kiosk=1",
       "icon": "dashboard",
       "keepTime": true,
@@ -89,7 +89,7 @@
     },
     {
       "type": "link",
-      "title": "Insights",
+      "title": "Analyses",
       "url": "/d/zevent-insights-public?kiosk=1",
       "icon": "dashboard",
       "keepTime": true,
@@ -116,7 +116,7 @@
     {
       "id": 1,
       "type": "stat",
-      "title": "Streamers online ($location)",
+      "title": "Streamers en live ($location)",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -134,7 +134,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT count(*) FILTER (WHERE s.online) AS \"Online\", count(*) AS \"Total\" FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' AND s.ts = (SELECT max(ts) FROM snapshot)",
+          "rawSql": "SELECT count(*) FILTER (WHERE s.online) AS \"En live\", count(*) AS \"Total\" FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' AND s.ts = (SELECT max(ts) FROM snapshot)",
           "format": "table",
           "refId": "A"
         }
@@ -165,7 +165,7 @@
     {
       "id": 2,
       "type": "stat",
-      "title": "Peak streamers online ($location)",
+      "title": "Pic de streamers en live ($location)",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -194,7 +194,7 @@
             "mode": "fixed",
             "fixedColor": "blue"
           },
-          "unit": "short"
+          "unit": "sishort"
         },
         "overrides": []
       },
@@ -215,7 +215,7 @@
     {
       "id": 3,
       "type": "stat",
-      "title": "Hours streamed",
+      "title": "Heures de stream",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -262,12 +262,12 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Total time live, summed over the streamers matching the Location and Streamer filters, within the selected time range. Each live sample counts the minute since the previous sample (capped at 5 minutes, so gaps in the data do not count)."
+      "description": "Temps total en live, additionn\u00e9 sur les streamers correspondant aux filtres Lieu et Streamer, dans la plage de temps s\u00e9lectionn\u00e9e. Chaque relev\u00e9 en live compte la minute \u00e9coul\u00e9e depuis le relev\u00e9 pr\u00e9c\u00e9dent (plafonn\u00e9e \u00e0 5 minutes, pour que les trous dans les donn\u00e9es ne comptent pas)."
     },
     {
       "id": 4,
       "type": "timeseries",
-      "title": "Streamers online over time ($location)",
+      "title": "Streamers en live au fil du temps ($location)",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -285,7 +285,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT s.ts AS time, count(*) FILTER (WHERE s.online) AS \"Online\" FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' AND $__timeFilter(s.ts) GROUP BY 1 ORDER BY 1",
+          "rawSql": "SELECT s.ts AS time, count(*) FILTER (WHERE s.online) AS \"En live\" FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' AND $__timeFilter(s.ts) GROUP BY 1 ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }
@@ -299,7 +299,7 @@
             "pointSize": 4,
             "spanNulls": true
           },
-          "unit": "short"
+          "unit": "sishort"
         },
         "overrides": []
       },
@@ -337,7 +337,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH s AS (\n  SELECT s.ts, s.twitch_id, st.display, CASE WHEN s.online THEN coalesce(s.game, '(no game)') END AS state\n  FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id)\n  WHERE $__timeFilter(s.ts) AND NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' AND s.twitch_id IN ($streamer)\n), d AS (\n  SELECT *, lag(state) OVER w AS prev, lead(ts) OVER w AS next,\n         min(ts) FILTER (WHERE state IS NOT NULL) OVER (PARTITION BY twitch_id) AS first_live\n  FROM s WINDOW w AS (PARTITION BY twitch_id ORDER BY ts)\n), r AS (\n  SELECT ts, display, state, first_live FROM d WHERE state IS DISTINCT FROM prev OR next IS NULL\n  UNION ALL\n  SELECT max(ts) + interval '1 minute', display, NULL, min(first_live) FROM d GROUP BY twitch_id, display\n)\nSELECT ts AS time, display AS \"Streamer\", state AS \"State\", first_live\nFROM r ORDER BY first_live NULLS LAST, lower(display), ts",
+          "rawSql": "WITH s AS (\n  SELECT s.ts, s.twitch_id, st.display, CASE WHEN s.online THEN coalesce(s.game, '(sans jeu)') END AS state\n  FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id)\n  WHERE $__timeFilter(s.ts) AND NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' AND s.twitch_id IN ($streamer)\n), d AS (\n  SELECT *, lag(state) OVER w AS prev, lead(ts) OVER w AS next,\n         min(ts) FILTER (WHERE state IS NOT NULL) OVER (PARTITION BY twitch_id) AS first_live\n  FROM s WINDOW w AS (PARTITION BY twitch_id ORDER BY ts)\n), r AS (\n  SELECT ts, display, state, first_live FROM d WHERE state IS DISTINCT FROM prev OR next IS NULL\n  UNION ALL\n  SELECT max(ts) + interval '1 minute', display, NULL, min(first_live) FROM d GROUP BY twitch_id, display\n)\nSELECT ts AS time, display AS \"Streamer\", state AS \"\u00c9tat\", first_live\nFROM r ORDER BY first_live NULLS LAST, lower(display), ts",
           "format": "table",
           "refId": "A"
         }
@@ -406,7 +406,7 @@
           }
         }
       ],
-      "description": "Green while live. Hover a bar for the game. Rows are sorted by the first time the streamer went live in the selected range; streamers that were not live in the range are at the bottom. Follows the Location and Streamer filters."
+      "description": "Vert pendant le live. Survolez une barre pour voir le jeu. Les lignes sont tri\u00e9es par le premier passage en live du streamer sur la p\u00e9riode s\u00e9lectionn\u00e9e ; les streamers qui n'ont pas \u00e9t\u00e9 en live sur la p\u00e9riode sont en bas. Suit les filtres Lieu et Streamer."
     }
   ]
 }

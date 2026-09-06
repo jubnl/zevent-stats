@@ -95,7 +95,7 @@ def ts(title, sql, x, y, w=12, h=9, unit=None, bars=False, legend=True, stack=Fa
 # (${__data.fields.login}); time series carry it as a field label (${__field.labels.login}), which
 # the postgres datasource creates from any extra string column in a time_series query.
 def twitch_link(var):
-    return {"title": "Open on Twitch", "url": "https://twitch.tv/${" + var + "}", "targetBlank": True}
+    return {"title": "Ouvrir sur Twitch", "url": "https://twitch.tv/${" + var + "}", "targetBlank": True}
 
 
 def table(title, sql, x, y, w=8, h=12, money_cols=(), duration_cols=(), hour_cols=(), image_cols=(), percent_cols=(),
@@ -150,15 +150,15 @@ def gain_expr(col):
 
 
 # Panels read the streamer_v / streamer_sample_v views (db/views.sql), not the raw tables. The views
-# split mistermv's counter into his own donations and a derived "mistermv (private counter)" row
+# split mistermv's counter into his own donations and a derived "mistermv (compteur privé)" row
 # holding the part that mirrors Domingo's counter (see the file header for the full story). Rows
 # with derived = true are not API entities and must be left out of sums compared to the global total.
 MIRROR_NOTE = (
-    "All donations that could not be tied to a streamer: the event total minus the sum of the streamer counters. "
-    "This holds donations made by people without picking a streamer (the Streamlabs Charity team page without a "
-    "member), the tickets of the concert on Thursday, all shop donations, and so on. The derived "
-    "\"mistermv (private counter)\" row is left out of the streamer sum: since 01:08 UTC on Sept 5 it mirrors "
-    "Domingo's counter, which is already counted once."
+    "Tous les dons qui n'ont pas pu être rattachés à un streamer : le total de l'événement moins la somme des "
+    "compteurs des streamers. On y trouve les dons faits sans choisir de streamer (la page d'équipe Streamlabs "
+    "Charity sans membre), les billets du concert de jeudi, tous les dons de la boutique, etc. La ligne dérivée "
+    "\"dons spéciaux du vieux monsieur\" est exclue de la somme des streamers : depuis le 5 sept. à 01:08 UTC, elle "
+    "reflète le compteur de Domingo, qui est déjà compté une fois."
 )
 
 
@@ -166,7 +166,7 @@ MIRROR_NOTE = (
 # home). Matched as a regex so "All" (allValue ".*") also keeps streamers whose location is unknown,
 # e.g. one that left the API list before the column existed. `st` is the streamer_v alias.
 LOC = "coalesce(st.location, '') ~ '^(${location:regex})$'"
-LOC_QUERY = ("SELECT CASE location WHEN 'LAN' THEN 'On site (LAN)' ELSE 'Remote (online)' END AS __text, "
+LOC_QUERY = ("SELECT CASE location WHEN 'LAN' THEN 'Sur place (LAN)' ELSE 'À distance (online)' END AS __text, "
              "location AS __value FROM streamer_v WHERE location IS NOT NULL GROUP BY location ORDER BY location")
 
 
@@ -185,9 +185,9 @@ def hours_streamed_sql(loc):
 
 
 HOURS_DESCRIPTION = (
-    "Total time live, summed over the streamers matching the Location and Streamer filters, within the "
-    "selected time range. Each live sample counts the minute since the previous sample (capped at 5 "
-    "minutes, so gaps in the data do not count)."
+    "Temps total en live, additionné sur les streamers correspondant aux filtres Lieu et Streamer, dans la "
+    "plage de temps sélectionnée. Chaque relevé en live compte la minute écoulée depuis le relevé précédent "
+    "(plafonnée à 5 minutes, pour que les trous dans les données ne comptent pas)."
 )
 
 
@@ -215,11 +215,11 @@ DT = "least(x.gap_s, 300)"
 
 
 PER_VIEWER_HOUR_DESCRIPTION = (
-    "How much the community gives relative to its size: donations gained by the streamers matching the "
-    "Location and Streamer filters over the selected range, divided by their viewer-hours (the viewer count "
-    "summed minute by minute over the same range, in hours). One viewer watching for an hour is one "
-    "viewer-hour, so 5 \u20ac means 5 \u20ac raised for every hour watched by one viewer. Donations not tied to a "
-    "streamer (tickets, shop, anonymous) are not included."
+    "Ce que la communauté donne par rapport à sa taille : les dons gagnés par les streamers correspondant aux "
+    "filtres Lieu et Streamer sur la période sélectionnée, divisés par leurs viewer-heures (le nombre de viewers "
+    "additionné minute par minute sur la même période, en heures). Un viewer qui regarde pendant une heure vaut "
+    "une viewer-heure : 5 \u20ac signifie 5 \u20ac récoltés pour chaque heure regardée par un viewer. Les dons sans "
+    "streamer (billets, boutique, anonymes) ne sont pas comptés."
 )
 
 
@@ -238,10 +238,11 @@ def per_viewer_hour_sql(loc):
 
 
 VIEWER_HOURS_DESCRIPTION = (
-    "Audience size over time, in viewer-hours: the viewer count of the streamers matching the Location and "
-    "Streamer filters, summed minute by minute over the selected range (each sample counts the time since "
-    "the previous one, capped at 5 minutes so gaps in the data do not count). One viewer watching for an "
-    "hour is one viewer-hour; 1,000 viewers for 2 hours are 2,000 viewer-hours."
+    "La taille de l'audience dans le temps, en viewer-heures : le nombre de viewers des streamers correspondant "
+    "aux filtres Lieu et Streamer, additionné minute par minute sur la période sélectionnée (chaque relevé compte "
+    "le temps écoulé depuis le précédent, plafonné à 5 minutes pour que les trous dans les données ne comptent "
+    "pas). Un viewer qui regarde pendant une heure vaut une viewer-heure ; 1 000 viewers pendant 2 heures font "
+    "2 000 viewer-heures."
 )
 
 
@@ -255,7 +256,7 @@ def viewer_hours_sql(loc):
 
 
 def hours_stat(x, w, loc, y=4):
-    return stat("Hours streamed", hours_streamed_sql(loc), x, w=w, y=y, unit="suffix: h", decimals=1,
+    return stat("Heures de stream", hours_streamed_sql(loc), x, w=w, y=y, unit="suffix: h", decimals=1,
                 color="green", description=HOURS_DESCRIPTION)
 
 
@@ -269,12 +270,12 @@ def leaderboard(title, x, y, order_by, where="true", extra_cte="", extra_col="",
         "  SELECT twitch_id, donation_total, viewers, online FROM streamer_sample_v"
         "  WHERE ts = (SELECT max(ts) FROM snapshot)"
         ") " + extra_cte +
-        f'SELECT st.profile_url AS "Avatar", st.display AS "Streamer", {extra_col}cur.donation_total AS "Donations", '
-        'cur.viewers AS "Viewers", coalesce(h.hours, 0) AS "Hours", st.login AS login '
+        f'SELECT st.profile_url AS "Avatar", st.display AS "Streamer", {extra_col}cur.donation_total AS "Dons", '
+        'cur.viewers AS "Viewers", coalesce(h.hours, 0) AS "Heures", st.login AS login '
         "FROM cur JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) " + extra_join +
         f"WHERE {where} AND " + LOC + f" ORDER BY {order_by} LIMIT 25"
     )
-    return table(title, sql, x, y, w=12, money_cols=money_cols + ("Donations",), hour_cols=("Hours",),
+    return table(title, sql, x, y, w=12, money_cols=money_cols + ("Dons",), hour_cols=("Heures",),
                  image_cols=("Avatar",), streamer_links=True)
 
 
@@ -319,16 +320,16 @@ def barchart(title, sql, x, y, w=12, h=9, x_field="", unit=None, description=Non
 def main_panels():
     reset_ids()
     return [
-        stat("Total donations", "SELECT donation_total FROM snapshot ORDER BY ts DESC LIMIT 1", 0, w=6,
+        stat("Total des dons", "SELECT donation_total FROM snapshot ORDER BY ts DESC LIMIT 1", 0, w=6,
              unit="currencyEUR", decimals=2),
-        stat("Donations, last hour",
+        stat("Dons, dernière heure",
              "SELECT max(donation_total) - min(donation_total) FROM snapshot WHERE ts > now() - interval '1 hour'", 6,
              w=6, unit="currencyEUR", decimals=2, color="orange"),
-        stat("Donations not tied to a streamer",
+        stat("Dons sans streamer",
              "SELECT sn.donation_total - sum(s.donation_total) FROM snapshot sn JOIN streamer_sample_v s USING (ts) "
              "WHERE NOT s.derived AND sn.ts = (SELECT max(ts) FROM snapshot) GROUP BY sn.donation_total",
              12, w=6, unit="currencyEUR", decimals=2, color="yellow", description=MIRROR_NOTE),
-        stat("MisterMV's private counter",
+        stat("Dons spéciaux du Vieux Monsieur",
              "SELECT coalesce(sum(donation_total), 0) FROM streamer_sample_v "
              "WHERE derived AND ts = (SELECT max(ts) FROM snapshot)",
              18, w=6, unit="currencyEUR", decimals=2, color="red",
@@ -336,54 +337,54 @@ def main_panels():
         # Second and third tile rows: audience and rate tiles, three per row. Viewers of the streamers
         # matching the Location and Streamer filters (sum of the per-streamer counts, which equals the API's
         # global viewer count).
-        stat("Viewers now",
+        stat("Viewers actuels",
              "SELECT coalesce(sum(s.viewers), 0) FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) "
              "WHERE s.ts = (SELECT max(ts) FROM snapshot) AND NOT st.derived AND s.twitch_id IN ($streamer) AND " + LOC,
-             0, w=8, y=4, unit="short", color="purple",
-             description="Viewers of the streamers matching the Location and Streamer filters, at the latest sample."),
-        stat("Peak viewers",
+             0, w=8, y=4, unit="sishort", color="purple",
+             description="Viewers des streamers correspondant aux filtres Lieu et Streamer, au dernier relevé."),
+        stat("Pic de viewers",
              "SELECT coalesce(max(v), 0) FROM ("
              "  SELECT s.ts, sum(s.viewers) AS v FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id)"
              "  WHERE $__timeFilter(s.ts) AND NOT st.derived AND s.twitch_id IN ($streamer) AND " + LOC +
              "  GROUP BY s.ts"
              ") x",
-             8, w=8, y=4, unit="short", color="purple",
-             description="Highest combined viewer count of the streamers matching the Location and Streamer filters, "
-                         "within the selected time range."),
-        stat("Streamers online",
-             'SELECT streamers_online AS "Online", streamers_total AS "Total" FROM snapshot ORDER BY ts DESC LIMIT 1',
+             8, w=8, y=4, unit="sishort", color="purple",
+             description="Plus grand nombre de viewers cumulés des streamers correspondant aux filtres Lieu et Streamer, "
+                         "dans la plage de temps sélectionnée."),
+        stat("Streamers en live",
+             'SELECT streamers_online AS "En live", streamers_total AS "Total" FROM snapshot ORDER BY ts DESC LIMIT 1',
              0, w=8, y=8, color="blue", text_mode="value_and_name"),
-        stat("Viewer-hours", viewer_hours_sql(LOC), 16, w=8, y=4, unit="short", decimals=1, color="purple",
+        stat("Viewer-heures", viewer_hours_sql(LOC), 16, w=8, y=4, unit="sishort", decimals=1, color="purple",
              description=VIEWER_HOURS_DESCRIPTION),
         hours_stat(8, 8, LOC, y=8),
-        stat("Donations per viewer-hour", per_viewer_hour_sql(LOC), 16, w=8, y=8, unit="currencyEUR", decimals=2,
+        stat("Dons par viewer-heure", per_viewer_hour_sql(LOC), 16, w=8, y=8, unit="currencyEUR", decimals=2,
              color="green", description=PER_VIEWER_HOUR_DESCRIPTION),
 
         row("Global", 12),
-        ts("Total donations over time",
+        ts("Total des dons au fil du temps",
            'SELECT ts AS time, donation_total AS "Total" FROM snapshot WHERE $__timeFilter(ts) ORDER BY 1',
            0, 13, unit="currencyEUR", legend=False),
-        ts("Viewers over time",
+        ts("Viewers au fil du temps",
            'SELECT ts AS time, viewers_total AS "Viewers" FROM snapshot WHERE $__timeFilter(ts) ORDER BY 1',
-           12, 13, unit="short", legend=False),
-        ts("Donations per interval",
-           'SELECT $__timeGroupAlias(ts, $__interval), sum(delta) AS "Donated" FROM ('
+           12, 13, unit="sishort", legend=False),
+        ts("Dons par intervalle",
+           'SELECT $__timeGroupAlias(ts, $__interval), sum(delta) AS "Dons" FROM ('
            '  SELECT ts, donation_total - lag(donation_total) OVER (ORDER BY ts) AS delta'
            '  FROM snapshot WHERE $__timeFilter(ts)'
            ') d WHERE delta IS NOT NULL GROUP BY 1 ORDER BY 1',
            0, 22, unit="currencyEUR", bars=True, legend=False, min_interval="5m"),
-        ts("Streamers online",
-           'SELECT ts AS time, streamers_online AS "Online" FROM snapshot WHERE $__timeFilter(ts) ORDER BY 1',
-           12, 22, unit="short", legend=False),
+        ts("Streamers en live",
+           'SELECT ts AS time, streamers_online AS "En live" FROM snapshot WHERE $__timeFilter(ts) ORDER BY 1',
+           12, 22, unit="sishort", legend=False),
 
-        row("Leaderboards (latest snapshot, $location)", 31),
+        row("Classements (dernier relevé, $location)", 31),
         # 2x2 grid
-        leaderboard("Top by donations", 0, 32, order_by="cur.donation_total DESC"),
-        leaderboard("Top by viewers", 12, 32, order_by="cur.viewers DESC", where="cur.online"),
-        leaderboard("Top gained in selected range", 0, 44, order_by="g.gained DESC",
-                    extra_cte=", " + GAIN_CTE, extra_col='g.gained AS "Gained", ',
-                    extra_join="JOIN g USING (twitch_id) ", money_cols=("Gained",)),
-        leaderboard("Top by hours streamed in selected range", 12, 44,
+        leaderboard("Top par dons", 0, 32, order_by="cur.donation_total DESC"),
+        leaderboard("Top par viewers", 12, 32, order_by="cur.viewers DESC", where="cur.online"),
+        leaderboard("Top des gains sur la période", 0, 44, order_by="g.gained DESC",
+                    extra_cte=", " + GAIN_CTE, extra_col='g.gained AS "Gagné", ',
+                    extra_join="JOIN g USING (twitch_id) ", money_cols=("Gagné",)),
+        leaderboard("Top des heures de stream sur la période", 12, 44,
                     order_by="coalesce(h.hours, 0) DESC, cur.donation_total DESC"),
     ]
 
@@ -392,12 +393,12 @@ def main_panels():
 # ZEVENT insights: milestones and pace, notable moments, patterns, on site vs remote, games, and the
 # donations that cannot be tied to a streamer. Location filter only.
 BLIP_NOTE = (
-    "Gains within one minute of a streamer's counter. The organisation's own channels (ZEVENT, ZEventPlays) are "
-    "left out: their counters move in lumps (tickets, shop) and, before Sept 4 22:58 CEST, come from a 30-minute "
-    "source. Gains are measured between two samples at most 5 minutes apart, so a gap in "
-    "the data is not counted as one minute). A restore after an upstream blip (a counter dropping to 0 and "
-    "coming back minutes later) is left out: rows whose streamer lost at least 90% of the amount in the "
-    "previous 10 minutes are skipped."
+    "Gains du compteur d'un streamer en une minute. Les chaînes de l'organisation (ZEVENT, ZEventPlays) sont "
+    "exclues : leurs compteurs bougent par paquets (billets, boutique) et, avant le 4 sept. 22:58 CEST, viennent "
+    "d'une source relevée toutes les 30 minutes. Les gains sont mesurés entre deux relevés espacés d'au plus "
+    "5 minutes, pour qu'un trou dans les données ne compte pas comme une minute. Le retour à la normale après un "
+    "raté de l'API (un compteur qui tombe à 0 et revient quelques minutes plus tard) est exclu : les lignes dont "
+    "le streamer a perdu au moins 90 % du montant dans les 10 minutes précédentes sont ignorées."
 )
 
 
@@ -411,45 +412,45 @@ def insights_panels():
     by_loc = ("FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) "
               "WHERE $__timeFilter(s.ts) AND NOT st.derived AND " + LOC)
     return [
-        stat("Donation rate, last 10 min",
+        stat("Rythme des dons, 10 dernières min",
              rate + "SELECT (cur.donation_total - past.donation_total) / 10 FROM cur, past",
              0, w=6, unit="currencyEUR", decimals=0, color="orange",
-             description="Event total gained per minute over the last 10 minutes of data."),
-        stat("Average rate since the start",
+             description="Gain du total de l'événement par minute sur les 10 dernières minutes de données."),
+        stat("Rythme moyen depuis le début",
              "SELECT (max(donation_total) - min(donation_total)) / greatest(extract(epoch FROM max(ts) - min(ts)) / 60, 1) "
              "FROM snapshot",
-             6, w=6, unit="currencyEUR", decimals=0, color="orange", description="Event total per minute, whole event."),
-        stat("Next million",
+             6, w=6, unit="currencyEUR", decimals=0, color="orange", description="Total de l'événement par minute, sur tout l'événement."),
+        stat("Prochain million",
              "SELECT (floor(donation_total / 1e6) + 1) * 1e6 FROM snapshot ORDER BY ts DESC LIMIT 1",
              12, w=6, unit="currencyEUR", decimals=0, color="green"),
-        stat("Next million in",
+        stat("Prochain million dans",
              rate + "SELECT CASE WHEN cur.donation_total > past.donation_total THEN "
                     "((floor(cur.donation_total / 1e6) + 1) * 1e6 - cur.donation_total) "
                     "/ ((cur.donation_total - past.donation_total) / 600.0) END FROM cur, past",
-             18, w=6, unit="dtdurations", decimals=0, color="green",
-             description="At the donation rate of the last 10 minutes."),
+             18, w=6, unit="dtdhms", decimals=0, color="green",
+             description="Au rythme des dons des 10 dernières minutes."),
 
-        row("Milestones and moments", 4),
-        table("Millions, one by one",
+        row("Paliers et moments", 4),
+        table("Les millions, un par un",
               "WITH m AS ("
               "  SELECT ts, floor(max(donation_total) OVER (ORDER BY ts) / 1e6) AS mil FROM snapshot"
               "), c AS ("
               "  SELECT ts, mil, lag(mil) OVER (ORDER BY ts) AS prev FROM m"
               "), x AS (SELECT ts, mil FROM c WHERE prev IS NOT NULL AND mil > prev) "
-              'SELECT mil * 1e6 AS "Milestone", ts AS "Reached at", '
-              '       extract(epoch FROM ts - lag(ts) OVER (ORDER BY ts)) AS "After the previous", '
-              '       extract(epoch FROM ts - (SELECT min(ts) FROM snapshot)) AS "Since the start" '
+              'SELECT mil * 1e6 AS "Palier", ts AS "Atteint à", '
+              '       extract(epoch FROM ts - lag(ts) OVER (ORDER BY ts)) AS "Après le précédent", '
+              '       extract(epoch FROM ts - (SELECT min(ts) FROM snapshot)) AS "Depuis le début" '
               "FROM x ORDER BY mil DESC",
-              0, 5, w=12, h=9, money_cols=("Milestone",), duration_cols=("After the previous", "Since the start"),
-              description="When the event total crossed each round million (running maximum, so a counter dip "
-                          "cannot cross the same million twice)."),
-        table("Largest single-minute gains",
+              0, 5, w=12, h=9, money_cols=("Palier",), duration_cols=("Après le précédent", "Depuis le début"),
+              description="Quand le total de l'événement a franchi chaque million rond (maximum glissant : une baisse "
+                          "du compteur ne peut pas franchir deux fois le même million)."),
+        table("Plus gros gains en une minute",
               "WITH e AS ("
               "  SELECT s.ts, s.twitch_id, s.gain AS delta FROM streamer_sample_v s"
               "  WHERE $__timeFilter(s.ts) AND NOT s.derived AND s.gain > 0 AND s.gap_s <= 300"
               "  ORDER BY s.gain DESC LIMIT 200"
               ") "
-              'SELECT e.ts AS "Time", st.display AS "Streamer", e.delta AS "Gain", st.login AS login '
+              'SELECT e.ts AS "Heure", st.display AS "Streamer", e.delta AS "Gain", st.login AS login '
               "FROM e JOIN streamer_v st USING (twitch_id) "
               "WHERE st.login NOT IN ('zevent', 'zeventplays') AND " + LOC + " "
               "AND NOT EXISTS (SELECT 1 FROM streamer_sample_v p WHERE p.twitch_id = e.twitch_id "
@@ -457,89 +458,91 @@ def insights_panels():
               "ORDER BY e.delta DESC LIMIT 25",
               12, 5, w=12, h=9, money_cols=("Gain",), streamer_links=True, description=BLIP_NOTE),
 
-        row("Patterns", 14),
+        row("Tendances", 14),
         # Global gain per snapshot split into what the streamer counters gained (all of them, no location
         # filter) and the rest (total gain minus streamer gains: tickets, shop, anonymous), then summed by
         # hour of the day. A snapshot without streamer samples counts fully as not tied to a streamer.
-        barchart("Donations by hour of the day (Europe/Paris)",
-                 "SELECT to_char(h, 'FM00\"h\"') AS \"Hour\", sum(sg) AS \"To a streamer\", "
-                 "       sum(g - sg) AS \"Not tied to a streamer\" FROM ("
+        barchart("Dons par heure de la journée (Europe/Paris)",
+                 "SELECT to_char(h, 'FM00\"h\"') AS \"Heure\", sum(sg) AS \"À un streamer\", "
+                 "       sum(g - sg) AS \"Sans streamer\" FROM ("
                  "  SELECT extract(hour FROM gl.ts AT TIME ZONE 'Europe/Paris') AS h, gl.g, coalesce(st.sg, 0) AS sg"
                  f"  FROM (SELECT ts, {gain_expr('donation_total')} AS g FROM snapshot WHERE $__timeFilter(ts)) gl"
                  "  LEFT JOIN (SELECT ts, sum(gain) AS sg FROM streamer_sample_v WHERE NOT derived AND $__timeFilter(ts)"
                  "             GROUP BY ts) st USING (ts)"
                  ") d WHERE g IS NOT NULL GROUP BY h ORDER BY h",
-                 0, 15, x_field="Hour", unit="currencyEUR",
-                 series_colors={"To a streamer": "green", "Not tied to a streamer": "yellow"},
-                 description="Event total gained per hour of the day, summed over the selected range (all locations), "
-                             "split into what the streamer counters gained and the rest. " + MIRROR_NOTE),
-        table("Donations per viewer-hour",
+                 0, 15, x_field="Heure", unit="currencyEUR",
+                 series_colors={"À un streamer": "green", "Sans streamer": "yellow"},
+                 description="Gain du total de l'événement par heure de la journée, additionné sur la période sélectionnée "
+                             "(tous lieux), séparé entre ce que les compteurs des streamers ont gagné et le reste. " + MIRROR_NOTE),
+        table("Dons par viewer-heure",
               "WITH v AS ("
               f"  SELECT x.twitch_id, sum(x.viewers * {DT}) / 3600.0 AS viewer_hours, "
               f"         sum({DT}) FILTER (WHERE x.online) / 3600.0 AS hours"
               "  FROM streamer_sample_v x WHERE $__timeFilter(x.ts) AND x.gap_s IS NOT NULL GROUP BY x.twitch_id"
               "), " + GAIN_CTE +
-              'SELECT st.profile_url AS "Avatar", st.display AS "Streamer", g.gained / v.viewer_hours AS "Per viewer-hour", '
-              'g.gained AS "Gained", v.viewer_hours AS "Viewer-hours", v.hours AS "Hours", st.login AS login '
+              'SELECT st.profile_url AS "Avatar", st.display AS "Streamer", g.gained / v.viewer_hours AS "Par viewer-heure", '
+              'g.gained AS "Gagné", v.viewer_hours AS "Viewer-heures", v.hours AS "Heures", st.login AS login '
               "FROM g JOIN v USING (twitch_id) JOIN streamer_v st USING (twitch_id) "
               "WHERE NOT st.derived AND v.viewer_hours >= 100 AND " + LOC + " ORDER BY 3 DESC LIMIT 25",
-              12, 15, w=12, h=9, money_cols=("Per viewer-hour", "Gained"), hour_cols=("Hours",), image_cols=("Avatar",),
+              12, 15, w=12, h=9, money_cols=("Par viewer-heure", "Gagné"), hour_cols=("Heures",), image_cols=("Avatar",),
               streamer_links=True,
-              description="Gained in the selected range divided by viewer-hours (viewers summed over time): how much a "
-                          "community gives relative to its size. Streamers with fewer than 100 viewer-hours are left out."),
-        table("Trending now (last 15 minutes)",
+              description="Gagné sur la période sélectionnée divisé par les viewer-heures (viewers additionnés dans le "
+                          "temps) : ce qu'une communauté donne par rapport à sa taille. Les streamers avec moins de "
+                          "100 viewer-heures sont exclus."),
+        table("Tendance du moment (15 dernières minutes)",
               "WITH cur AS (SELECT max(ts) AS ts FROM snapshot), "
               "n AS (SELECT twitch_id, donation_total, viewers FROM streamer_sample_v, cur WHERE streamer_sample_v.ts = cur.ts), "
               "p AS (SELECT DISTINCT ON (ss.twitch_id) ss.twitch_id, ss.donation_total, ss.viewers FROM streamer_sample_v ss, cur "
               "      WHERE ss.ts BETWEEN cur.ts - interval '60 minutes' AND cur.ts - interval '15 minutes' "
               "      ORDER BY ss.twitch_id, ss.ts DESC) "
-              'SELECT st.profile_url AS "Avatar", st.display AS "Streamer", n.donation_total - p.donation_total AS "Gained", '
-              'n.viewers AS "Viewers", n.viewers - p.viewers AS "Viewers change", st.login AS login '
+              'SELECT st.profile_url AS "Avatar", st.display AS "Streamer", n.donation_total - p.donation_total AS "Gagné", '
+              'n.viewers AS "Viewers", n.viewers - p.viewers AS "Variation viewers", st.login AS login '
               "FROM n JOIN p USING (twitch_id) JOIN streamer_v st USING (twitch_id) "
               "WHERE NOT st.derived AND " + LOC + " ORDER BY 3 DESC LIMIT 25",
-              0, 24, w=12, h=9, money_cols=("Gained",), image_cols=("Avatar",), streamer_links=True,
-              description="Streamers by donations gained over the last 15 minutes of data, with the change in viewers "
-                          "(compared with the latest sample at least 15 minutes old, looking back up to an hour)."),
-        ts("Donations gained per interval, by location",
-           "SELECT $__timeGroupAlias(d.ts, $__interval), coalesce(st.location, 'Unknown') AS metric, sum(d.gain) AS value "
+              0, 24, w=12, h=9, money_cols=("Gagné",), image_cols=("Avatar",), streamer_links=True,
+              description="Streamers classés par dons gagnés sur les 15 dernières minutes de données, avec la variation "
+                          "du nombre de viewers (par rapport au dernier relevé vieux d'au moins 15 minutes, en remontant "
+                          "jusqu'à une heure)."),
+        ts("Dons gagnés par intervalle, par lieu",
+           "SELECT $__timeGroupAlias(d.ts, $__interval), CASE st.location WHEN 'LAN' THEN 'Sur place (LAN)' WHEN 'Online' THEN 'À distance (online)' ELSE 'Inconnu' END AS metric, sum(d.gain) AS value "
            "FROM streamer_sample_v d JOIN streamer_v st USING (twitch_id) "
            "WHERE $__timeFilter(d.ts) AND NOT d.derived AND d.gain IS NOT NULL AND " + LOC + " GROUP BY 1, 2 ORDER BY 1",
            12, 24, unit="currencyEUR", bars=True, stack=True, min_interval="5m"),
 
-        row("On site vs remote", 33),
-        ts("Live streamers by location",
-           "SELECT s.ts AS time, coalesce(st.location, 'Unknown') AS metric, count(*) FILTER (WHERE s.online) AS value "
+        row("Sur place vs à distance", 33),
+        ts("Streamers en live par lieu",
+           "SELECT s.ts AS time, CASE st.location WHEN 'LAN' THEN 'Sur place (LAN)' WHEN 'Online' THEN 'À distance (online)' ELSE 'Inconnu' END AS metric, count(*) FILTER (WHERE s.online) AS value "
            + by_loc + " GROUP BY 1, 2 ORDER BY 1",
-           0, 34, unit="short", stack=True),
-        ts("Viewers by location",
-           "SELECT s.ts AS time, coalesce(st.location, 'Unknown') AS metric, sum(s.viewers) AS value "
+           0, 34, unit="sishort", stack=True),
+        ts("Viewers par lieu",
+           "SELECT s.ts AS time, CASE st.location WHEN 'LAN' THEN 'Sur place (LAN)' WHEN 'Online' THEN 'À distance (online)' ELSE 'Inconnu' END AS metric, sum(s.viewers) AS value "
            + by_loc + " GROUP BY 1, 2 ORDER BY 1",
-           12, 34, unit="short", stack=True),
+           12, 34, unit="sishort", stack=True),
 
-        row("Games", 43),
-        ts("Streamers online per game",
-           "WITH top AS (SELECT game FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.online AND " + LOC + " GROUP BY game ORDER BY count(*) DESC LIMIT 8) SELECT ts AS time, CASE WHEN game IN (SELECT game FROM top) THEN game ELSE 'Other' END AS metric, count(*) AS value FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.online AND " + LOC + " GROUP BY 1, 2 ORDER BY 1",
-           0, 44, unit="short", stack=True),
-        ts("Viewers per game",
-           "WITH top AS (SELECT game FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.online AND " + LOC + " GROUP BY game ORDER BY sum(viewers) DESC LIMIT 8) SELECT ts AS time, CASE WHEN game IN (SELECT game FROM top) THEN game ELSE 'Other' END AS metric, sum(viewers) AS value FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.online AND " + LOC + " GROUP BY 1, 2 ORDER BY 1",
-           12, 44, unit="short", stack=True),
-        table("Hours streamed per game",
-              "SELECT coalesce(x.game, '(no game)') AS \"Game\", sum(" + DT + ") / 3600.0 AS \"Hours\", "
-              "       count(DISTINCT x.twitch_id) AS \"Streamers\", sum(x.viewers * " + DT + ") / 3600.0 AS \"Viewer-hours\" "
+        row("Jeux", 43),
+        ts("Streamers en live par jeu",
+           "WITH top AS (SELECT game FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.online AND " + LOC + " GROUP BY game ORDER BY count(*) DESC LIMIT 8) SELECT ts AS time, CASE WHEN game IN (SELECT game FROM top) THEN game ELSE 'Autre' END AS metric, count(*) AS value FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.online AND " + LOC + " GROUP BY 1, 2 ORDER BY 1",
+           0, 44, unit="sishort", stack=True),
+        ts("Viewers par jeu",
+           "WITH top AS (SELECT game FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.online AND " + LOC + " GROUP BY game ORDER BY sum(viewers) DESC LIMIT 8) SELECT ts AS time, CASE WHEN game IN (SELECT game FROM top) THEN game ELSE 'Autre' END AS metric, sum(viewers) AS value FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.online AND " + LOC + " GROUP BY 1, 2 ORDER BY 1",
+           12, 44, unit="sishort", stack=True),
+        table("Heures de stream par jeu",
+              "SELECT coalesce(x.game, '(sans jeu)') AS \"Jeu\", sum(" + DT + ") / 3600.0 AS \"Heures\", "
+              "       count(DISTINCT x.twitch_id) AS \"Streamers\", sum(x.viewers * " + DT + ") / 3600.0 AS \"Viewer-heures\" "
               "FROM streamer_sample_v x JOIN streamer_v st USING (twitch_id) "
               "WHERE $__timeFilter(x.ts) AND NOT st.derived AND " + LOC + " AND x.online AND x.gap_s IS NOT NULL "
               "GROUP BY 1 ORDER BY 2 DESC LIMIT 25",
-              0, 53, w=24, h=9, hour_cols=("Hours",)),
+              0, 53, w=24, h=9, hour_cols=("Heures",)),
 
-        row("Donations not tied to a streamer", 62),
-        ts("Over time (total minus all streamers)",
-           'SELECT sn.ts AS time, sn.donation_total - sum(s.donation_total) FILTER (WHERE NOT s.derived) AS "Not tied to a streamer", '
-           'coalesce(sum(s.donation_total) FILTER (WHERE s.derived), 0) AS "Mirrored (mistermv)" '
+        row("Dons sans streamer", 62),
+        ts("Au fil du temps (total moins tous les streamers)",
+           'SELECT sn.ts AS time, sn.donation_total - sum(s.donation_total) FILTER (WHERE NOT s.derived) AS "Sans streamer", '
+           'coalesce(sum(s.donation_total) FILTER (WHERE s.derived), 0) AS "Reflet (mistermv)" '
            'FROM snapshot sn JOIN streamer_sample_v s USING (ts) '
            'WHERE $__timeFilter(sn.ts) GROUP BY sn.ts, sn.donation_total ORDER BY 1',
            0, 63, unit="currencyEUR", description=MIRROR_NOTE),
-        ts("Per interval (total gain minus streamer gains)",
-           'SELECT $__timeGroupAlias(ts, $__interval), sum(g) - sum(sg) AS "Not tied to a streamer" FROM ('
+        ts("Par intervalle (gain total moins gains des streamers)",
+           'SELECT $__timeGroupAlias(ts, $__interval), sum(g) - sum(sg) AS "Sans streamer" FROM ('
            f'  SELECT ts, {gain_expr("donation_total")} AS g FROM snapshot WHERE $__timeFilter(ts)'
            ') gl JOIN ('
            '  SELECT ts, sum(gain) AS sg FROM streamer_sample_v WHERE NOT derived AND $__timeFilter(ts) GROUP BY ts'
@@ -558,9 +561,9 @@ HERO_VARS = {
     "hero_display": "SELECT st.display FROM cur JOIN streamer_v st USING (twitch_id)",
     "hero_login": "SELECT st.login FROM cur JOIN streamer_v st USING (twitch_id)",
     "hero_avatar": "SELECT coalesce(st.profile_url, '') FROM cur JOIN streamer_v st USING (twitch_id)",
-    "hero_location": "SELECT CASE st.location WHEN 'LAN' THEN 'On site at the ZEVENT' WHEN 'Online' THEN "
-                     "'Streaming from home' ELSE '' END FROM cur JOIN streamer_v st USING (twitch_id)",
-    "hero_status": "SELECT CASE WHEN cur.online THEN 'LIVE' ELSE 'OFFLINE' END FROM cur",
+    "hero_location": "SELECT CASE st.location WHEN 'LAN' THEN 'Sur place au ZEVENT' WHEN 'Online' THEN "
+                     "'En stream à distance' ELSE '' END FROM cur JOIN streamer_v st USING (twitch_id)",
+    "hero_status": "SELECT CASE WHEN cur.online THEN 'LIVE' ELSE 'HORS LIGNE' END FROM cur",
     "hero_color": "SELECT CASE WHEN cur.online THEN '#3fb950' ELSE '#8b949e' END FROM cur",
     "hero_game": "SELECT CASE WHEN cur.online THEN coalesce(cur.game, '') ELSE '' END FROM cur",
 }
@@ -609,43 +612,43 @@ def streamer_panels():
            "WHERE NOT st.derived AND s.twitch_id IN ($streamer)")
     return [
         text_panel(HERO_HTML, 0, 0, 9, 12),
-        stat("Donations",
+        stat("Dons",
              f"SELECT coalesce(sum(s.donation_total), 0) {sel} AND s.ts = (SELECT max(ts) FROM snapshot)",
              9, w=5, unit="currencyEUR", decimals=2),
         stat("Rank",
              "SELECT min(rank) FROM streamer_sample_v WHERE ts = (SELECT max(ts) FROM snapshot) AND NOT derived "
              "AND twitch_id IN ($streamer)",
-             14, w=5, unit="short", color="yellow",
-             description="Position in the donation leaderboard at the latest sample (best of the selected streamers)."),
-        stat("Viewers now",
+             14, w=5, unit="sishort", color="yellow",
+             description="Position au classement des dons au dernier relevé (la meilleure des streamers sélectionnés)."),
+        stat("Viewers actuels",
              f"SELECT coalesce(sum(s.viewers), 0) {sel} AND s.ts = (SELECT max(ts) FROM snapshot)",
-             19, w=5, unit="short", color="purple"),
-        stat("Gained in selected range",
+             19, w=5, unit="sishort", color="purple"),
+        stat("Gagné sur la période",
              "WITH " + GAIN_CTE + "SELECT coalesce(sum(g.gained), 0) FROM g JOIN streamer_v st USING (twitch_id) "
              "WHERE NOT st.derived AND g.twitch_id IN ($streamer)",
              9, w=5, y=4, unit="currencyEUR", decimals=2, color="orange"),
-        stat("Hours streamed", hours_streamed_sql("true"), 14, w=5, y=4, unit="suffix: h", decimals=1, color="green",
+        stat("Heures de stream", hours_streamed_sql("true"), 14, w=5, y=4, unit="suffix: h", decimals=1, color="green",
              description=HOURS_DESCRIPTION),
-        stat("Peak viewers",
+        stat("Pic de viewers",
              f"SELECT coalesce(max(v), 0) FROM (SELECT s.ts, sum(s.viewers) AS v {sel} AND $__timeFilter(s.ts) GROUP BY s.ts) x",
-             19, w=5, y=4, unit="short", color="purple", description="Highest combined viewer count in the selected range."),
+             19, w=5, y=4, unit="sishort", color="purple", description="Plus grand nombre de viewers cumulés sur la période sélectionnée."),
 
         # third row of tiles next to the hero, y=8
-        stat("Share of the event total",
+        stat("Part du total de l'événement",
              f"SELECT coalesce(sum(s.donation_total), 0) / nullif((SELECT donation_total FROM snapshot ORDER BY ts DESC LIMIT 1), 0) "
              f"{sel} AND s.ts = (SELECT max(ts) FROM snapshot)",
              9, w=5, y=8, unit="percentunit", decimals=2, color="blue",
-             description="Selected streamers' counters divided by the event total, at the latest sample."),
-        stat("Average viewers while live",
+             description="Compteurs des streamers sélectionnés divisés par le total de l'événement, au dernier relevé."),
+        stat("Viewers moyens en live",
              f"SELECT sum(x.viewers * {DT}) / nullif(sum({DT}) FILTER (WHERE x.online), 0) "
              "FROM streamer_sample_v x WHERE $__timeFilter(x.ts) AND x.twitch_id IN ($streamer) AND x.gap_s IS NOT NULL",
-             14, w=5, y=8, unit="short", decimals=0, color="purple",
-             description="Viewer-hours divided by hours live, over the selected range and streamers."),
-        stat("Viewer-hours", viewer_hours_sql("true"), 19, w=5, y=8, unit="short", decimals=1, color="purple",
+             14, w=5, y=8, unit="sishort", decimals=0, color="purple",
+             description="Viewer-heures divisées par les heures en live, sur la période et les streamers sélectionnés."),
+        stat("Viewer-heures", viewer_hours_sql("true"), 19, w=5, y=8, unit="sishort", decimals=1, color="purple",
              description=VIEWER_HOURS_DESCRIPTION),
 
         # fourth row of tiles, full width, y=12
-        stat("In this state since",
+        stat("Dans cet état depuis",
              "WITH cur AS ("
              "  SELECT twitch_id, ts, online, game FROM streamer_sample_v"
              "  WHERE ts = (SELECT max(ts) FROM snapshot) AND twitch_id IN ($streamer) AND NOT derived"
@@ -656,29 +659,29 @@ def streamer_panels():
              ") "
              "SELECT extract(epoch FROM c.ts - coalesce(ch.at, (SELECT first_seen FROM streamer_v st WHERE st.twitch_id = c.twitch_id))) "
              "FROM cur c, changed ch",
-             0, w=12, y=12, unit="dtdurations", decimals=0, color="orange",
-             description="How long the featured streamer has been in the current live/offline state with the current game."),
-        stat("Donations per viewer-hour", per_viewer_hour_sql("true"), 12, w=12, y=12, unit="currencyEUR", decimals=2,
+             0, w=12, y=12, unit="dtdhms", decimals=0, color="orange",
+             description="Depuis combien de temps le streamer affiché est dans son état actuel (live ou hors ligne) avec le jeu actuel."),
+        stat("Dons par viewer-heure", per_viewer_hour_sql("true"), 12, w=12, y=12, unit="currencyEUR", decimals=2,
              color="green", description=PER_VIEWER_HOUR_DESCRIPTION),
 
-        ts("Donations over time",
+        ts("Dons au fil du temps",
            'SELECT s.ts AS time, st.display AS metric, st.login AS login, s.donation_total AS value '
            f'{sel} AND $__timeFilter(s.ts) ORDER BY 1',
            0, 16, unit="currencyEUR", streamer_links=True),
-        ts("Viewers over time",
+        ts("Viewers au fil du temps",
            'SELECT s.ts AS time, st.display AS metric, st.login AS login, s.viewers AS value '
            f'{sel} AND $__timeFilter(s.ts) ORDER BY 1',
-           12, 16, unit="short", streamer_links=True),
-        ts("Donations gained per interval",
+           12, 16, unit="sishort", streamer_links=True),
+        ts("Dons gagnés par intervalle",
            'SELECT $__timeGroupAlias(d.ts, $__interval), st.display AS metric, st.login AS login, sum(d.gain) AS value '
            'FROM streamer_sample_v d JOIN streamer_v st USING (twitch_id) '
            'WHERE $__timeFilter(d.ts) AND d.twitch_id IN ($streamer) AND d.gain IS NOT NULL GROUP BY 1, 2, 3 ORDER BY 1',
            0, 25, unit="currencyEUR", bars=True, stack=True, min_interval="5m", streamer_links=True),
-        ts("Rank in the donation leaderboard over time",
+        ts("Rank au classement des dons au fil du temps",
            "SELECT r.ts AS time, st.display AS metric, st.login AS login, r.rank AS value "
            "FROM streamer_sample_v r JOIN streamer_v st USING (twitch_id) "
            "WHERE $__timeFilter(r.ts) AND r.twitch_id IN ($streamer) AND r.rank IS NOT NULL ORDER BY 1",
-           12, 25, unit="short", streamer_links=True, description="1 is the top; lower is better."),
+           12, 25, unit="sishort", streamer_links=True, description="1 est la première place ; plus c'est bas, mieux c'est."),
         game_timeline(0, 34),
     ]
 
@@ -687,7 +690,7 @@ def game_timeline(x, y):
     """State timeline of the games played by the selected streamers, one colour per game."""
     sql = LIVE_SQL.format(loc="true", filter=" AND s.twitch_id IN ($streamer)")
     return panel(
-        "state-timeline", "Games played", sql, x, y, 24, 8, fmt="table",
+        "state-timeline", "Jeux joués", sql, x, y, 24, 8, fmt="table",
         fieldConfig={"defaults": {
             "custom": {"lineWidth": 0, "fillOpacity": 85, "spanNulls": False, "insertNulls": False},
             "color": {"mode": "palette-classic"},
@@ -703,7 +706,7 @@ def game_timeline(x, y):
             {"id": "partitionByValues",
              "options": {"fields": ["Streamer"], "keepFields": False, "naming": {"asLabels": True}}},
         ],
-        description="What each selected streamer was playing while live; gaps are offline time.",
+        description="Ce que chaque streamer sélectionné jouait en live ; les trous sont du temps hors ligne.",
     )
 
 
@@ -736,19 +739,19 @@ STREAMER_VAR_DETAIL = query_var(
     multi=False, include_all=False,
 )
 
-LOCATION_VAR = query_var("location", "Location", LOC_QUERY, all_value=".*")
+LOCATION_VAR = query_var("location", "Lieu", LOC_QUERY, all_value=".*")
 # Same Location filter, but "On site (LAN)" selected by default (live dashboard).
 LOCATION_VAR_LAN = copy.deepcopy(LOCATION_VAR)
-LOCATION_VAR_LAN["current"] = {"selected": True, "text": ["On site (LAN)"], "value": ["LAN"]}
+LOCATION_VAR_LAN["current"] = {"selected": True, "text": ["Sur place (LAN)"], "value": ["LAN"]}
 
 # First datapoint until now; grows as data arrives. Data before 2026-09-04 20:58 UTC is backfilled from
 # third-party sources (raw-backfill/, see zevent_tracker/external.py); its first tick is 17:01 UTC.
 TIME_RANGE = {"from": "2026-09-03T17:01:00.000Z", "to": "now"}
 
 DASHBOARDS = [  # (uid, button title)
-    ("zevent-public", "Main stats"),
-    ("zevent-live-public", "Live timeline"),
-    ("zevent-insights-public", "Insights"),
+    ("zevent-public", "Stats principales"),
+    ("zevent-live-public", "Timeline live"),
+    ("zevent-insights-public", "Analyses"),
     ("zevent-streamer-public", "Streamer"),
 ]
 
@@ -797,7 +800,7 @@ def dashboard_base(uid, title, variables, panels_):
 # transformation so it does not become a second row per streamer.
 LIVE_SQL = """
 WITH s AS (
-  SELECT s.ts, s.twitch_id, st.display, CASE WHEN s.online THEN coalesce(s.game, '(no game)') END AS state
+  SELECT s.ts, s.twitch_id, st.display, CASE WHEN s.online THEN coalesce(s.game, '(sans jeu)') END AS state
   FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id)
   WHERE $__timeFilter(s.ts) AND NOT st.derived AND {loc}{filter}
 ), d AS (
@@ -809,13 +812,13 @@ WITH s AS (
   UNION ALL
   SELECT max(ts) + interval '1 minute', display, NULL, min(first_live) FROM d GROUP BY twitch_id, display
 )
-SELECT ts AS time, display AS "Streamer", state AS "State", first_live
+SELECT ts AS time, display AS "Streamer", state AS "État", first_live
 FROM r ORDER BY first_live NULLS LAST, lower(display), ts
 """
 
 LIVE_DESCRIPTION = (
-    "Green while live. Hover a bar for the game. Rows are sorted by the first time the streamer went live in "
-    "the selected range; streamers that were not live in the range are at the bottom."
+    "Vert pendant le live. Survolez une barre pour voir le jeu. Les lignes sont triées par le premier passage en "
+    "live du streamer sur la période sélectionnée ; les streamers qui n'ont pas été en live sur la période sont en bas."
 )
 
 
@@ -849,22 +852,22 @@ def live_panels(loc, scope):
     reset_ids()
     latest = "FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND " + loc
     return [
-        stat(f"Streamers online ({scope})",
-             f'SELECT count(*) FILTER (WHERE s.online) AS "Online", count(*) AS "Total" {latest} '
+        stat(f"Streamers en live ({scope})",
+             f'SELECT count(*) FILTER (WHERE s.online) AS "En live", count(*) AS "Total" {latest} '
              "AND s.ts = (SELECT max(ts) FROM snapshot)",
              0, w=4, color="blue", text_mode="value_and_name"),
-        stat(f"Peak streamers online ({scope})",
+        stat(f"Pic de streamers en live ({scope})",
              f"SELECT max(n) FROM (SELECT count(*) AS n {latest} AND s.online GROUP BY s.ts) x",
-             4, w=4, unit="short", color="blue"),
-        stat("Hours streamed", hours_streamed_sql(loc), 8, w=4, unit="suffix: h", decimals=1, color="green",
+             4, w=4, unit="sishort", color="blue"),
+        stat("Heures de stream", hours_streamed_sql(loc), 8, w=4, unit="suffix: h", decimals=1, color="green",
              description=HOURS_DESCRIPTION),
-        ts(f"Streamers online over time ({scope})",
-           f'SELECT s.ts AS time, count(*) FILTER (WHERE s.online) AS "Online" {latest} AND $__timeFilter(s.ts) '
+        ts(f"Streamers en live au fil du temps ({scope})",
+           f'SELECT s.ts AS time, count(*) FILTER (WHERE s.online) AS "En live" {latest} AND $__timeFilter(s.ts) '
            "GROUP BY 1 ORDER BY 1",
-           12, 0, w=12, h=4, unit="short", legend=False),
+           12, 0, w=12, h=4, unit="sishort", legend=False),
         # paginated, follows the Location and Streamer filters
         live_timeline(f"Streamers ({scope}, $streamer)", 4, 34, loc, filtered=True, per_page=50,
-                      description=LIVE_DESCRIPTION + " Follows the Location and Streamer filters."),
+                      description=LIVE_DESCRIPTION + " Suit les filtres Lieu et Streamer."),
     ]
 
 
@@ -881,7 +884,7 @@ def write(dash):
 write(dashboard_base("zevent-public", "ZEVENT", [LOCATION_VAR, streamer_var(LOC)], main_panels()))
 write(dashboard_base("zevent-live-public", "ZEVENT live", [LOCATION_VAR_LAN, streamer_var(LOC)],
                      live_panels(LOC, "$location")))
-write(dashboard_base("zevent-insights-public", "ZEVENT insights", [LOCATION_VAR], insights_panels()))
+write(dashboard_base("zevent-insights-public", "ZEVENT analyses", [LOCATION_VAR], insights_panels()))
 def single_select(dash, name):
     """Rewrite IN ($name) as IN (${name:sqlstring}) in every query: a single-select value is inserted unquoted."""
     a, b = f"IN (${name})", f"IN (${{{name}:sqlstring}})"

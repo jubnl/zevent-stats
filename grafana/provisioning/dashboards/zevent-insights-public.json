@@ -1,6 +1,6 @@
 {
   "uid": "zevent-insights-public",
-  "title": "ZEVENT insights",
+  "title": "ZEVENT analyses",
   "tags": [
     "zevent"
   ],
@@ -25,14 +25,14 @@
     "list": [
       {
         "name": "location",
-        "label": "Location",
+        "label": "Lieu",
         "type": "query",
         "datasource": {
           "type": "grafana-postgresql-datasource",
           "uid": "zevent-pg"
         },
-        "query": "SELECT CASE location WHEN 'LAN' THEN 'On site (LAN)' ELSE 'Remote (online)' END AS __text, location AS __value FROM streamer_v WHERE location IS NOT NULL GROUP BY location ORDER BY location",
-        "definition": "SELECT CASE location WHEN 'LAN' THEN 'On site (LAN)' ELSE 'Remote (online)' END AS __text, location AS __value FROM streamer_v WHERE location IS NOT NULL GROUP BY location ORDER BY location",
+        "query": "SELECT CASE location WHEN 'LAN' THEN 'Sur place (LAN)' ELSE '\u00c0 distance (online)' END AS __text, location AS __value FROM streamer_v WHERE location IS NOT NULL GROUP BY location ORDER BY location",
+        "definition": "SELECT CASE location WHEN 'LAN' THEN 'Sur place (LAN)' ELSE '\u00c0 distance (online)' END AS __text, location AS __value FROM streamer_v WHERE location IS NOT NULL GROUP BY location ORDER BY location",
         "multi": true,
         "includeAll": true,
         "refresh": 1,
@@ -53,7 +53,7 @@
   "links": [
     {
       "type": "link",
-      "title": "Main stats",
+      "title": "Stats principales",
       "url": "/d/zevent-public?kiosk=1",
       "icon": "dashboard",
       "keepTime": true,
@@ -65,7 +65,7 @@
     },
     {
       "type": "link",
-      "title": "Live timeline",
+      "title": "Timeline live",
       "url": "/d/zevent-live-public?kiosk=1",
       "icon": "dashboard",
       "keepTime": true,
@@ -92,7 +92,7 @@
     {
       "id": 1,
       "type": "stat",
-      "title": "Donation rate, last 10 min",
+      "title": "Rythme des dons, 10 derni\u00e8res min",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -139,12 +139,12 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Event total gained per minute over the last 10 minutes of data."
+      "description": "Gain du total de l'\u00e9v\u00e9nement par minute sur les 10 derni\u00e8res minutes de donn\u00e9es."
     },
     {
       "id": 2,
       "type": "stat",
-      "title": "Average rate since the start",
+      "title": "Rythme moyen depuis le d\u00e9but",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -191,12 +191,12 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Event total per minute, whole event."
+      "description": "Total de l'\u00e9v\u00e9nement par minute, sur tout l'\u00e9v\u00e9nement."
     },
     {
       "id": 3,
       "type": "stat",
-      "title": "Next million",
+      "title": "Prochain million",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -247,7 +247,7 @@
     {
       "id": 4,
       "type": "stat",
-      "title": "Next million in",
+      "title": "Prochain million dans",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -276,7 +276,7 @@
             "mode": "fixed",
             "fixedColor": "green"
           },
-          "unit": "dtdurations",
+          "unit": "dtdhms",
           "decimals": 0
         },
         "overrides": []
@@ -294,12 +294,12 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "At the donation rate of the last 10 minutes."
+      "description": "Au rythme des dons des 10 derni\u00e8res minutes."
     },
     {
       "id": 5,
       "type": "row",
-      "title": "Milestones and moments",
+      "title": "Paliers et moments",
       "collapsed": false,
       "gridPos": {
         "x": 0,
@@ -312,7 +312,7 @@
     {
       "id": 6,
       "type": "table",
-      "title": "Millions, one by one",
+      "title": "Les millions, un par un",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -330,7 +330,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH m AS (  SELECT ts, floor(max(donation_total) OVER (ORDER BY ts) / 1e6) AS mil FROM snapshot), c AS (  SELECT ts, mil, lag(mil) OVER (ORDER BY ts) AS prev FROM m), x AS (SELECT ts, mil FROM c WHERE prev IS NOT NULL AND mil > prev) SELECT mil * 1e6 AS \"Milestone\", ts AS \"Reached at\",        extract(epoch FROM ts - lag(ts) OVER (ORDER BY ts)) AS \"After the previous\",        extract(epoch FROM ts - (SELECT min(ts) FROM snapshot)) AS \"Since the start\" FROM x ORDER BY mil DESC",
+          "rawSql": "WITH m AS (  SELECT ts, floor(max(donation_total) OVER (ORDER BY ts) / 1e6) AS mil FROM snapshot), c AS (  SELECT ts, mil, lag(mil) OVER (ORDER BY ts) AS prev FROM m), x AS (SELECT ts, mil FROM c WHERE prev IS NOT NULL AND mil > prev) SELECT mil * 1e6 AS \"Palier\", ts AS \"Atteint \u00e0\",        extract(epoch FROM ts - lag(ts) OVER (ORDER BY ts)) AS \"Apr\u00e8s le pr\u00e9c\u00e9dent\",        extract(epoch FROM ts - (SELECT min(ts) FROM snapshot)) AS \"Depuis le d\u00e9but\" FROM x ORDER BY mil DESC",
           "format": "table",
           "refId": "A"
         }
@@ -349,7 +349,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Milestone"
+              "options": "Palier"
             },
             "properties": [
               {
@@ -365,7 +365,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "After the previous"
+              "options": "Apr\u00e8s le pr\u00e9c\u00e9dent"
             },
             "properties": [
               {
@@ -377,7 +377,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Since the start"
+              "options": "Depuis le d\u00e9but"
             },
             "properties": [
               {
@@ -392,12 +392,12 @@
         "showHeader": true,
         "sortBy": []
       },
-      "description": "When the event total crossed each round million (running maximum, so a counter dip cannot cross the same million twice)."
+      "description": "Quand le total de l'\u00e9v\u00e9nement a franchi chaque million rond (maximum glissant : une baisse du compteur ne peut pas franchir deux fois le m\u00eame million)."
     },
     {
       "id": 7,
       "type": "table",
-      "title": "Largest single-minute gains",
+      "title": "Plus gros gains en une minute",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -415,7 +415,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH e AS (  SELECT s.ts, s.twitch_id, s.gain AS delta FROM streamer_sample_v s  WHERE $__timeFilter(s.ts) AND NOT s.derived AND s.gain > 0 AND s.gap_s <= 300  ORDER BY s.gain DESC LIMIT 200) SELECT e.ts AS \"Time\", st.display AS \"Streamer\", e.delta AS \"Gain\", st.login AS login FROM e JOIN streamer_v st USING (twitch_id) WHERE st.login NOT IN ('zevent', 'zeventplays') AND coalesce(st.location, '') ~ '^(${location:regex})$' AND NOT EXISTS (SELECT 1 FROM streamer_sample_v p WHERE p.twitch_id = e.twitch_id                 AND p.ts < e.ts AND p.ts >= e.ts - interval '10 minutes' AND p.gain <= -0.9 * e.delta) ORDER BY e.delta DESC LIMIT 25",
+          "rawSql": "WITH e AS (  SELECT s.ts, s.twitch_id, s.gain AS delta FROM streamer_sample_v s  WHERE $__timeFilter(s.ts) AND NOT s.derived AND s.gain > 0 AND s.gap_s <= 300  ORDER BY s.gain DESC LIMIT 200) SELECT e.ts AS \"Heure\", st.display AS \"Streamer\", e.delta AS \"Gain\", st.login AS login FROM e JOIN streamer_v st USING (twitch_id) WHERE st.login NOT IN ('zevent', 'zeventplays') AND coalesce(st.location, '') ~ '^(${location:regex})$' AND NOT EXISTS (SELECT 1 FROM streamer_sample_v p WHERE p.twitch_id = e.twitch_id                 AND p.ts < e.ts AND p.ts >= e.ts - interval '10 minutes' AND p.gain <= -0.9 * e.delta) ORDER BY e.delta DESC LIMIT 25",
           "format": "table",
           "refId": "A"
         }
@@ -457,7 +457,7 @@
                 "id": "links",
                 "value": [
                   {
-                    "title": "Open on Twitch",
+                    "title": "Ouvrir sur Twitch",
                     "url": "https://twitch.tv/${__data.fields.login}",
                     "targetBlank": true
                   }
@@ -483,12 +483,12 @@
         "showHeader": true,
         "sortBy": []
       },
-      "description": "Gains within one minute of a streamer's counter. The organisation's own channels (ZEVENT, ZEventPlays) are left out: their counters move in lumps (tickets, shop) and, before Sept 4 22:58 CEST, come from a 30-minute source. Gains are measured between two samples at most 5 minutes apart, so a gap in the data is not counted as one minute). A restore after an upstream blip (a counter dropping to 0 and coming back minutes later) is left out: rows whose streamer lost at least 90% of the amount in the previous 10 minutes are skipped."
+      "description": "Gains du compteur d'un streamer en une minute. Les cha\u00eenes de l'organisation (ZEVENT, ZEventPlays) sont exclues : leurs compteurs bougent par paquets (billets, boutique) et, avant le 4 sept. 22:58 CEST, viennent d'une source relev\u00e9e toutes les 30 minutes. Les gains sont mesur\u00e9s entre deux relev\u00e9s espac\u00e9s d'au plus 5 minutes, pour qu'un trou dans les donn\u00e9es ne compte pas comme une minute. Le retour \u00e0 la normale apr\u00e8s un rat\u00e9 de l'API (un compteur qui tombe \u00e0 0 et revient quelques minutes plus tard) est exclu : les lignes dont le streamer a perdu au moins 90 % du montant dans les 10 minutes pr\u00e9c\u00e9dentes sont ignor\u00e9es."
     },
     {
       "id": 8,
       "type": "row",
-      "title": "Patterns",
+      "title": "Tendances",
       "collapsed": false,
       "gridPos": {
         "x": 0,
@@ -501,7 +501,7 @@
     {
       "id": 9,
       "type": "barchart",
-      "title": "Donations by hour of the day (Europe/Paris)",
+      "title": "Dons par heure de la journ\u00e9e (Europe/Paris)",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -519,7 +519,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT to_char(h, 'FM00\"h\"') AS \"Hour\", sum(sg) AS \"To a streamer\",        sum(g - sg) AS \"Not tied to a streamer\" FROM (  SELECT extract(hour FROM gl.ts AT TIME ZONE 'Europe/Paris') AS h, gl.g, coalesce(st.sg, 0) AS sg  FROM (SELECT ts, donation_total - lag(donation_total) OVER (ORDER BY ts) AS g FROM snapshot WHERE $__timeFilter(ts)) gl  LEFT JOIN (SELECT ts, sum(gain) AS sg FROM streamer_sample_v WHERE NOT derived AND $__timeFilter(ts)             GROUP BY ts) st USING (ts)) d WHERE g IS NOT NULL GROUP BY h ORDER BY h",
+          "rawSql": "SELECT to_char(h, 'FM00\"h\"') AS \"Heure\", sum(sg) AS \"\u00c0 un streamer\",        sum(g - sg) AS \"Sans streamer\" FROM (  SELECT extract(hour FROM gl.ts AT TIME ZONE 'Europe/Paris') AS h, gl.g, coalesce(st.sg, 0) AS sg  FROM (SELECT ts, donation_total - lag(donation_total) OVER (ORDER BY ts) AS g FROM snapshot WHERE $__timeFilter(ts)) gl  LEFT JOIN (SELECT ts, sum(gain) AS sg FROM streamer_sample_v WHERE NOT derived AND $__timeFilter(ts)             GROUP BY ts) st USING (ts)) d WHERE g IS NOT NULL GROUP BY h ORDER BY h",
           "format": "table",
           "refId": "A"
         }
@@ -540,7 +540,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "To a streamer"
+              "options": "\u00c0 un streamer"
             },
             "properties": [
               {
@@ -555,7 +555,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Not tied to a streamer"
+              "options": "Sans streamer"
             },
             "properties": [
               {
@@ -571,7 +571,7 @@
       },
       "options": {
         "orientation": "auto",
-        "xField": "Hour",
+        "xField": "Heure",
         "showValue": "never",
         "barWidth": 0.8,
         "stacking": "none",
@@ -585,12 +585,12 @@
           "sort": "none"
         }
       },
-      "description": "Event total gained per hour of the day, summed over the selected range (all locations), split into what the streamer counters gained and the rest. All donations that could not be tied to a streamer: the event total minus the sum of the streamer counters. This holds donations made by people without picking a streamer (the Streamlabs Charity team page without a member), the tickets of the concert on Thursday, all shop donations, and so on. The derived \"mistermv (private counter)\" row is left out of the streamer sum: since 01:08 UTC on Sept 5 it mirrors Domingo's counter, which is already counted once."
+      "description": "Gain du total de l'\u00e9v\u00e9nement par heure de la journ\u00e9e, additionn\u00e9 sur la p\u00e9riode s\u00e9lectionn\u00e9e (tous lieux), s\u00e9par\u00e9 entre ce que les compteurs des streamers ont gagn\u00e9 et le reste. Tous les dons qui n'ont pas pu \u00eatre rattach\u00e9s \u00e0 un streamer : le total de l'\u00e9v\u00e9nement moins la somme des compteurs des streamers. On y trouve les dons faits sans choisir de streamer (la page d'\u00e9quipe Streamlabs Charity sans membre), les billets du concert de jeudi, tous les dons de la boutique, etc. La ligne d\u00e9riv\u00e9e \"dons sp\u00e9ciaux du vieux monsieur\" est exclue de la somme des streamers : depuis le 5 sept. \u00e0 01:08 UTC, elle refl\u00e8te le compteur de Domingo, qui est d\u00e9j\u00e0 compt\u00e9 une fois."
     },
     {
       "id": 10,
       "type": "table",
-      "title": "Donations per viewer-hour",
+      "title": "Dons par viewer-heure",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -608,7 +608,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH v AS (  SELECT x.twitch_id, sum(x.viewers * least(x.gap_s, 300)) / 3600.0 AS viewer_hours,          sum(least(x.gap_s, 300)) FILTER (WHERE x.online) / 3600.0 AS hours  FROM streamer_sample_v x WHERE $__timeFilter(x.ts) AND x.gap_s IS NOT NULL GROUP BY x.twitch_id), g AS (  SELECT s.twitch_id, sum(s.gain) AS gained FROM streamer_sample_v s  WHERE $__timeFilter(s.ts) AND s.gain IS NOT NULL GROUP BY s.twitch_id) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", g.gained / v.viewer_hours AS \"Per viewer-hour\", g.gained AS \"Gained\", v.viewer_hours AS \"Viewer-hours\", v.hours AS \"Hours\", st.login AS login FROM g JOIN v USING (twitch_id) JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND v.viewer_hours >= 100 AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY 3 DESC LIMIT 25",
+          "rawSql": "WITH v AS (  SELECT x.twitch_id, sum(x.viewers * least(x.gap_s, 300)) / 3600.0 AS viewer_hours,          sum(least(x.gap_s, 300)) FILTER (WHERE x.online) / 3600.0 AS hours  FROM streamer_sample_v x WHERE $__timeFilter(x.ts) AND x.gap_s IS NOT NULL GROUP BY x.twitch_id), g AS (  SELECT s.twitch_id, sum(s.gain) AS gained FROM streamer_sample_v s  WHERE $__timeFilter(s.ts) AND s.gain IS NOT NULL GROUP BY s.twitch_id) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", g.gained / v.viewer_hours AS \"Par viewer-heure\", g.gained AS \"Gagn\u00e9\", v.viewer_hours AS \"Viewer-heures\", v.hours AS \"Heures\", st.login AS login FROM g JOIN v USING (twitch_id) JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND v.viewer_hours >= 100 AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY 3 DESC LIMIT 25",
           "format": "table",
           "refId": "A"
         }
@@ -649,7 +649,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Per viewer-hour"
+              "options": "Par viewer-heure"
             },
             "properties": [
               {
@@ -665,7 +665,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Gained"
+              "options": "Gagn\u00e9"
             },
             "properties": [
               {
@@ -681,7 +681,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Hours"
+              "options": "Heures"
             },
             "properties": [
               {
@@ -704,7 +704,7 @@
                 "id": "links",
                 "value": [
                   {
-                    "title": "Open on Twitch",
+                    "title": "Ouvrir sur Twitch",
                     "url": "https://twitch.tv/${__data.fields.login}",
                     "targetBlank": true
                   }
@@ -730,12 +730,12 @@
         "showHeader": true,
         "sortBy": []
       },
-      "description": "Gained in the selected range divided by viewer-hours (viewers summed over time): how much a community gives relative to its size. Streamers with fewer than 100 viewer-hours are left out."
+      "description": "Gagn\u00e9 sur la p\u00e9riode s\u00e9lectionn\u00e9e divis\u00e9 par les viewer-heures (viewers additionn\u00e9s dans le temps) : ce qu'une communaut\u00e9 donne par rapport \u00e0 sa taille. Les streamers avec moins de 100 viewer-heures sont exclus."
     },
     {
       "id": 11,
       "type": "table",
-      "title": "Trending now (last 15 minutes)",
+      "title": "Tendance du moment (15 derni\u00e8res minutes)",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -753,7 +753,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH cur AS (SELECT max(ts) AS ts FROM snapshot), n AS (SELECT twitch_id, donation_total, viewers FROM streamer_sample_v, cur WHERE streamer_sample_v.ts = cur.ts), p AS (SELECT DISTINCT ON (ss.twitch_id) ss.twitch_id, ss.donation_total, ss.viewers FROM streamer_sample_v ss, cur       WHERE ss.ts BETWEEN cur.ts - interval '60 minutes' AND cur.ts - interval '15 minutes'       ORDER BY ss.twitch_id, ss.ts DESC) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", n.donation_total - p.donation_total AS \"Gained\", n.viewers AS \"Viewers\", n.viewers - p.viewers AS \"Viewers change\", st.login AS login FROM n JOIN p USING (twitch_id) JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY 3 DESC LIMIT 25",
+          "rawSql": "WITH cur AS (SELECT max(ts) AS ts FROM snapshot), n AS (SELECT twitch_id, donation_total, viewers FROM streamer_sample_v, cur WHERE streamer_sample_v.ts = cur.ts), p AS (SELECT DISTINCT ON (ss.twitch_id) ss.twitch_id, ss.donation_total, ss.viewers FROM streamer_sample_v ss, cur       WHERE ss.ts BETWEEN cur.ts - interval '60 minutes' AND cur.ts - interval '15 minutes'       ORDER BY ss.twitch_id, ss.ts DESC) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", n.donation_total - p.donation_total AS \"Gagn\u00e9\", n.viewers AS \"Viewers\", n.viewers - p.viewers AS \"Variation viewers\", st.login AS login FROM n JOIN p USING (twitch_id) JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY 3 DESC LIMIT 25",
           "format": "table",
           "refId": "A"
         }
@@ -794,7 +794,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Gained"
+              "options": "Gagn\u00e9"
             },
             "properties": [
               {
@@ -817,7 +817,7 @@
                 "id": "links",
                 "value": [
                   {
-                    "title": "Open on Twitch",
+                    "title": "Ouvrir sur Twitch",
                     "url": "https://twitch.tv/${__data.fields.login}",
                     "targetBlank": true
                   }
@@ -843,12 +843,12 @@
         "showHeader": true,
         "sortBy": []
       },
-      "description": "Streamers by donations gained over the last 15 minutes of data, with the change in viewers (compared with the latest sample at least 15 minutes old, looking back up to an hour)."
+      "description": "Streamers class\u00e9s par dons gagn\u00e9s sur les 15 derni\u00e8res minutes de donn\u00e9es, avec la variation du nombre de viewers (par rapport au dernier relev\u00e9 vieux d'au moins 15 minutes, en remontant jusqu'\u00e0 une heure)."
     },
     {
       "id": 12,
       "type": "timeseries",
-      "title": "Donations gained per interval, by location",
+      "title": "Dons gagn\u00e9s par intervalle, par lieu",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -866,7 +866,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroupAlias(d.ts, $__interval), coalesce(st.location, 'Unknown') AS metric, sum(d.gain) AS value FROM streamer_sample_v d JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(d.ts) AND NOT d.derived AND d.gain IS NOT NULL AND coalesce(st.location, '') ~ '^(${location:regex})$' GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT $__timeGroupAlias(d.ts, $__interval), CASE st.location WHEN 'LAN' THEN 'Sur place (LAN)' WHEN 'Online' THEN '\u00c0 distance (online)' ELSE 'Inconnu' END AS metric, sum(d.gain) AS value FROM streamer_sample_v d JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(d.ts) AND NOT d.derived AND d.gain IS NOT NULL AND coalesce(st.location, '') ~ '^(${location:regex})$' GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }
@@ -906,7 +906,7 @@
     {
       "id": 13,
       "type": "row",
-      "title": "On site vs remote",
+      "title": "Sur place vs \u00e0 distance",
       "collapsed": false,
       "gridPos": {
         "x": 0,
@@ -919,7 +919,7 @@
     {
       "id": 14,
       "type": "timeseries",
-      "title": "Live streamers by location",
+      "title": "Streamers en live par lieu",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -937,7 +937,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT s.ts AS time, coalesce(st.location, 'Unknown') AS metric, count(*) FILTER (WHERE s.online) AS value FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT s.ts AS time, CASE st.location WHEN 'LAN' THEN 'Sur place (LAN)' WHEN 'Online' THEN '\u00c0 distance (online)' ELSE 'Inconnu' END AS metric, count(*) FILTER (WHERE s.online) AS value FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }
@@ -955,7 +955,7 @@
               "group": "A"
             }
           },
-          "unit": "short"
+          "unit": "sishort"
         },
         "overrides": []
       },
@@ -975,7 +975,7 @@
     {
       "id": 15,
       "type": "timeseries",
-      "title": "Viewers by location",
+      "title": "Viewers par lieu",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -993,7 +993,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT s.ts AS time, coalesce(st.location, 'Unknown') AS metric, sum(s.viewers) AS value FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "SELECT s.ts AS time, CASE st.location WHEN 'LAN' THEN 'Sur place (LAN)' WHEN 'Online' THEN '\u00c0 distance (online)' ELSE 'Inconnu' END AS metric, sum(s.viewers) AS value FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }
@@ -1011,7 +1011,7 @@
               "group": "A"
             }
           },
-          "unit": "short"
+          "unit": "sishort"
         },
         "overrides": []
       },
@@ -1031,7 +1031,7 @@
     {
       "id": 16,
       "type": "row",
-      "title": "Games",
+      "title": "Jeux",
       "collapsed": false,
       "gridPos": {
         "x": 0,
@@ -1044,7 +1044,7 @@
     {
       "id": 17,
       "type": "timeseries",
-      "title": "Streamers online per game",
+      "title": "Streamers en live par jeu",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -1062,7 +1062,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH top AS (SELECT game FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.online AND coalesce(st.location, '') ~ '^(${location:regex})$' GROUP BY game ORDER BY count(*) DESC LIMIT 8) SELECT ts AS time, CASE WHEN game IN (SELECT game FROM top) THEN game ELSE 'Other' END AS metric, count(*) AS value FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.online AND coalesce(st.location, '') ~ '^(${location:regex})$' GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "WITH top AS (SELECT game FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.online AND coalesce(st.location, '') ~ '^(${location:regex})$' GROUP BY game ORDER BY count(*) DESC LIMIT 8) SELECT ts AS time, CASE WHEN game IN (SELECT game FROM top) THEN game ELSE 'Autre' END AS metric, count(*) AS value FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.online AND coalesce(st.location, '') ~ '^(${location:regex})$' GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }
@@ -1080,7 +1080,7 @@
               "group": "A"
             }
           },
-          "unit": "short"
+          "unit": "sishort"
         },
         "overrides": []
       },
@@ -1100,7 +1100,7 @@
     {
       "id": 18,
       "type": "timeseries",
-      "title": "Viewers per game",
+      "title": "Viewers par jeu",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -1118,7 +1118,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH top AS (SELECT game FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.online AND coalesce(st.location, '') ~ '^(${location:regex})$' GROUP BY game ORDER BY sum(viewers) DESC LIMIT 8) SELECT ts AS time, CASE WHEN game IN (SELECT game FROM top) THEN game ELSE 'Other' END AS metric, sum(viewers) AS value FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.online AND coalesce(st.location, '') ~ '^(${location:regex})$' GROUP BY 1, 2 ORDER BY 1",
+          "rawSql": "WITH top AS (SELECT game FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.online AND coalesce(st.location, '') ~ '^(${location:regex})$' GROUP BY game ORDER BY sum(viewers) DESC LIMIT 8) SELECT ts AS time, CASE WHEN game IN (SELECT game FROM top) THEN game ELSE 'Autre' END AS metric, sum(viewers) AS value FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND s.online AND coalesce(st.location, '') ~ '^(${location:regex})$' GROUP BY 1, 2 ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }
@@ -1136,7 +1136,7 @@
               "group": "A"
             }
           },
-          "unit": "short"
+          "unit": "sishort"
         },
         "overrides": []
       },
@@ -1156,7 +1156,7 @@
     {
       "id": 19,
       "type": "table",
-      "title": "Hours streamed per game",
+      "title": "Heures de stream par jeu",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -1174,7 +1174,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT coalesce(x.game, '(no game)') AS \"Game\", sum(least(x.gap_s, 300)) / 3600.0 AS \"Hours\",        count(DISTINCT x.twitch_id) AS \"Streamers\", sum(x.viewers * least(x.gap_s, 300)) / 3600.0 AS \"Viewer-hours\" FROM streamer_sample_v x JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(x.ts) AND NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' AND x.online AND x.gap_s IS NOT NULL GROUP BY 1 ORDER BY 2 DESC LIMIT 25",
+          "rawSql": "SELECT coalesce(x.game, '(sans jeu)') AS \"Jeu\", sum(least(x.gap_s, 300)) / 3600.0 AS \"Heures\",        count(DISTINCT x.twitch_id) AS \"Streamers\", sum(x.viewers * least(x.gap_s, 300)) / 3600.0 AS \"Viewer-heures\" FROM streamer_sample_v x JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(x.ts) AND NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' AND x.online AND x.gap_s IS NOT NULL GROUP BY 1 ORDER BY 2 DESC LIMIT 25",
           "format": "table",
           "refId": "A"
         }
@@ -1193,7 +1193,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Hours"
+              "options": "Heures"
             },
             "properties": [
               {
@@ -1216,7 +1216,7 @@
     {
       "id": 20,
       "type": "row",
-      "title": "Donations not tied to a streamer",
+      "title": "Dons sans streamer",
       "collapsed": false,
       "gridPos": {
         "x": 0,
@@ -1229,7 +1229,7 @@
     {
       "id": 21,
       "type": "timeseries",
-      "title": "Over time (total minus all streamers)",
+      "title": "Au fil du temps (total moins tous les streamers)",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -1247,7 +1247,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT sn.ts AS time, sn.donation_total - sum(s.donation_total) FILTER (WHERE NOT s.derived) AS \"Not tied to a streamer\", coalesce(sum(s.donation_total) FILTER (WHERE s.derived), 0) AS \"Mirrored (mistermv)\" FROM snapshot sn JOIN streamer_sample_v s USING (ts) WHERE $__timeFilter(sn.ts) GROUP BY sn.ts, sn.donation_total ORDER BY 1",
+          "rawSql": "SELECT sn.ts AS time, sn.donation_total - sum(s.donation_total) FILTER (WHERE NOT s.derived) AS \"Sans streamer\", coalesce(sum(s.donation_total) FILTER (WHERE s.derived), 0) AS \"Reflet (mistermv)\" FROM snapshot sn JOIN streamer_sample_v s USING (ts) WHERE $__timeFilter(sn.ts) GROUP BY sn.ts, sn.donation_total ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }
@@ -1277,12 +1277,12 @@
           "sort": "desc"
         }
       },
-      "description": "All donations that could not be tied to a streamer: the event total minus the sum of the streamer counters. This holds donations made by people without picking a streamer (the Streamlabs Charity team page without a member), the tickets of the concert on Thursday, all shop donations, and so on. The derived \"mistermv (private counter)\" row is left out of the streamer sum: since 01:08 UTC on Sept 5 it mirrors Domingo's counter, which is already counted once."
+      "description": "Tous les dons qui n'ont pas pu \u00eatre rattach\u00e9s \u00e0 un streamer : le total de l'\u00e9v\u00e9nement moins la somme des compteurs des streamers. On y trouve les dons faits sans choisir de streamer (la page d'\u00e9quipe Streamlabs Charity sans membre), les billets du concert de jeudi, tous les dons de la boutique, etc. La ligne d\u00e9riv\u00e9e \"dons sp\u00e9ciaux du vieux monsieur\" est exclue de la somme des streamers : depuis le 5 sept. \u00e0 01:08 UTC, elle refl\u00e8te le compteur de Domingo, qui est d\u00e9j\u00e0 compt\u00e9 une fois."
     },
     {
       "id": 22,
       "type": "timeseries",
-      "title": "Per interval (total gain minus streamer gains)",
+      "title": "Par intervalle (gain total moins gains des streamers)",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -1300,7 +1300,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroupAlias(ts, $__interval), sum(g) - sum(sg) AS \"Not tied to a streamer\" FROM (  SELECT ts, donation_total - lag(donation_total) OVER (ORDER BY ts) AS g FROM snapshot WHERE $__timeFilter(ts)) gl JOIN (  SELECT ts, sum(gain) AS sg FROM streamer_sample_v WHERE NOT derived AND $__timeFilter(ts) GROUP BY ts) st USING (ts) WHERE g IS NOT NULL GROUP BY 1 ORDER BY 1",
+          "rawSql": "SELECT $__timeGroupAlias(ts, $__interval), sum(g) - sum(sg) AS \"Sans streamer\" FROM (  SELECT ts, donation_total - lag(donation_total) OVER (ORDER BY ts) AS g FROM snapshot WHERE $__timeFilter(ts)) gl JOIN (  SELECT ts, sum(gain) AS sg FROM streamer_sample_v WHERE NOT derived AND $__timeFilter(ts) GROUP BY ts) st USING (ts) WHERE g IS NOT NULL GROUP BY 1 ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }
@@ -1332,7 +1332,7 @@
         }
       },
       "interval": "5m",
-      "description": "All donations that could not be tied to a streamer: the event total minus the sum of the streamer counters. This holds donations made by people without picking a streamer (the Streamlabs Charity team page without a member), the tickets of the concert on Thursday, all shop donations, and so on. The derived \"mistermv (private counter)\" row is left out of the streamer sum: since 01:08 UTC on Sept 5 it mirrors Domingo's counter, which is already counted once."
+      "description": "Tous les dons qui n'ont pas pu \u00eatre rattach\u00e9s \u00e0 un streamer : le total de l'\u00e9v\u00e9nement moins la somme des compteurs des streamers. On y trouve les dons faits sans choisir de streamer (la page d'\u00e9quipe Streamlabs Charity sans membre), les billets du concert de jeudi, tous les dons de la boutique, etc. La ligne d\u00e9riv\u00e9e \"dons sp\u00e9ciaux du vieux monsieur\" est exclue de la somme des streamers : depuis le 5 sept. \u00e0 01:08 UTC, elle refl\u00e8te le compteur de Domingo, qui est d\u00e9j\u00e0 compt\u00e9 une fois."
     }
   ]
 }
