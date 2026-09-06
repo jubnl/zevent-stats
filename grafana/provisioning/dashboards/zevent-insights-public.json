@@ -1247,7 +1247,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT sn.ts AS time, sn.donation_total - sum(s.donation_total) FILTER (WHERE NOT s.derived) AS \"Sans streamer\", coalesce(sum(s.donation_total) FILTER (WHERE s.derived), 0) AS \"Reflet (mistermv)\" FROM snapshot sn JOIN streamer_sample_v s USING (ts) WHERE $__timeFilter(sn.ts) GROUP BY sn.ts, sn.donation_total ORDER BY 1",
+          "rawSql": "SELECT sn.ts AS time, sn.donation_total - sum(s.donation_total) FILTER (WHERE NOT s.derived) AS \"Sans streamer\", coalesce(sum(s.donation_total) FILTER (WHERE s.derived), 0) AS \"dons sp\u00e9ciaux du vieux monsieur\" FROM snapshot sn JOIN streamer_sample_v s USING (ts) WHERE $__timeFilter(sn.ts) GROUP BY sn.ts, sn.donation_total ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }

@@ -270,12 +270,12 @@ def leaderboard(title, x, y, order_by, where="true", extra_cte="", extra_col="",
         "  SELECT twitch_id, donation_total, viewers, online FROM streamer_sample_v"
         "  WHERE ts = (SELECT max(ts) FROM snapshot)"
         ") " + extra_cte +
-        f'SELECT st.profile_url AS "Avatar", st.display AS "Streamer", {extra_col}cur.donation_total AS "Dons", '
-        'cur.viewers AS "Viewers", coalesce(h.hours, 0) AS "Heures", st.login AS login '
+        f'SELECT st.profile_url AS "Avatar", st.display AS "Streamer", {extra_col}cur.donation_total AS "Cagnotte", '
+        'cur.viewers AS "Viewers", coalesce(h.hours, 0) AS "Heures de stream", st.login AS login '
         "FROM cur JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) " + extra_join +
         f"WHERE {where} AND " + LOC + f" ORDER BY {order_by} LIMIT 25"
     )
-    return table(title, sql, x, y, w=12, money_cols=money_cols + ("Dons",), hour_cols=("Heures",),
+    return table(title, sql, x, y, w=12, money_cols=money_cols + ("Cagnotte",), hour_cols=("Heures de stream",),
                  image_cols=("Avatar",), streamer_links=True)
 
 
@@ -537,7 +537,7 @@ def insights_panels():
         row("Dons sans streamer", 62),
         ts("Au fil du temps (total moins tous les streamers)",
            'SELECT sn.ts AS time, sn.donation_total - sum(s.donation_total) FILTER (WHERE NOT s.derived) AS "Sans streamer", '
-           'coalesce(sum(s.donation_total) FILTER (WHERE s.derived), 0) AS "Reflet (mistermv)" '
+           'coalesce(sum(s.donation_total) FILTER (WHERE s.derived), 0) AS "dons spéciaux du vieux monsieur" '
            'FROM snapshot sn JOIN streamer_sample_v s USING (ts) '
            'WHERE $__timeFilter(sn.ts) GROUP BY sn.ts, sn.donation_total ORDER BY 1',
            0, 63, unit="currencyEUR", description=MIRROR_NOTE),
@@ -612,7 +612,7 @@ def streamer_panels():
            "WHERE NOT st.derived AND s.twitch_id IN ($streamer)")
     return [
         text_panel(HERO_HTML, 0, 0, 9, 12),
-        stat("Dons",
+        stat("Cagnotte perso",
              f"SELECT coalesce(sum(s.donation_total), 0) {sel} AND s.ts = (SELECT max(ts) FROM snapshot)",
              9, w=5, unit="currencyEUR", decimals=2),
         stat("Rank",

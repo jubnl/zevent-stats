@@ -883,7 +883,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH h AS (  SELECT s.twitch_id, sum(least(s.gap_s, 300)) FILTER (WHERE s.online) / 3600.0 AS hours  FROM streamer_sample_v s WHERE $__timeFilter(s.ts) AND s.gap_s IS NOT NULL GROUP BY s.twitch_id) , cur AS (  SELECT twitch_id, donation_total, viewers, online FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot)) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", cur.donation_total AS \"Dons\", cur.viewers AS \"Viewers\", coalesce(h.hours, 0) AS \"Heures\", st.login AS login FROM cur JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) WHERE true AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY cur.donation_total DESC LIMIT 25",
+          "rawSql": "WITH h AS (  SELECT s.twitch_id, sum(least(s.gap_s, 300)) FILTER (WHERE s.online) / 3600.0 AS hours  FROM streamer_sample_v s WHERE $__timeFilter(s.ts) AND s.gap_s IS NOT NULL GROUP BY s.twitch_id) , cur AS (  SELECT twitch_id, donation_total, viewers, online FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot)) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", cur.donation_total AS \"Cagnotte\", cur.viewers AS \"Viewers\", coalesce(h.hours, 0) AS \"Heures de stream\", st.login AS login FROM cur JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) WHERE true AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY cur.donation_total DESC LIMIT 25",
           "format": "table",
           "refId": "A"
         }
@@ -924,7 +924,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Dons"
+              "options": "Cagnotte"
             },
             "properties": [
               {
@@ -940,7 +940,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Heures"
+              "options": "Heures de stream"
             },
             "properties": [
               {
@@ -1011,7 +1011,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH h AS (  SELECT s.twitch_id, sum(least(s.gap_s, 300)) FILTER (WHERE s.online) / 3600.0 AS hours  FROM streamer_sample_v s WHERE $__timeFilter(s.ts) AND s.gap_s IS NOT NULL GROUP BY s.twitch_id) , cur AS (  SELECT twitch_id, donation_total, viewers, online FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot)) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", cur.donation_total AS \"Dons\", cur.viewers AS \"Viewers\", coalesce(h.hours, 0) AS \"Heures\", st.login AS login FROM cur JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) WHERE cur.online AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY cur.viewers DESC LIMIT 25",
+          "rawSql": "WITH h AS (  SELECT s.twitch_id, sum(least(s.gap_s, 300)) FILTER (WHERE s.online) / 3600.0 AS hours  FROM streamer_sample_v s WHERE $__timeFilter(s.ts) AND s.gap_s IS NOT NULL GROUP BY s.twitch_id) , cur AS (  SELECT twitch_id, donation_total, viewers, online FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot)) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", cur.donation_total AS \"Cagnotte\", cur.viewers AS \"Viewers\", coalesce(h.hours, 0) AS \"Heures de stream\", st.login AS login FROM cur JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) WHERE cur.online AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY cur.viewers DESC LIMIT 25",
           "format": "table",
           "refId": "A"
         }
@@ -1052,7 +1052,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Dons"
+              "options": "Cagnotte"
             },
             "properties": [
               {
@@ -1068,7 +1068,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Heures"
+              "options": "Heures de stream"
             },
             "properties": [
               {
@@ -1139,7 +1139,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH h AS (  SELECT s.twitch_id, sum(least(s.gap_s, 300)) FILTER (WHERE s.online) / 3600.0 AS hours  FROM streamer_sample_v s WHERE $__timeFilter(s.ts) AND s.gap_s IS NOT NULL GROUP BY s.twitch_id) , cur AS (  SELECT twitch_id, donation_total, viewers, online FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot)) , g AS (  SELECT s.twitch_id, sum(s.gain) AS gained FROM streamer_sample_v s  WHERE $__timeFilter(s.ts) AND s.gain IS NOT NULL GROUP BY s.twitch_id) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", g.gained AS \"Gagn\u00e9\", cur.donation_total AS \"Dons\", cur.viewers AS \"Viewers\", coalesce(h.hours, 0) AS \"Heures\", st.login AS login FROM cur JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) JOIN g USING (twitch_id) WHERE true AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY g.gained DESC LIMIT 25",
+          "rawSql": "WITH h AS (  SELECT s.twitch_id, sum(least(s.gap_s, 300)) FILTER (WHERE s.online) / 3600.0 AS hours  FROM streamer_sample_v s WHERE $__timeFilter(s.ts) AND s.gap_s IS NOT NULL GROUP BY s.twitch_id) , cur AS (  SELECT twitch_id, donation_total, viewers, online FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot)) , g AS (  SELECT s.twitch_id, sum(s.gain) AS gained FROM streamer_sample_v s  WHERE $__timeFilter(s.ts) AND s.gain IS NOT NULL GROUP BY s.twitch_id) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", g.gained AS \"Gagn\u00e9\", cur.donation_total AS \"Cagnotte\", cur.viewers AS \"Viewers\", coalesce(h.hours, 0) AS \"Heures de stream\", st.login AS login FROM cur JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) JOIN g USING (twitch_id) WHERE true AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY g.gained DESC LIMIT 25",
           "format": "table",
           "refId": "A"
         }
@@ -1196,7 +1196,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Dons"
+              "options": "Cagnotte"
             },
             "properties": [
               {
@@ -1212,7 +1212,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Heures"
+              "options": "Heures de stream"
             },
             "properties": [
               {
@@ -1283,7 +1283,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH h AS (  SELECT s.twitch_id, sum(least(s.gap_s, 300)) FILTER (WHERE s.online) / 3600.0 AS hours  FROM streamer_sample_v s WHERE $__timeFilter(s.ts) AND s.gap_s IS NOT NULL GROUP BY s.twitch_id) , cur AS (  SELECT twitch_id, donation_total, viewers, online FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot)) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", cur.donation_total AS \"Dons\", cur.viewers AS \"Viewers\", coalesce(h.hours, 0) AS \"Heures\", st.login AS login FROM cur JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) WHERE true AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY coalesce(h.hours, 0) DESC, cur.donation_total DESC LIMIT 25",
+          "rawSql": "WITH h AS (  SELECT s.twitch_id, sum(least(s.gap_s, 300)) FILTER (WHERE s.online) / 3600.0 AS hours  FROM streamer_sample_v s WHERE $__timeFilter(s.ts) AND s.gap_s IS NOT NULL GROUP BY s.twitch_id) , cur AS (  SELECT twitch_id, donation_total, viewers, online FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot)) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", cur.donation_total AS \"Cagnotte\", cur.viewers AS \"Viewers\", coalesce(h.hours, 0) AS \"Heures de stream\", st.login AS login FROM cur JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) WHERE true AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY coalesce(h.hours, 0) DESC, cur.donation_total DESC LIMIT 25",
           "format": "table",
           "refId": "A"
         }
@@ -1324,7 +1324,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Dons"
+              "options": "Cagnotte"
             },
             "properties": [
               {
@@ -1340,7 +1340,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Heures"
+              "options": "Heures de stream"
             },
             "properties": [
               {
