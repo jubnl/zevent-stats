@@ -652,7 +652,7 @@
     {
       "id": 10,
       "type": "stat",
-      "title": "Heures visionn\u00e9es par viewer",
+      "title": "Heures visionn\u00e9es",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"

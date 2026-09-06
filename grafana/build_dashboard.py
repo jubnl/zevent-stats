@@ -1071,7 +1071,7 @@ def streamer_panels():
              "FROM streamer_sample_v x WHERE $__timeFilter(x.ts) AND x.twitch_id IN ($streamer) AND x.gap_s IS NOT NULL",
              14, w=5, y=8, unit="sishort", decimals=0, color="purple",
              description="Heures visionnées par viewer divisées par les heures en live, sur la période et les streamers sélectionnés."),
-        stat("Heures visionnées par viewer", viewer_hours_sql("true"), 19, w=5, y=8, unit="sishort", decimals=1, color="purple",
+        stat("Heures visionnées", viewer_hours_sql("true"), 19, w=5, y=8, unit="sishort", decimals=1, color="purple",
              description=VIEWER_HOURS_DESCRIPTION),
 
         # fourth row of tiles, full width, y=12
