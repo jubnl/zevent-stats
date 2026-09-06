@@ -372,9 +372,9 @@ def xychart(title, sql, x, y, w=12, h=9, x_col="", y_col="", y_unit=None, descri
 # upstream blip where the counter drops and is restored).
 RANGE_GAIN = "(array_agg(donation_total ORDER BY ts DESC))[1] - (array_agg(donation_total ORDER BY ts))[1]"
 
-# Assumed end of the event (the channels' marathon closes Monday morning, 02:00 CEST). Only used by the
+# End of the event (the channels' marathon closes Monday 01:00 CEST, 23:00 UTC Sunday). Only used by the
 # "projected total" tiles; after this instant they simply show the current total.
-EVENT_END = "2026-09-07 00:00:00+00"
+EVENT_END = "2026-09-06 23:00:00+00"
 
 
 # One-minute jumps of the event total at or above this are one-off payments (the shop: 3.7M in one minute on
@@ -583,11 +583,11 @@ def insights_panels():
              description="Au rythme des dons des 10 dernières minutes."),
         stat("Total projeté à la fin (rythme 1 h)", projection_sql(1), 0, w=6, y=4, unit="currencyEUR", decimals=2,
              color="green", description="Total actuel plus le rythme de la dernière heure tenu jusqu'à la fin de "
-                                        "l'événement (lundi 02h00, heure de Paris). Les minutes avec un versement de "
+                                        "l'événement (lundi 01h00, heure de Paris). Les minutes avec un versement de "
                                         f"{BIG_DONATION // 1000} K€ ou plus (boutique, gros dons ponctuels) ne comptent pas dans le rythme."),
         stat("Total projeté à la fin (rythme 6 h)", projection_sql(6), 6, w=6, y=4, unit="currencyEUR", decimals=2,
              color="green", description="Total actuel plus le rythme des 6 dernières heures tenu jusqu'à la fin de "
-                                        "l'événement (lundi 02h00, heure de Paris). Les minutes avec un versement de "
+                                        "l'événement (lundi 01h00, heure de Paris). Les minutes avec un versement de "
                                         f"{BIG_DONATION // 1000} K€ ou plus (boutique, gros dons ponctuels) ne comptent pas dans le rythme."),
         stat("Dernière heure, et hier à la même heure",
              "WITH cur AS (SELECT max(ts) AS at FROM snapshot) "
