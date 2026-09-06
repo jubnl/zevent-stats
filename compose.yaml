@@ -18,24 +18,6 @@ services:
       retries: 10
     restart: unless-stopped
 
-  collector:
-    build: .
-    environment:
-      DATABASE_URL: postgresql://zevent:${POSTGRES_PASSWORD}@db:5432/zevent
-      ZEVENT_API_URL: https://zevent.fr/api/
-      POLL_INTERVAL: "60"
-      RAW_DIR: /raw
-      BACKFILL_ON_START: "true"   # import raw/ files missing from the db at startup
-    volumes:
-      - ./raw:/raw
-      # synthetic dumps for the hours before the collector started (see zevent_tracker/external.py); not
-      # imported automatically: run once `docker compose exec collector /app/.venv/bin/python main.py backfill /raw-backfill`
-      - ./raw-backfill:/raw-backfill:ro
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: unless-stopped
-
   # Grafana: anonymous read-only, provisioned dashboards, fixed time range, 30s refresh.
   # Published as zevent.jubnl.ch; the proxy redirects / to /d/zevent-public?kiosk.
   grafana-public:
