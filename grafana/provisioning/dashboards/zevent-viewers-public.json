@@ -140,7 +140,7 @@
         "x": 0,
         "y": 0,
         "w": 24,
-        "h": 18
+        "h": 22
       },
       "targets": [
         {
@@ -179,8 +179,10 @@
           "calcs": []
         },
         "tooltip": {
-          "mode": "single",
-          "sort": "desc"
+          "mode": "multi",
+          "sort": "desc",
+          "hideZeros": true,
+          "maxHeight": 600
         }
       },
       "interval": "15m",

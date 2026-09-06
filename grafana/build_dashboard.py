@@ -1361,17 +1361,18 @@ def live_panels(loc, scope):
 # bottom to top; the legend is off (hover a band for the name), and the Location and Streamer filters apply.
 def viewers_panels():
     reset_ids()
-    return [
-        ts("Viewers de chaque streamer au fil du temps ($location, $streamer)",
+    chart = ts("Viewers de chaque streamer au fil du temps ($location, $streamer)",
            "SELECT $__timeGroupAlias(s.ts, $__interval), st.display AS metric, sum(s.viewers)::float / count(DISTINCT s.ts) AS value "
            "FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) "
            "WHERE $__timeFilter(s.ts) AND NOT st.derived AND s.twitch_id IN ($streamer) AND " + LOC + " "
            "GROUP BY 1, 2 ORDER BY 1",
-           0, 0, w=24, h=18, unit="sishort", stack=True, legend=False, min_interval="15m",
+           0, 0, w=24, h=22, unit="sishort", stack=True, legend=False, min_interval="15m",
            description="Les viewers de chaque streamer, empilés : le haut de la pile est le total des viewers des streamers "
                        "correspondant aux filtres Lieu et Streamer. Survolez une bande pour voir le streamer. Chaque point "
-                       "est la moyenne sur l'intervalle (15 minutes au moins)."),
-    ]
+                       "est la moyenne sur l'intervalle (15 minutes au moins).")
+    # every streamer live at the hovered instant, biggest first; the streamers at 0 are left out of the list
+    chart["options"]["tooltip"] = {"mode": "multi", "sort": "desc", "hideZeros": True, "maxHeight": 600}
+    return [chart]
 
 
 # ---------------------------------------------------------------------------------------------------
