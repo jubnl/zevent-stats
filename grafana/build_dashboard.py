@@ -673,20 +673,10 @@ def insights_panels():
               "JOIN streamer_sample_v s ON s.donation_total >= t.v JOIN streamer_v st USING (twitch_id) "
               "WHERE NOT st.derived AND " + LOC + " GROUP BY st.profile_url, st.display, t.v, st.login "
               # not $__timeFilter(min(s.ts)): Grafana's macro parser stops at the first closing parenthesis
-              "HAVING min(s.ts) BETWEEN $__timeFrom() AND $__timeTo() ORDER BY min(s.ts) DESC LIMIT 25",
-              0, 14, w=12, h=9, money_cols=("Palier",), image_cols=("Avatar",), streamer_links=True,
+              "HAVING min(s.ts) BETWEEN $__timeFrom() AND $__timeTo() ORDER BY min(s.ts) DESC",
+              0, 14, w=12, h=18, money_cols=("Palier",), image_cols=("Avatar",), streamer_links=True,
               description="Quand chaque streamer a franchi 100 K, 250 K, 500 K, 1 M, 2 M, 3 M ou 5 M€ pour la première "
                           "fois (les franchissements dans la plage de temps sélectionnée, les plus récents en premier)."),
-        table("Changements de leader",
-              "WITH l AS (SELECT ts, twitch_id, donation_total, lag(twitch_id) OVER (ORDER BY ts) AS prev "
-              "           FROM streamer_sample_v WHERE rank = 1 AND NOT derived AND donation_total > 0) "
-              "SELECT l.ts AS \"Heure\", st.profile_url AS \"Avatar\", st.display AS \"Streamer\", "
-              "       coalesce(p.display, '—') AS \"Remplace\", l.donation_total AS \"Cagnotte\", st.login AS login "
-              "FROM l JOIN streamer_v st USING (twitch_id) LEFT JOIN streamer_v p ON p.twitch_id = l.prev "
-              "WHERE l.prev IS DISTINCT FROM l.twitch_id AND $__timeFilter(l.ts) ORDER BY l.ts DESC LIMIT 25",
-              12, 14, w=12, h=9, money_cols=("Cagnotte",), image_cols=("Avatar",), streamer_links=True,
-              description="Chaque fois que la première place du classement des dons a changé de mains, avec la "
-                          "cagnotte du nouveau leader à ce moment."),
         table("Plus gros bonds de viewers en une minute",
               "WITH e AS (SELECT s.ts, s.twitch_id, s.viewers_gain, s.viewers FROM streamer_sample_v s "
               "           WHERE $__timeFilter(s.ts) AND NOT s.derived AND s.viewers_gain > 0 "
@@ -694,26 +684,9 @@ def insights_panels():
               "SELECT e.ts AS \"Heure\", st.profile_url AS \"Avatar\", st.display AS \"Streamer\", e.viewers_gain AS \"Bond\", "
               "       e.viewers AS \"Viewers après\", st.login AS login "
               "FROM e JOIN streamer_v st USING (twitch_id) WHERE " + LOC + " ORDER BY e.viewers_gain DESC LIMIT 25",
-              0, 23, w=12, h=9, image_cols=("Avatar",), streamer_links=True,
+              12, 14, w=12, h=18, image_cols=("Avatar",), streamer_links=True,
               description="Plus fortes hausses du nombre de viewers d'un streamer entre deux relevés (raids, co-streams, "
                           "moments forts). Les passages en live (de 0 viewer à N) ne comptent pas."),
-        table("Plus fortes montées au classement (fin de l'événement)",
-              "WITH cur AS (SELECT max(ts) AS ts FROM snapshot), "
-              "n AS (SELECT s.twitch_id, s.rank, s.donation_total FROM streamer_sample_v s, cur WHERE s.ts = cur.ts AND NOT s.derived), "
-              "h AS (SELECT s.twitch_id, s.rank FROM streamer_sample_v s WHERE NOT s.derived "
-              "      AND s.ts = (SELECT max(sn.ts) FROM snapshot sn, cur WHERE sn.ts <= cur.ts - interval '1 hour')), "
-              "d AS (SELECT s.twitch_id, s.rank FROM streamer_sample_v s WHERE NOT s.derived "
-              "      AND s.ts = (SELECT max(sn.ts) FROM snapshot sn, cur WHERE sn.ts <= cur.ts - interval '24 hours')) "
-              "SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", n.rank AS \"Rang\", h.rank - n.rank AS \"Sur 1 h\", "
-              "       d.rank - n.rank AS \"Sur 24 h\", n.donation_total AS \"Cagnotte\", st.login AS login "
-              "FROM n JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) LEFT JOIN d USING (twitch_id) "
-              "WHERE " + LOC + " AND (h.rank <> n.rank OR d.rank <> n.rank) "
-              "ORDER BY coalesce(d.rank - n.rank, 0) DESC, coalesce(h.rank - n.rank, 0) DESC, n.rank LIMIT 25",
-              12, 23, w=12, h=9, money_cols=("Cagnotte",), image_cols=("Avatar",), streamer_links=True,
-              delta_cols=("Sur 1 h", "Sur 24 h"),
-              description="Places gagnées (ou perdues, en rouge) au classement des dons depuis 1 h et depuis 24 h, "
-                          "à la fin de l'événement."),
-
         table("Éditions précédentes",
               f"SELECT e.year AS \"Édition\", e.name AS \"Nom\", e.total AS \"Total\", "
               "       (SELECT min(ts) FROM snapshot WHERE donation_total >= e.total) AS \"Dépassé à\" "
@@ -766,15 +739,16 @@ def insights_panels():
               description="Gagné sur la période sélectionnée divisé par les heures visionnées par viewer (viewers additionnés dans le "
                           "temps) : ce qu'une communauté donne par rapport à sa taille. Les streamers avec moins de "
                           "100 heures visionnées par viewer sont exclus."),
-        table("Le sprint final (dernière heure de l'événement)",
+        # the final sprint started at 20:00 Paris time on the last evening (18:00 UTC)
+        table("Le sprint final (de 20h à la fin de l'événement)",
               "WITH cur AS (SELECT max(ts) AS ts FROM snapshot), "
               "f AS (SELECT s.twitch_id, sum(s.gain) AS gained, max(s.viewers) AS peak FROM streamer_sample_v s, cur "
-              "      WHERE s.ts > cur.ts - interval '1 hour' AND s.ts <= cur.ts AND NOT s.derived AND s.gain IS NOT NULL GROUP BY s.twitch_id) "
+              "      WHERE s.ts > '2026-09-06 18:00:00+00'::timestamptz AND s.ts <= cur.ts AND NOT s.derived AND s.gain IS NOT NULL GROUP BY s.twitch_id) "
               'SELECT st.profile_url AS "Avatar", st.display AS "Streamer", f.gained AS "Gagné", f.peak AS "Pic de viewers", st.login AS login '
               "FROM f JOIN streamer_v st USING (twitch_id) WHERE " + LOC + " ORDER BY f.gained DESC LIMIT 25",
               0, 51, w=12, h=9, money_cols=("Gagné",), image_cols=("Avatar",), streamer_links=True,
-              description="Dons gagnés par chaque streamer pendant la dernière heure de l'événement, et son pic de viewers "
-                          "sur cette heure."),
+              description="Dons gagnés par chaque streamer depuis 20h (heure de Paris) le dernier soir jusqu'à la fin de "
+                          "l'événement, et son pic de viewers sur cette période."),
         ts("Dons gagnés par intervalle, par lieu",
            "SELECT $__timeGroupAlias(d.ts, $__interval), CASE st.location WHEN 'LAN' THEN 'Sur place (LAN)' WHEN 'Online' THEN 'À distance (online)' ELSE 'Inconnu' END AS metric, sum(d.gain) AS value "
            "FROM streamer_sample_v d JOIN streamer_v st USING (twitch_id) "

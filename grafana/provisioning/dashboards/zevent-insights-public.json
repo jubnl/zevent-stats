@@ -504,7 +504,7 @@
         "x": 0,
         "y": 14,
         "w": 12,
-        "h": 9
+        "h": 18
       },
       "targets": [
         {
@@ -513,7 +513,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", t.v AS \"Palier\", min(s.ts) AS \"Atteint \u00e0\",        st.login AS login FROM (VALUES (100000), (250000), (500000), (1000000), (2000000), (3000000), (5000000)) t(v) JOIN streamer_sample_v s ON s.donation_total >= t.v JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' GROUP BY st.profile_url, st.display, t.v, st.login HAVING min(s.ts) BETWEEN $__timeFrom() AND $__timeTo() ORDER BY min(s.ts) DESC LIMIT 25",
+          "rawSql": "SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", t.v AS \"Palier\", min(s.ts) AS \"Atteint \u00e0\",        st.login AS login FROM (VALUES (100000), (250000), (500000), (1000000), (2000000), (3000000), (5000000)) t(v) JOIN streamer_sample_v s ON s.donation_total >= t.v JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' GROUP BY st.profile_url, st.display, t.v, st.login HAVING min(s.ts) BETWEEN $__timeFrom() AND $__timeTo() ORDER BY min(s.ts) DESC",
           "format": "table",
           "refId": "A"
         }
@@ -608,7 +608,7 @@
     {
       "id": 9,
       "type": "table",
-      "title": "Changements de leader",
+      "title": "Plus gros bonds de viewers en une minute",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -617,120 +617,7 @@
         "x": 12,
         "y": 14,
         "w": 12,
-        "h": 9
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "zevent-pg"
-          },
-          "rawQuery": true,
-          "rawSql": "WITH l AS (SELECT ts, twitch_id, donation_total, lag(twitch_id) OVER (ORDER BY ts) AS prev            FROM streamer_sample_v WHERE rank = 1 AND NOT derived AND donation_total > 0) SELECT l.ts AS \"Heure\", st.profile_url AS \"Avatar\", st.display AS \"Streamer\",        coalesce(p.display, '\u2014') AS \"Remplace\", l.donation_total AS \"Cagnotte\", st.login AS login FROM l JOIN streamer_v st USING (twitch_id) LEFT JOIN streamer_v p ON p.twitch_id = l.prev WHERE l.prev IS DISTINCT FROM l.twitch_id AND $__timeFilter(l.ts) ORDER BY l.ts DESC LIMIT 25",
-          "format": "table",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "auto"
-            },
-            "minWidth": 50
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Avatar"
-            },
-            "properties": [
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "image"
-                }
-              },
-              {
-                "id": "custom.width",
-                "value": 44
-              },
-              {
-                "id": "displayName",
-                "value": " "
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Cagnotte"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "currencyEUR"
-              },
-              {
-                "id": "decimals",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Streamer"
-            },
-            "properties": [
-              {
-                "id": "links",
-                "value": [
-                  {
-                    "title": "Ouvrir sur Twitch",
-                    "url": "https://twitch.tv/${__data.fields.login}",
-                    "targetBlank": true
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "login"
-            },
-            "properties": [
-              {
-                "id": "custom.hidden",
-                "value": true
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "showHeader": true,
-        "sortBy": []
-      },
-      "description": "Chaque fois que la premi\u00e8re place du classement des dons a chang\u00e9 de mains, avec la cagnotte du nouveau leader \u00e0 ce moment."
-    },
-    {
-      "id": 10,
-      "type": "table",
-      "title": "Plus gros bonds de viewers en une minute",
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "zevent-pg"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 23,
-        "w": 12,
-        "h": 9
+        "h": 18
       },
       "targets": [
         {
@@ -816,200 +703,7 @@
       "description": "Plus fortes hausses du nombre de viewers d'un streamer entre deux relev\u00e9s (raids, co-streams, moments forts). Les passages en live (de 0 viewer \u00e0 N) ne comptent pas."
     },
     {
-      "id": 11,
-      "type": "table",
-      "title": "Plus fortes mont\u00e9es au classement (fin de l'\u00e9v\u00e9nement)",
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "zevent-pg"
-      },
-      "gridPos": {
-        "x": 12,
-        "y": 23,
-        "w": 12,
-        "h": 9
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "zevent-pg"
-          },
-          "rawQuery": true,
-          "rawSql": "WITH cur AS (SELECT max(ts) AS ts FROM snapshot), n AS (SELECT s.twitch_id, s.rank, s.donation_total FROM streamer_sample_v s, cur WHERE s.ts = cur.ts AND NOT s.derived), h AS (SELECT s.twitch_id, s.rank FROM streamer_sample_v s WHERE NOT s.derived       AND s.ts = (SELECT max(sn.ts) FROM snapshot sn, cur WHERE sn.ts <= cur.ts - interval '1 hour')), d AS (SELECT s.twitch_id, s.rank FROM streamer_sample_v s WHERE NOT s.derived       AND s.ts = (SELECT max(sn.ts) FROM snapshot sn, cur WHERE sn.ts <= cur.ts - interval '24 hours')) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", n.rank AS \"Rang\", h.rank - n.rank AS \"Sur 1 h\",        d.rank - n.rank AS \"Sur 24 h\", n.donation_total AS \"Cagnotte\", st.login AS login FROM n JOIN streamer_v st USING (twitch_id) LEFT JOIN h USING (twitch_id) LEFT JOIN d USING (twitch_id) WHERE coalesce(st.location, '') ~ '^(${location:regex})$' AND (h.rank <> n.rank OR d.rank <> n.rank) ORDER BY coalesce(d.rank - n.rank, 0) DESC, coalesce(h.rank - n.rank, 0) DESC, n.rank LIMIT 25",
-          "format": "table",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "auto"
-            },
-            "minWidth": 50
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Sur 1 h"
-            },
-            "properties": [
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-text"
-                }
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "thresholds"
-                }
-              },
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "red",
-                      "value": null
-                    },
-                    {
-                      "color": "text",
-                      "value": 0
-                    },
-                    {
-                      "color": "green",
-                      "value": 1
-                    }
-                  ]
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Sur 24 h"
-            },
-            "properties": [
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "color-text"
-                }
-              },
-              {
-                "id": "color",
-                "value": {
-                  "mode": "thresholds"
-                }
-              },
-              {
-                "id": "thresholds",
-                "value": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "red",
-                      "value": null
-                    },
-                    {
-                      "color": "text",
-                      "value": 0
-                    },
-                    {
-                      "color": "green",
-                      "value": 1
-                    }
-                  ]
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Avatar"
-            },
-            "properties": [
-              {
-                "id": "custom.cellOptions",
-                "value": {
-                  "type": "image"
-                }
-              },
-              {
-                "id": "custom.width",
-                "value": 44
-              },
-              {
-                "id": "displayName",
-                "value": " "
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Cagnotte"
-            },
-            "properties": [
-              {
-                "id": "unit",
-                "value": "currencyEUR"
-              },
-              {
-                "id": "decimals",
-                "value": 2
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Streamer"
-            },
-            "properties": [
-              {
-                "id": "links",
-                "value": [
-                  {
-                    "title": "Ouvrir sur Twitch",
-                    "url": "https://twitch.tv/${__data.fields.login}",
-                    "targetBlank": true
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "login"
-            },
-            "properties": [
-              {
-                "id": "custom.hidden",
-                "value": true
-              }
-            ]
-          }
-        ]
-      },
-      "options": {
-        "showHeader": true,
-        "sortBy": []
-      },
-      "description": "Places gagn\u00e9es (ou perdues, en rouge) au classement des dons depuis 1 h et depuis 24 h, \u00e0 la fin de l'\u00e9v\u00e9nement."
-    },
-    {
-      "id": 12,
+      "id": 10,
       "type": "table",
       "title": "\u00c9ditions pr\u00e9c\u00e9dentes",
       "datasource": {
@@ -1070,7 +764,7 @@
       "description": "Total final de chaque \u00e9dition et le moment o\u00f9 cette ann\u00e9e l'a d\u00e9pass\u00e9 (vide : pas encore). Pas d'\u00e9dition en 2023."
     },
     {
-      "id": 13,
+      "id": 11,
       "type": "barchart",
       "title": "Total par \u00e9dition",
       "datasource": {
@@ -1171,7 +865,7 @@
       "description": "Total final des \u00e9ditions pr\u00e9c\u00e9dentes et total actuel de cette ann\u00e9e. Pas d'\u00e9dition en 2023."
     },
     {
-      "id": 14,
+      "id": 12,
       "type": "stat",
       "title": "Record \u00e0 battre (2025)",
       "datasource": {
@@ -1222,7 +916,7 @@
       }
     },
     {
-      "id": 15,
+      "id": 13,
       "type": "stat",
       "title": "Il manque, pour le battre",
       "datasource": {
@@ -1299,7 +993,7 @@
       "description": "\u00c9cart entre le total actuel et le record de 2025."
     },
     {
-      "id": 16,
+      "id": 14,
       "type": "row",
       "title": "Tendances",
       "collapsed": false,
@@ -1312,7 +1006,7 @@
       "panels": []
     },
     {
-      "id": 17,
+      "id": 15,
       "type": "barchart",
       "title": "Dons par heure de la journ\u00e9e (Europe/Paris)",
       "datasource": {
@@ -1413,7 +1107,7 @@
       "description": "Gain du total de l'\u00e9v\u00e9nement par heure de la journ\u00e9e, additionn\u00e9 sur la p\u00e9riode s\u00e9lectionn\u00e9e (tous lieux), s\u00e9par\u00e9 entre ce que les compteurs des streamers ont gagn\u00e9 et le reste. Tous les dons qui n'ont pas pu \u00eatre rattach\u00e9s \u00e0 un streamer : le total de l'\u00e9v\u00e9nement moins la somme des compteurs des streamers. On y trouve les dons faits sans choisir de streamer (la page d'\u00e9quipe Streamlabs Charity sans membre), les billets du concert de jeudi, tous les dons de la boutique, etc."
     },
     {
-      "id": 18,
+      "id": 16,
       "type": "table",
       "title": "Dons par heure visionn\u00e9e par viewer",
       "datasource": {
@@ -1558,9 +1252,9 @@
       "description": "Gagn\u00e9 sur la p\u00e9riode s\u00e9lectionn\u00e9e divis\u00e9 par les heures visionn\u00e9es par viewer (viewers additionn\u00e9s dans le temps) : ce qu'une communaut\u00e9 donne par rapport \u00e0 sa taille. Les streamers avec moins de 100 heures visionn\u00e9es par viewer sont exclus."
     },
     {
-      "id": 19,
+      "id": 17,
       "type": "table",
-      "title": "Le sprint final (derni\u00e8re heure de l'\u00e9v\u00e9nement)",
+      "title": "Le sprint final (de 20h \u00e0 la fin de l'\u00e9v\u00e9nement)",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -1578,7 +1272,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH cur AS (SELECT max(ts) AS ts FROM snapshot), f AS (SELECT s.twitch_id, sum(s.gain) AS gained, max(s.viewers) AS peak FROM streamer_sample_v s, cur       WHERE s.ts > cur.ts - interval '1 hour' AND s.ts <= cur.ts AND NOT s.derived AND s.gain IS NOT NULL GROUP BY s.twitch_id) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", f.gained AS \"Gagn\u00e9\", f.peak AS \"Pic de viewers\", st.login AS login FROM f JOIN streamer_v st USING (twitch_id) WHERE coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY f.gained DESC LIMIT 25",
+          "rawSql": "WITH cur AS (SELECT max(ts) AS ts FROM snapshot), f AS (SELECT s.twitch_id, sum(s.gain) AS gained, max(s.viewers) AS peak FROM streamer_sample_v s, cur       WHERE s.ts > '2026-09-06 18:00:00+00'::timestamptz AND s.ts <= cur.ts AND NOT s.derived AND s.gain IS NOT NULL GROUP BY s.twitch_id) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", f.gained AS \"Gagn\u00e9\", f.peak AS \"Pic de viewers\", st.login AS login FROM f JOIN streamer_v st USING (twitch_id) WHERE coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY f.gained DESC LIMIT 25",
           "format": "table",
           "refId": "A"
         }
@@ -1668,10 +1362,10 @@
         "showHeader": true,
         "sortBy": []
       },
-      "description": "Dons gagn\u00e9s par chaque streamer pendant la derni\u00e8re heure de l'\u00e9v\u00e9nement, et son pic de viewers sur cette heure."
+      "description": "Dons gagn\u00e9s par chaque streamer depuis 20h (heure de Paris) le dernier soir jusqu'\u00e0 la fin de l'\u00e9v\u00e9nement, et son pic de viewers sur cette p\u00e9riode."
     },
     {
-      "id": 20,
+      "id": 18,
       "type": "timeseries",
       "title": "Dons gagn\u00e9s par intervalle, par lieu",
       "datasource": {
@@ -1729,7 +1423,7 @@
       "interval": "5m"
     },
     {
-      "id": 21,
+      "id": 19,
       "type": "timeseries",
       "title": "Rythme des dons par minute (1 h glissante)",
       "datasource": {
@@ -1782,7 +1476,7 @@
       "description": "Gain du total de l'\u00e9v\u00e9nement par minute, moyenn\u00e9 sur l'heure qui pr\u00e9c\u00e8de chaque point, compar\u00e9 au rythme moyen depuis le d\u00e9but. Un pic d'une heure suit chaque gros versement (boutique, billets)."
     },
     {
-      "id": 22,
+      "id": 20,
       "type": "timeseries",
       "title": "Dons par heure visionn\u00e9e par viewer au fil du temps",
       "datasource": {
@@ -1836,7 +1530,7 @@
       "description": "G\u00e9n\u00e9rosit\u00e9 par intervalle : dons gagn\u00e9s par les streamers correspondant au filtre Lieu divis\u00e9s par leurs heures visionn\u00e9es par viewer sur l'intervalle. Les cha\u00eenes de l'organisation (billets, boutique) sont exclues."
     },
     {
-      "id": 23,
+      "id": 21,
       "type": "barchart",
       "title": "Viewers par heure de la journ\u00e9e (Europe/Paris)",
       "datasource": {
@@ -1937,7 +1631,7 @@
       "description": "Viewers cumul\u00e9s des streamers correspondant au filtre Lieu, par heure de la journ\u00e9e sur la p\u00e9riode s\u00e9lectionn\u00e9e : moyenne des relev\u00e9s et plus haut relev\u00e9."
     },
     {
-      "id": 24,
+      "id": 22,
       "type": "table",
       "title": "Jour par jour (Europe/Paris)",
       "datasource": {
@@ -2014,7 +1708,7 @@
       "description": "Par jour calendaire : gain du total de l'\u00e9v\u00e9nement et viewers (tous lieux), heures de stream et streamers pass\u00e9s en live (filtre Lieu)."
     },
     {
-      "id": 25,
+      "id": 23,
       "type": "row",
       "title": "R\u00e9partition",
       "collapsed": false,
@@ -2027,7 +1721,7 @@
       "panels": []
     },
     {
-      "id": 26,
+      "id": 24,
       "type": "barchart",
       "title": "Part des compteurs des streamers",
       "datasource": {
@@ -2098,7 +1792,7 @@
       "description": "Part de la somme des compteurs des streamers (filtre Lieu) d\u00e9tenue par chacun des dix premiers, et par tous les autres r\u00e9unis, \u00e0 la fin de l'\u00e9v\u00e9nement."
     },
     {
-      "id": 27,
+      "id": 25,
       "type": "timeseries",
       "title": "Part d\u00e9tenue par le haut du classement",
       "datasource": {
@@ -2151,7 +1845,7 @@
       "description": "Part de la somme des compteurs des streamers d\u00e9tenue par le premier, les dix premiers et les vingt-cinq premiers du classement, au fil du temps (tous lieux)."
     },
     {
-      "id": 28,
+      "id": 26,
       "type": "timeseries",
       "title": "Streamers par palier de cagnotte",
       "datasource": {
@@ -2208,7 +1902,7 @@
       "description": "Nombre de streamers (filtre Lieu) dont la cagnotte est dans chaque tranche, au fil du temps."
     },
     {
-      "id": 29,
+      "id": 27,
       "type": "xychart",
       "title": "Viewers et dons, un point par streamer",
       "datasource": {
@@ -2287,7 +1981,7 @@
       "description": "Chaque point est un streamer : ses viewers moyens quand il est en live (horizontal) et ce qu'il a gagn\u00e9 sur la p\u00e9riode (vertical), \u00e9chelles logarithmiques. Les points au-dessus du nuage sont les communaut\u00e9s qui donnent le plus par rapport \u00e0 leur taille. Survolez un point pour le nom."
     },
     {
-      "id": 30,
+      "id": 28,
       "type": "stat",
       "title": "Dons re\u00e7us pendant le live et hors live",
       "datasource": {
@@ -2339,7 +2033,7 @@
       "description": "Dons gagn\u00e9s par les compteurs des streamers (filtre Lieu) sur la p\u00e9riode, selon que le streamer \u00e9tait en live ou non au moment du relev\u00e9."
     },
     {
-      "id": 31,
+      "id": 29,
       "type": "stat",
       "title": "Streamers dont la cagnotte d\u00e9passe",
       "datasource": {
@@ -2389,7 +2083,7 @@
       "description": "Nombre de streamers (filtre Lieu) dont la cagnotte d\u00e9passe chaque seuil, \u00e0 la fin de l'\u00e9v\u00e9nement."
     },
     {
-      "id": 32,
+      "id": 30,
       "type": "row",
       "title": "Endurance et efficacit\u00e9",
       "collapsed": false,
@@ -2402,7 +2096,7 @@
       "panels": []
     },
     {
-      "id": 33,
+      "id": 31,
       "type": "table",
       "title": "Plus longues sessions en live",
       "datasource": {
@@ -2531,7 +2225,7 @@
       "description": "Plus long passage en live sans interruption observ\u00e9 sur la p\u00e9riode (il peut avoir commenc\u00e9 avant), et la dur\u00e9e de la session en cours si le streamer est en live."
     },
     {
-      "id": 34,
+      "id": 32,
       "type": "table",
       "title": "Dons par heure de live",
       "datasource": {
@@ -2676,7 +2370,7 @@
       "description": "Gagn\u00e9 sur la p\u00e9riode divis\u00e9 par les heures pass\u00e9es en live. Les streamers avec moins de 3 heures de live et les cha\u00eenes de l'organisation sont exclus."
     },
     {
-      "id": 35,
+      "id": 33,
       "type": "row",
       "title": "Sur place vs \u00e0 distance",
       "collapsed": false,
@@ -2689,7 +2383,7 @@
       "panels": []
     },
     {
-      "id": 36,
+      "id": 34,
       "type": "timeseries",
       "title": "Streamers en live par lieu",
       "datasource": {
@@ -2745,7 +2439,7 @@
       }
     },
     {
-      "id": 37,
+      "id": 35,
       "type": "timeseries",
       "title": "Viewers par lieu",
       "datasource": {
@@ -2801,7 +2495,7 @@
       }
     },
     {
-      "id": 38,
+      "id": 36,
       "type": "timeseries",
       "title": "Cagnottes par lieu",
       "datasource": {
@@ -2858,7 +2552,7 @@
       "description": "Somme des compteurs des streamers sur place et \u00e0 distance, au fil du temps."
     },
     {
-      "id": 39,
+      "id": 37,
       "type": "stat",
       "title": "Part des dons sur place",
       "datasource": {
@@ -2910,7 +2604,7 @@
       "description": "Part de la somme des compteurs des streamers d\u00e9tenue par les streamers sur place, \u00e0 la fin de l'\u00e9v\u00e9nement."
     },
     {
-      "id": 40,
+      "id": 38,
       "type": "stat",
       "title": "Cagnotte moyenne par streamer",
       "datasource": {
@@ -2961,7 +2655,7 @@
       }
     },
     {
-      "id": 41,
+      "id": 39,
       "type": "stat",
       "title": "Dons gagn\u00e9s sur la p\u00e9riode, par lieu",
       "datasource": {
@@ -3012,7 +2706,7 @@
       }
     },
     {
-      "id": 42,
+      "id": 40,
       "type": "row",
       "title": "Jeux",
       "collapsed": false,
@@ -3025,7 +2719,7 @@
       "panels": []
     },
     {
-      "id": 43,
+      "id": 41,
       "type": "timeseries",
       "title": "Streamers en live par jeu",
       "datasource": {
@@ -3081,7 +2775,7 @@
       }
     },
     {
-      "id": 44,
+      "id": 42,
       "type": "timeseries",
       "title": "Viewers par jeu",
       "datasource": {
@@ -3137,7 +2831,7 @@
       }
     },
     {
-      "id": 45,
+      "id": 43,
       "type": "table",
       "title": "Heures de stream par jeu",
       "datasource": {
@@ -3197,7 +2891,7 @@
       }
     },
     {
-      "id": 46,
+      "id": 44,
       "type": "row",
       "title": "Dons sans streamer",
       "collapsed": false,
@@ -3210,7 +2904,7 @@
       "panels": []
     },
     {
-      "id": 47,
+      "id": 45,
       "type": "timeseries",
       "title": "Au fil du temps (total moins tous les streamers)",
       "datasource": {
@@ -3263,7 +2957,7 @@
       "description": "Tous les dons qui n'ont pas pu \u00eatre rattach\u00e9s \u00e0 un streamer : le total de l'\u00e9v\u00e9nement moins la somme des compteurs des streamers. On y trouve les dons faits sans choisir de streamer (la page d'\u00e9quipe Streamlabs Charity sans membre), les billets du concert de jeudi, tous les dons de la boutique, etc."
     },
     {
-      "id": 48,
+      "id": 46,
       "type": "timeseries",
       "title": "Par intervalle (gain total moins gains des streamers)",
       "datasource": {
@@ -3318,7 +3012,7 @@
       "description": "Tous les dons qui n'ont pas pu \u00eatre rattach\u00e9s \u00e0 un streamer : le total de l'\u00e9v\u00e9nement moins la somme des compteurs des streamers. On y trouve les dons faits sans choisir de streamer (la page d'\u00e9quipe Streamlabs Charity sans membre), les billets du concert de jeudi, tous les dons de la boutique, etc."
     },
     {
-      "id": 49,
+      "id": 47,
       "type": "row",
       "title": "Qualit\u00e9 des donn\u00e9es",
       "collapsed": false,
@@ -3331,7 +3025,7 @@
       "panels": []
     },
     {
-      "id": 50,
+      "id": 48,
       "type": "stat",
       "title": "Relev\u00e9s sur la p\u00e9riode",
       "datasource": {
@@ -3382,7 +3076,7 @@
       "description": "Nombre de relev\u00e9s de l'API dans la plage de temps (un par minute)."
     },
     {
-      "id": 51,
+      "id": 49,
       "type": "stat",
       "title": "Trous de collecte",
       "datasource": {
@@ -3449,7 +3143,7 @@
       "description": "Nombre de fois o\u00f9 plus de 90 secondes s\u00e9parent deux relev\u00e9s (API injoignable ou collecteur arr\u00eat\u00e9)."
     },
     {
-      "id": 52,
+      "id": 50,
       "type": "stat",
       "title": "Rat\u00e9s de l'API",
       "datasource": {
