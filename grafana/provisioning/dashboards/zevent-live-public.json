@@ -71,6 +71,32 @@
             "$__all"
           ]
         }
+      },
+      {
+        "name": "zevent_only",
+        "label": "Cat\u00e9gorie",
+        "type": "custom",
+        "query": "Tous les jeux : 0, ZEVENT uniquement : 1",
+        "options": [
+          {
+            "text": "Tous les jeux",
+            "value": "0",
+            "selected": true
+          },
+          {
+            "text": "ZEVENT uniquement",
+            "value": "1",
+            "selected": false
+          }
+        ],
+        "current": {
+          "selected": true,
+          "text": "Tous les jeux",
+          "value": "0"
+        },
+        "multi": false,
+        "includeAll": false,
+        "hide": 0
       }
     ]
   },
@@ -137,7 +163,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT count(*) FILTER (WHERE s.online) AS \"En live\", count(*) AS \"Total\" FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' AND s.ts = (SELECT max(ts) FROM snapshot)",
+          "rawSql": "SELECT count(*) FILTER (WHERE s.online AND ('$zevent_only' = '0' OR s.game = 'ZEVENT')) AS \"En live\", count(*) AS \"Total\" FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' AND s.ts = (SELECT max(ts) FROM snapshot)",
           "format": "table",
           "refId": "A"
         }
@@ -163,7 +189,8 @@
         "graphMode": "none",
         "textMode": "value_and_name",
         "justifyMode": "center"
-      }
+      },
+      "description": "Au dernier relev\u00e9. Avec le s\u00e9lecteur Cat\u00e9gorie sur \u00ab ZEVENT uniquement \u00bb, seul le temps pass\u00e9 avec la cat\u00e9gorie Twitch \u00ab ZEVENT \u00bb compte."
     },
     {
       "id": 2,
@@ -186,7 +213,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT max(n) FROM (SELECT count(*) AS n FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' AND s.online GROUP BY s.ts) x",
+          "rawSql": "SELECT max(n) FROM (SELECT count(*) AS n FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' AND s.online AND ('$zevent_only' = '0' OR s.game = 'ZEVENT') GROUP BY s.ts) x",
           "format": "table",
           "refId": "A"
         }
@@ -213,7 +240,8 @@
         "graphMode": "none",
         "textMode": "value",
         "justifyMode": "center"
-      }
+      },
+      "description": "Plus grand nombre de streamers en live en m\u00eame temps, sur la p\u00e9riode. Avec le s\u00e9lecteur Cat\u00e9gorie sur \u00ab ZEVENT uniquement \u00bb, seul le temps pass\u00e9 avec la cat\u00e9gorie Twitch \u00ab ZEVENT \u00bb compte."
     },
     {
       "id": 3,
@@ -226,7 +254,7 @@
       "gridPos": {
         "x": 8,
         "y": 0,
-        "w": 4,
+        "w": 6,
         "h": 4
       },
       "targets": [
@@ -236,7 +264,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT coalesce(sum(least(s.gap_s, 300)) FILTER (WHERE s.online), 0) / 3600.0 AS \"Total\", coalesce(sum(least(s.gap_s, 300)) FILTER (WHERE s.online AND s.game = 'ZEVENT'), 0) / 3600.0 AS \"Dont cat\u00e9gorie ZEVENT\" FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' AND $__timeFilter(s.ts) AND s.twitch_id IN ($streamer) AND s.gap_s IS NOT NULL",
+          "rawSql": "SELECT coalesce(sum(least(s.gap_s, 300)) FILTER (WHERE s.online AND ('$zevent_only' = '0' OR s.game = 'ZEVENT')), 0) / 3600.0 AS \"Total\", coalesce(sum(least(s.gap_s, 300)) FILTER (WHERE s.online AND s.game = 'ZEVENT'), 0) / 3600.0 AS \"Dont cat\u00e9gorie ZEVENT\" FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' AND $__timeFilter(s.ts) AND s.twitch_id IN ($streamer) AND s.gap_s IS NOT NULL",
           "format": "table",
           "refId": "A"
         }
@@ -265,7 +293,7 @@
         "textMode": "value_and_name",
         "justifyMode": "center"
       },
-      "description": "Temps total en live, additionn\u00e9 sur les streamers correspondant aux filtres Lieu et Streamer, dans la plage de temps s\u00e9lectionn\u00e9e. Chaque relev\u00e9 en live compte la minute \u00e9coul\u00e9e depuis le relev\u00e9 pr\u00e9c\u00e9dent (plafonn\u00e9e \u00e0 5 minutes, pour que les trous dans les donn\u00e9es ne comptent pas). \u00ab Dont cat\u00e9gorie ZEVENT \u00bb : la part de ce temps pass\u00e9e avec la cat\u00e9gorie Twitch \u00ab ZEVENT \u00bb."
+      "description": "Temps total en live, additionn\u00e9 sur les streamers correspondant aux filtres Lieu et Streamer, dans la plage de temps s\u00e9lectionn\u00e9e. Chaque relev\u00e9 en live compte la minute \u00e9coul\u00e9e depuis le relev\u00e9 pr\u00e9c\u00e9dent (plafonn\u00e9e \u00e0 5 minutes, pour que les trous dans les donn\u00e9es ne comptent pas). \u00ab Dont cat\u00e9gorie ZEVENT \u00bb : la part de ce temps pass\u00e9e avec la cat\u00e9gorie Twitch \u00ab ZEVENT \u00bb. Avec le s\u00e9lecteur Cat\u00e9gorie sur \u00ab ZEVENT uniquement \u00bb, seul le temps pass\u00e9 avec la cat\u00e9gorie Twitch \u00ab ZEVENT \u00bb compte."
     },
     {
       "id": 4,
@@ -276,9 +304,9 @@
         "uid": "zevent-pg"
       },
       "gridPos": {
-        "x": 12,
+        "x": 14,
         "y": 0,
-        "w": 12,
+        "w": 10,
         "h": 4
       },
       "targets": [
@@ -288,7 +316,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT s.ts AS time, count(*) FILTER (WHERE s.online) AS \"En live\" FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' AND $__timeFilter(s.ts) GROUP BY 1 ORDER BY 1",
+          "rawSql": "SELECT s.ts AS time, count(*) FILTER (WHERE s.online AND ('$zevent_only' = '0' OR s.game = 'ZEVENT')) AS \"En live\" FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' AND $__timeFilter(s.ts) GROUP BY 1 ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }
@@ -340,7 +368,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH s AS (\n  SELECT s.ts, s.twitch_id, st.display, CASE WHEN s.online THEN coalesce(s.game, '(sans jeu)') END AS state\n  FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id)\n  WHERE $__timeFilter(s.ts) AND NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' AND s.twitch_id IN ($streamer)\n), d AS (\n  SELECT *, lag(state) OVER w AS prev, lead(ts) OVER w AS next,\n         min(ts) FILTER (WHERE state IS NOT NULL) OVER (PARTITION BY twitch_id) AS first_live\n  FROM s WINDOW w AS (PARTITION BY twitch_id ORDER BY ts)\n), r AS (\n  SELECT ts, display, state, first_live FROM d WHERE state IS DISTINCT FROM prev OR next IS NULL\n  UNION ALL\n  SELECT max(ts) + interval '1 minute', display, NULL, min(first_live) FROM d GROUP BY twitch_id, display\n)\nSELECT ts AS time, display AS \"Streamer\", state AS \"\u00c9tat\", first_live\nFROM r ORDER BY first_live NULLS LAST, lower(display), ts",
+          "rawSql": "WITH s AS (\n  SELECT s.ts, s.twitch_id, st.display, CASE WHEN s.online AND ('$zevent_only' = '0' OR s.game = 'ZEVENT') THEN coalesce(s.game, '(sans jeu)') END AS state\n  FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id)\n  WHERE $__timeFilter(s.ts) AND NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' AND s.twitch_id IN ($streamer)\n), d AS (\n  SELECT *, lag(state) OVER w AS prev, lead(ts) OVER w AS next,\n         min(ts) FILTER (WHERE state IS NOT NULL) OVER (PARTITION BY twitch_id) AS first_live\n  FROM s WINDOW w AS (PARTITION BY twitch_id ORDER BY ts)\n), r AS (\n  SELECT ts, display, state, first_live FROM d WHERE state IS DISTINCT FROM prev OR next IS NULL\n  UNION ALL\n  SELECT max(ts) + interval '1 minute', display, NULL, min(first_live) FROM d GROUP BY twitch_id, display\n)\nSELECT ts AS time, display AS \"Streamer\", state AS \"\u00c9tat\", first_live\nFROM r ORDER BY first_live NULLS LAST, lower(display), ts",
           "format": "table",
           "refId": "A"
         }
@@ -409,7 +437,7 @@
           }
         }
       ],
-      "description": "Vert pendant le live. Survolez une barre pour voir le jeu. Les lignes sont tri\u00e9es par le premier passage en live du streamer sur la p\u00e9riode s\u00e9lectionn\u00e9e ; les streamers qui n'ont pas \u00e9t\u00e9 en live sur la p\u00e9riode sont en bas. Suit les filtres Lieu et Streamer."
+      "description": "Vert pendant le live. Survolez une barre pour voir le jeu. Les lignes sont tri\u00e9es par le premier passage en live du streamer sur la p\u00e9riode s\u00e9lectionn\u00e9e ; les streamers qui n'ont pas \u00e9t\u00e9 en live sur la p\u00e9riode sont en bas. Suit les filtres Lieu et Streamer. Avec le s\u00e9lecteur Cat\u00e9gorie sur \u00ab ZEVENT uniquement \u00bb, seul le temps pass\u00e9 avec la cat\u00e9gorie Twitch \u00ab ZEVENT \u00bb compte."
     }
   ]
 }

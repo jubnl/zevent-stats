@@ -192,10 +192,10 @@ LOC_QUERY = ("SELECT CASE location WHEN 'LAN' THEN 'Sur place (LAN)' ELSE 'À di
 LIVE_SECONDS = "least(s.gap_s, 300)"
 
 
-def hours_streamed_sql(loc, with_game=None):
+def hours_streamed_sql(loc, with_game=None, live="s.online"):
     """One column (the stat's value); with `with_game` two named columns, the total and the part spent in that
-    Twitch category, for a value_and_name stat."""
-    cols = f"coalesce(sum({LIVE_SECONDS}) FILTER (WHERE s.online), 0) / 3600.0"
+    Twitch category, for a value_and_name stat. `live` is the SQL condition for a sample that counts."""
+    cols = f"coalesce(sum({LIVE_SECONDS}) FILTER (WHERE {live}), 0) / 3600.0"
     if with_game:
         cols = (f'{cols} AS "Total", coalesce(sum({LIVE_SECONDS}) FILTER (WHERE s.online AND s.game = \'{with_game}\'), 0) '
                 f'/ 3600.0 AS "Dont catégorie {with_game}"')
@@ -1025,7 +1025,7 @@ def streamer_panels():
 
 def game_timeline(x, y):
     """State timeline of the games played by the selected streamers, one colour per game."""
-    sql = LIVE_SQL.format(loc="true", filter=" AND s.twitch_id IN ($streamer)")
+    sql = LIVE_SQL.format(loc="true", filter=" AND s.twitch_id IN ($streamer)", game="true")
     return panel(
         "state-timeline", "Jeux joués", sql, x, y, 24, 8, fmt="table",
         fieldConfig={"defaults": {
@@ -1155,7 +1155,7 @@ def dashboard_base(uid, title, variables, panels_, annotations=()):
 # transformation so it does not become a second row per streamer.
 LIVE_SQL = """
 WITH s AS (
-  SELECT s.ts, s.twitch_id, st.display, CASE WHEN s.online THEN coalesce(s.game, '(sans jeu)') END AS state
+  SELECT s.ts, s.twitch_id, st.display, CASE WHEN s.online AND {game} THEN coalesce(s.game, '(sans jeu)') END AS state
   FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id)
   WHERE $__timeFilter(s.ts) AND NOT st.derived AND {loc}{filter}
 ), d AS (
@@ -1177,8 +1177,8 @@ LIVE_DESCRIPTION = (
 )
 
 
-def live_timeline(title, y, h, loc, filtered, description, per_page):
-    sql = LIVE_SQL.format(loc=loc, filter=" AND s.twitch_id IN ($streamer)" if filtered else "")
+def live_timeline(title, y, h, loc, filtered, description, per_page, game="true"):
+    sql = LIVE_SQL.format(loc=loc, filter=" AND s.twitch_id IN ($streamer)" if filtered else "", game=game)
     return panel(
         "state-timeline", title, sql, 0, y, 24, h, fmt="table",
         fieldConfig={"defaults": {
@@ -1202,29 +1202,44 @@ def live_timeline(title, y, h, loc, filtered, description, per_page):
     )
 
 
+# "Catégorie" switch of the live dashboard: every panel counts a sample as live only when this holds.
+ZEVENT_ONLY = "('$zevent_only' = '0' OR s.game = 'ZEVENT')"
+ZEVENT_ONLY_VAR = {
+    "name": "zevent_only", "label": "Catégorie", "type": "custom",
+    "query": "Tous les jeux : 0, ZEVENT uniquement : 1",
+    "options": [{"text": "Tous les jeux", "value": "0", "selected": True},
+                {"text": "ZEVENT uniquement", "value": "1", "selected": False}],
+    "current": {"selected": True, "text": "Tous les jeux", "value": "0"},
+    "multi": False, "includeAll": False, "hide": 0,
+}
+SWITCH_NOTE = " Avec le sélecteur Catégorie sur « ZEVENT uniquement », seul le temps passé avec la catégorie Twitch « ZEVENT » compte."
+
+
 def live_panels(loc, scope):
     """Panels of the live dashboard. `loc` is the SQL location filter (st = streamer_v), `scope` a label."""
     reset_ids()
     latest = "FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND " + loc
+    live = "s.online AND " + ZEVENT_ONLY
     return [
         stat(f"Streamers en live ({scope})",
-             f'SELECT count(*) FILTER (WHERE s.online) AS "En live", count(*) AS "Total" {latest} '
+             f'SELECT count(*) FILTER (WHERE {live}) AS "En live", count(*) AS "Total" {latest} '
              "AND s.ts = (SELECT max(ts) FROM snapshot)",
-             0, w=4, color="blue", text_mode="value_and_name"),
+             0, w=4, color="blue", text_mode="value_and_name", description="Au dernier relevé." + SWITCH_NOTE),
         stat(f"Pic de streamers en live ({scope})",
-             f"SELECT max(n) FROM (SELECT count(*) AS n {latest} AND s.online GROUP BY s.ts) x",
-             4, w=4, unit="sishort", color="blue"),
-        stat("Heures de stream", hours_streamed_sql(loc, with_game="ZEVENT"), 8, w=4, unit="suffix: h", decimals=1,
-             color="green", text_mode="value_and_name",
+             f"SELECT max(n) FROM (SELECT count(*) AS n {latest} AND {live} GROUP BY s.ts) x",
+             4, w=4, unit="sishort", color="blue",
+             description="Plus grand nombre de streamers en live en même temps, sur la période." + SWITCH_NOTE),
+        stat("Heures de stream", hours_streamed_sql(loc, with_game="ZEVENT", live=live), 8, w=6, unit="suffix: h",
+             decimals=1, color="green", text_mode="value_and_name",
              description=HOURS_DESCRIPTION + " « Dont catégorie ZEVENT » : la part de ce temps passée avec la catégorie "
-                                             "Twitch « ZEVENT »."),
+                                             "Twitch « ZEVENT »." + SWITCH_NOTE),
         ts(f"Streamers en live au fil du temps ({scope})",
-           f'SELECT s.ts AS time, count(*) FILTER (WHERE s.online) AS "En live" {latest} AND $__timeFilter(s.ts) '
+           f'SELECT s.ts AS time, count(*) FILTER (WHERE {live}) AS "En live" {latest} AND $__timeFilter(s.ts) '
            "GROUP BY 1 ORDER BY 1",
-           12, 0, w=12, h=4, unit="sishort", legend=False),
-        # paginated, follows the Location and Streamer filters
-        live_timeline(f"Streamers ({scope}, $streamer)", 4, 34, loc, filtered=True, per_page=50,
-                      description=LIVE_DESCRIPTION + " Suit les filtres Lieu et Streamer."),
+           14, 0, w=10, h=4, unit="sishort", legend=False),
+        # paginated, follows the Location and Streamer filters and the Catégorie switch
+        live_timeline(f"Streamers ({scope}, $streamer)", 4, 34, loc, filtered=True, per_page=50, game=ZEVENT_ONLY,
+                      description=LIVE_DESCRIPTION + " Suit les filtres Lieu et Streamer." + SWITCH_NOTE),
     ]
 
 
@@ -1242,7 +1257,7 @@ main = main_panels()
 total_chart = next(p["id"] for p in main if p["title"] == "Total des dons au fil du temps")
 write(dashboard_base("zevent-public", "ZEVENT", [LOCATION_VAR, streamer_var(LOC)], main,
                      annotations=[millions_annotation([total_chart])]))
-write(dashboard_base("zevent-live-public", "ZEVENT live", [LOCATION_VAR_LAN, streamer_var(LOC)],
+write(dashboard_base("zevent-live-public", "ZEVENT live", [LOCATION_VAR_LAN, streamer_var(LOC), ZEVENT_ONLY_VAR],
                      live_panels(LOC, "$location")))
 write(dashboard_base("zevent-insights-public", "ZEVENT analyses", [LOCATION_VAR], insights_panels()))
 def single_select(dash, name):
