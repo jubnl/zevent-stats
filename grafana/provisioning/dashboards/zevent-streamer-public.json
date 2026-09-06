@@ -231,7 +231,7 @@
       "gridPos": {
         "x": 9,
         "y": 0,
-        "w": 5,
+        "w": 8,
         "h": 4
       },
       "targets": [
@@ -241,7 +241,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT coalesce(sum(s.donation_total), 0) FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND s.twitch_id IN (${streamer:sqlstring}) AND s.ts = (SELECT max(ts) FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz)",
+          "rawSql": "SELECT replace(replace(to_char(coalesce(sum(s.donation_total), 0), 'FM999,999,999.00'), ',', ' '), '.', ',') || ' \u20ac' FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND s.twitch_id IN (${streamer:sqlstring}) AND s.ts = (SELECT max(ts) FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz)",
           "format": "table",
           "refId": "A"
         }
@@ -251,9 +251,7 @@
           "color": {
             "mode": "fixed",
             "fixedColor": "green"
-          },
-          "unit": "currencyEUR",
-          "decimals": 2
+          }
         },
         "overrides": []
       },
@@ -262,7 +260,7 @@
           "calcs": [
             "lastNotNull"
           ],
-          "fields": "",
+          "fields": "/.*/",
           "values": false
         },
         "colorMode": "value",
@@ -280,9 +278,9 @@
         "uid": "zevent-pg"
       },
       "gridPos": {
-        "x": 14,
+        "x": 17,
         "y": 0,
-        "w": 5,
+        "w": 7,
         "h": 4
       },
       "targets": [
@@ -324,57 +322,6 @@
     },
     {
       "id": 4,
-      "type": "stat",
-      "title": "Meilleur rang",
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "zevent-pg"
-      },
-      "gridPos": {
-        "x": 19,
-        "y": 0,
-        "w": 5,
-        "h": 4
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "zevent-pg"
-          },
-          "rawQuery": true,
-          "rawSql": "SELECT min(rank) FROM streamer_sample_v WHERE $__timeFilter(ts) AND NOT derived AND twitch_id IN (${streamer:sqlstring})",
-          "format": "table",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "yellow"
-          },
-          "unit": "sishort"
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "value",
-        "graphMode": "none",
-        "textMode": "value",
-        "justifyMode": "center"
-      },
-      "description": "Meilleure position atteinte au classement des dons dans la plage de temps s\u00e9lectionn\u00e9e."
-    },
-    {
-      "id": 5,
       "type": "stat",
       "title": "Gagn\u00e9 sur la p\u00e9riode",
       "datasource": {
@@ -425,7 +372,7 @@
       }
     },
     {
-      "id": 6,
+      "id": 5,
       "type": "stat",
       "title": "Heures de stream",
       "datasource": {
@@ -477,7 +424,7 @@
       "description": "Temps total en live, additionn\u00e9 sur les streamers correspondant aux filtres Lieu et Streamer, dans la plage de temps s\u00e9lectionn\u00e9e. Chaque relev\u00e9 en live compte la minute \u00e9coul\u00e9e depuis le relev\u00e9 pr\u00e9c\u00e9dent (plafonn\u00e9e \u00e0 5 minutes, pour que les trous dans les donn\u00e9es ne comptent pas). \u00ab Dont cat\u00e9gorie ZEVENT \u00bb : la part de ce temps pass\u00e9e avec la cat\u00e9gorie Twitch \u00ab ZEVENT \u00bb."
     },
     {
-      "id": 7,
+      "id": 6,
       "type": "stat",
       "title": "Pic de viewers",
       "datasource": {
@@ -528,7 +475,7 @@
       "description": "Plus grand nombre de viewers cumul\u00e9s sur la p\u00e9riode s\u00e9lectionn\u00e9e."
     },
     {
-      "id": 8,
+      "id": 7,
       "type": "stat",
       "title": "Part du total de l'\u00e9v\u00e9nement",
       "datasource": {
@@ -580,7 +527,7 @@
       "description": "Compteurs des streamers s\u00e9lectionn\u00e9s divis\u00e9s par le total de l'\u00e9v\u00e9nement, \u00e0 la fin de l'\u00e9v\u00e9nement."
     },
     {
-      "id": 9,
+      "id": 8,
       "type": "stat",
       "title": "Viewers moyens en live",
       "datasource": {
@@ -632,7 +579,7 @@
       "description": "Heures visionn\u00e9es par viewer divis\u00e9es par les heures en live, sur la p\u00e9riode et les streamers s\u00e9lectionn\u00e9s."
     },
     {
-      "id": 10,
+      "id": 9,
       "type": "stat",
       "title": "Heures visionn\u00e9es",
       "datasource": {
@@ -684,7 +631,7 @@
       "description": "La taille de l'audience dans le temps, en heures visionn\u00e9es par viewer : le nombre de viewers des streamers correspondant aux filtres Lieu et Streamer, additionn\u00e9 minute par minute sur la p\u00e9riode s\u00e9lectionn\u00e9e (chaque relev\u00e9 compte le temps \u00e9coul\u00e9 depuis le pr\u00e9c\u00e9dent, plafonn\u00e9 \u00e0 5 minutes pour que les trous dans les donn\u00e9es ne comptent pas). Un viewer qui regarde pendant une heure vaut une heure visionn\u00e9e par un viewer ; 1 000 viewers pendant 2 heures font 2 000 heures visionn\u00e9es par viewer."
     },
     {
-      "id": 11,
+      "id": 10,
       "type": "stat",
       "title": "Meilleure heure",
       "datasource": {
@@ -734,7 +681,7 @@
       "description": "L'heure (heure de Paris) o\u00f9 la cagnotte du streamer a le plus progress\u00e9, dans la plage de temps s\u00e9lectionn\u00e9e."
     },
     {
-      "id": 12,
+      "id": 11,
       "type": "stat",
       "title": "Dons par heure visionn\u00e9e par viewer",
       "datasource": {
@@ -786,147 +733,7 @@
       "description": "Ce que la communaut\u00e9 donne par rapport \u00e0 sa taille : les dons gagn\u00e9s par les streamers correspondant aux filtres Lieu et Streamer sur la p\u00e9riode s\u00e9lectionn\u00e9e, divis\u00e9s par leurs heures visionn\u00e9es par viewer (le nombre de viewers additionn\u00e9 minute par minute sur la m\u00eame p\u00e9riode, en heures). Un viewer qui regarde pendant une heure vaut une heure visionn\u00e9e par un viewer : 5 \u20ac signifie 5 \u20ac r\u00e9colt\u00e9s pour chaque heure regard\u00e9e par un viewer. Les dons sans streamer (billets, boutique, anonymes) ne sont pas compt\u00e9s."
     },
     {
-      "id": 13,
-      "type": "stat",
-      "title": "\u00c9cart avec le pr\u00e9c\u00e9dent",
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "zevent-pg"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 16,
-        "w": 6,
-        "h": 4
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "zevent-pg"
-          },
-          "rawQuery": true,
-          "rawSql": "WITH cur AS (SELECT max(ts) AS ts FROM snapshot), me AS (SELECT s.rank, s.donation_total FROM streamer_sample_v s, cur WHERE s.ts = cur.ts        AND s.twitch_id IN (${streamer:sqlstring}) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT st.display AS name, s.donation_total - me.donation_total AS value FROM me, cur, streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE s.ts = cur.ts AND NOT s.derived AND s.rank < me.rank ORDER BY s.rank DESC LIMIT 1",
-          "format": "table",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "yellow"
-          },
-          "unit": "currencyEUR",
-          "decimals": 0,
-          "noValue": "En t\u00eate !"
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "value",
-        "graphMode": "none",
-        "textMode": "value_and_name",
-        "justifyMode": "center"
-      },
-      "description": "Combien il manque pour d\u00e9passer le streamer juste devant au classement des dons, \u00e0 la fin de l'\u00e9v\u00e9nement.",
-      "transformations": [
-        {
-          "id": "rowsToFields",
-          "options": {
-            "mappings": [
-              {
-                "fieldName": "name",
-                "handlerKey": "field.name"
-              },
-              {
-                "fieldName": "value",
-                "handlerKey": "field.value"
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "id": 14,
-      "type": "stat",
-      "title": "Avance sur le suivant",
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "zevent-pg"
-      },
-      "gridPos": {
-        "x": 6,
-        "y": 16,
-        "w": 6,
-        "h": 4
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "zevent-pg"
-          },
-          "rawQuery": true,
-          "rawSql": "WITH cur AS (SELECT max(ts) AS ts FROM snapshot), me AS (SELECT s.rank, s.donation_total FROM streamer_sample_v s, cur WHERE s.ts = cur.ts        AND s.twitch_id IN (${streamer:sqlstring}) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT st.display AS name, me.donation_total - s.donation_total AS value FROM me, cur, streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE s.ts = cur.ts AND NOT s.derived AND s.rank > me.rank ORDER BY s.rank ASC LIMIT 1",
-          "format": "table",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "yellow"
-          },
-          "unit": "currencyEUR",
-          "decimals": 0,
-          "noValue": "Dernier"
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "value",
-        "graphMode": "none",
-        "textMode": "value_and_name",
-        "justifyMode": "center"
-      },
-      "description": "Avance sur le streamer juste derri\u00e8re au classement des dons, \u00e0 la fin de l'\u00e9v\u00e9nement.",
-      "transformations": [
-        {
-          "id": "rowsToFields",
-          "options": {
-            "mappings": [
-              {
-                "fieldName": "name",
-                "handlerKey": "field.name"
-              },
-              {
-                "fieldName": "value",
-                "handlerKey": "field.value"
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "id": 15,
+      "id": 12,
       "type": "stat",
       "title": "Dons re\u00e7us en live et hors live",
       "datasource": {
@@ -934,9 +741,9 @@
         "uid": "zevent-pg"
       },
       "gridPos": {
-        "x": 12,
+        "x": 0,
         "y": 16,
-        "w": 6,
+        "w": 12,
         "h": 4
       },
       "targets": [
@@ -978,7 +785,7 @@
       "description": "Dons gagn\u00e9s sur la p\u00e9riode selon que le streamer \u00e9tait en live ou non au moment du relev\u00e9."
     },
     {
-      "id": 16,
+      "id": 13,
       "type": "stat",
       "title": "Plus longue session en live",
       "datasource": {
@@ -986,9 +793,9 @@
         "uid": "zevent-pg"
       },
       "gridPos": {
-        "x": 18,
+        "x": 12,
         "y": 16,
-        "w": 6,
+        "w": 12,
         "h": 4
       },
       "targets": [
@@ -1030,7 +837,7 @@
       "description": "Plus long passage en live sans interruption observ\u00e9 sur la p\u00e9riode (il peut avoir commenc\u00e9 avant)."
     },
     {
-      "id": 17,
+      "id": 14,
       "type": "timeseries",
       "title": "Dons au fil du temps",
       "datasource": {
@@ -1090,7 +897,7 @@
       }
     },
     {
-      "id": 18,
+      "id": 15,
       "type": "timeseries",
       "title": "Viewers au fil du temps",
       "datasource": {
@@ -1150,7 +957,7 @@
       }
     },
     {
-      "id": 19,
+      "id": 16,
       "type": "timeseries",
       "title": "Dons gagn\u00e9s par intervalle",
       "datasource": {
@@ -1216,7 +1023,7 @@
       "interval": "5m"
     },
     {
-      "id": 20,
+      "id": 17,
       "type": "timeseries",
       "title": "Rank au classement des dons au fil du temps",
       "datasource": {
@@ -1277,7 +1084,7 @@
       "description": "1 est la premi\u00e8re place ; plus c'est bas, mieux c'est."
     },
     {
-      "id": 21,
+      "id": 18,
       "type": "state-timeline",
       "title": "Jeux jou\u00e9s",
       "datasource": {

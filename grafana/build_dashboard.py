@@ -1017,25 +1017,6 @@ def text_panel(html, x, y, w, h):
             "options": {"mode": "html", "content": html.strip()}}
 
 
-# Turns a (name, value) row into a field named after the streamer, so a stat can show "Domingo: 12 345 €".
-ROWS_TO_FIELDS = {"id": "rowsToFields", "options": {"mappings": [
-    {"fieldName": "name", "handlerKey": "field.name"}, {"fieldName": "value", "handlerKey": "field.value"}]}}
-
-
-def neighbour_sql(above):
-    """Distance to the streamer one place above (positive: what is missing) or below (positive: the lead)
-    the selected streamer in the donation ranking at the latest snapshot; no row for the first / last."""
-    cmp, order, expr = ("<", "DESC", "s.donation_total - me.donation_total") if above else (">", "ASC", "me.donation_total - s.donation_total")
-    return (
-        "WITH cur AS (SELECT max(ts) AS ts FROM snapshot), "
-        "me AS (SELECT s.rank, s.donation_total FROM streamer_sample_v s, cur WHERE s.ts = cur.ts "
-        "       AND s.twitch_id IN ($streamer) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) "
-        f"SELECT st.display AS name, {expr} AS value "
-        "FROM me, cur, streamer_sample_v s JOIN streamer_v st USING (twitch_id) "
-        f"WHERE s.ts = cur.ts AND NOT s.derived AND s.rank {cmp} me.rank ORDER BY s.rank {order} LIMIT 1"
-    )
-
-
 # ZEVENT streamer: one or a few streamers in detail. The Streamer filter has no "All" and lists streamers
 # by donations, so the dashboard opens on the current leader.
 def streamer_panels():
@@ -1044,18 +1025,16 @@ def streamer_panels():
            "WHERE NOT st.derived AND s.twitch_id IN ($streamer)")
     return [
         text_panel(HERO_HTML, 0, 0, 9, 12),
+        # full amount as text ("5 391 218,42 €"), like the main dashboard's final total
         stat("Cagnotte finale",
-             f"SELECT coalesce(sum(s.donation_total), 0) {sel} AND s.ts = (SELECT max(ts) FROM snapshot)",
-             9, w=5, unit="currencyEUR", decimals=2),
+             "SELECT replace(replace(to_char(coalesce(sum(s.donation_total), 0), 'FM999,999,999.00'), ',', ' '), '.', ',') || ' €' "
+             f"{sel} AND s.ts = (SELECT max(ts) FROM snapshot)",
+             9, w=8, text_field=True),
         stat("Rang final",
              "SELECT min(rank) FROM streamer_sample_v WHERE ts = (SELECT max(ts) FROM snapshot) AND NOT derived "
              "AND twitch_id IN ($streamer)",
-             14, w=5, unit="sishort", color="yellow",
+             17, w=7, unit="sishort", color="yellow",
              description="Position au classement des dons à la fin de l'événement."),
-        stat("Meilleur rang",
-             "SELECT min(rank) FROM streamer_sample_v WHERE $__timeFilter(ts) AND NOT derived AND twitch_id IN ($streamer)",
-             19, w=5, unit="sishort", color="yellow",
-             description="Meilleure position atteinte au classement des dons dans la plage de temps sélectionnée."),
         stat("Gagné sur la période",
              "WITH " + GAIN_CTE + "SELECT coalesce(sum(g.gained), 0) FROM g JOIN streamer_v st USING (twitch_id) "
              "WHERE NOT st.derived AND g.twitch_id IN ($streamer)",
@@ -1093,23 +1072,17 @@ def streamer_panels():
         stat("Dons par heure visionnée par viewer", per_viewer_hour_sql("true"), 12, w=12, y=12, unit="currencyEUR", decimals=2,
              color="green", description=PER_VIEWER_HOUR_DESCRIPTION),
 
-        # fifth row of tiles, y=16: neighbours in the ranking, live/offline split, longest session
-        stat("Écart avec le précédent", neighbour_sql(above=True), 0, w=6, y=16, unit="currencyEUR", decimals=0,
-             color="yellow", text_mode="value_and_name", transformations=[ROWS_TO_FIELDS], no_value="En tête !",
-             description="Combien il manque pour dépasser le streamer juste devant au classement des dons, à la fin de l'événement."),
-        stat("Avance sur le suivant", neighbour_sql(above=False), 6, w=6, y=16, unit="currencyEUR", decimals=0,
-             color="yellow", text_mode="value_and_name", transformations=[ROWS_TO_FIELDS], no_value="Dernier",
-             description="Avance sur le streamer juste derrière au classement des dons, à la fin de l'événement."),
+        # fifth row of tiles, y=16: live/offline split, longest session
         stat("Dons reçus en live et hors live",
              "SELECT coalesce(sum(s.gain) FILTER (WHERE s.online), 0) AS \"En live\", "
              f"       coalesce(sum(s.gain) FILTER (WHERE NOT s.online), 0) AS \"Hors live\" {sel} "
              "AND $__timeFilter(s.ts) AND s.gain IS NOT NULL",
-             12, w=6, y=16, unit="currencyEUR", decimals=0, color="green", text_mode="value_and_name",
+             0, w=12, y=16, unit="currencyEUR", decimals=0, color="green", text_mode="value_and_name",
              description="Dons gagnés sur la période selon que le streamer était en live ou non au moment du relevé."),
         stat("Plus longue session en live",
              f"SELECT extract(epoch FROM max(s.ts - coalesce(s.offline_at, st.first_seen))) / 3600.0 {sel} "
              "AND $__timeFilter(s.ts) AND s.online",
-             18, w=6, y=16, unit="suffix: h", decimals=1, color="green",
+             12, w=12, y=16, unit="suffix: h", decimals=1, color="green",
              description="Plus long passage en live sans interruption observé sur la période (il peut avoir commencé avant)."),
 
         ts("Dons au fil du temps",
