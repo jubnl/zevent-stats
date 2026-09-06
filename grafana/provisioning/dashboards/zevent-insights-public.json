@@ -332,7 +332,7 @@
             "fixedColor": "green"
           },
           "unit": "currencyEUR",
-          "decimals": 0
+          "decimals": 2
         },
         "overrides": []
       },
@@ -384,7 +384,7 @@
             "fixedColor": "green"
           },
           "unit": "currencyEUR",
-          "decimals": 0
+          "decimals": 2
         },
         "overrides": []
       },

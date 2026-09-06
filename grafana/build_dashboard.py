@@ -493,10 +493,10 @@ def insights_panels():
                     "/ ((cur.donation_total - past.donation_total) / 600.0) END FROM cur, past",
              18, w=6, unit="dtdurations", decimals=0, color="green",
              description="Au rythme des dons des 10 dernières minutes."),
-        stat("Total projeté à la fin (rythme 1 h)", projection_sql(1), 0, w=6, y=4, unit="currencyEUR", decimals=0,
+        stat("Total projeté à la fin (rythme 1 h)", projection_sql(1), 0, w=6, y=4, unit="currencyEUR", decimals=2,
              color="green", description="Total actuel plus le rythme de la dernière heure tenu jusqu'à la fin de "
                                         "l'événement (lundi 02h00, heure de Paris)."),
-        stat("Total projeté à la fin (rythme 6 h)", projection_sql(6), 6, w=6, y=4, unit="currencyEUR", decimals=0,
+        stat("Total projeté à la fin (rythme 6 h)", projection_sql(6), 6, w=6, y=4, unit="currencyEUR", decimals=2,
              color="green", description="Total actuel plus le rythme des 6 dernières heures tenu jusqu'à la fin de "
                                         "l'événement (lundi 02h00, heure de Paris)."),
         stat("Dernière heure, et hier à la même heure",
