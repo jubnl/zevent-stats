@@ -427,7 +427,7 @@ def insights_panels():
              rate + "SELECT CASE WHEN cur.donation_total > past.donation_total THEN "
                     "((floor(cur.donation_total / 1e6) + 1) * 1e6 - cur.donation_total) "
                     "/ ((cur.donation_total - past.donation_total) / 600.0) END FROM cur, past",
-             18, w=6, unit="dtdhms", decimals=0, color="green",
+             18, w=6, unit="dtdurations", decimals=0, color="green",
              description="Au rythme des dons des 10 dernières minutes."),
 
         row("Paliers et moments", 4),

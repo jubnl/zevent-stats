@@ -276,7 +276,7 @@
             "mode": "fixed",
             "fixedColor": "green"
           },
-          "unit": "dtdhms",
+          "unit": "dtdurations",
           "decimals": 0
         },
         "overrides": []
