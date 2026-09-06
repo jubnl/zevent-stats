@@ -647,12 +647,12 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Viewer-heures divis\u00e9es par les heures en live, sur la p\u00e9riode et les streamers s\u00e9lectionn\u00e9s."
+      "description": "Heures visionn\u00e9es par viewer divis\u00e9es par les heures en live, sur la p\u00e9riode et les streamers s\u00e9lectionn\u00e9s."
     },
     {
       "id": 10,
       "type": "stat",
-      "title": "Viewer-heures",
+      "title": "Heures visionn\u00e9es par viewer",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -699,7 +699,7 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "La taille de l'audience dans le temps, en viewer-heures : le nombre de viewers des streamers correspondant aux filtres Lieu et Streamer, additionn\u00e9 minute par minute sur la p\u00e9riode s\u00e9lectionn\u00e9e (chaque relev\u00e9 compte le temps \u00e9coul\u00e9 depuis le pr\u00e9c\u00e9dent, plafonn\u00e9 \u00e0 5 minutes pour que les trous dans les donn\u00e9es ne comptent pas). Un viewer qui regarde pendant une heure vaut une viewer-heure ; 1 000 viewers pendant 2 heures font 2 000 viewer-heures."
+      "description": "La taille de l'audience dans le temps, en heures visionn\u00e9es par viewer : le nombre de viewers des streamers correspondant aux filtres Lieu et Streamer, additionn\u00e9 minute par minute sur la p\u00e9riode s\u00e9lectionn\u00e9e (chaque relev\u00e9 compte le temps \u00e9coul\u00e9 depuis le pr\u00e9c\u00e9dent, plafonn\u00e9 \u00e0 5 minutes pour que les trous dans les donn\u00e9es ne comptent pas). Un viewer qui regarde pendant une heure vaut une heure visionn\u00e9e par un viewer ; 1 000 viewers pendant 2 heures font 2 000 heures visionn\u00e9es par viewer."
     },
     {
       "id": 11,
@@ -756,7 +756,7 @@
     {
       "id": 12,
       "type": "stat",
-      "title": "Dons par viewer-heure",
+      "title": "Dons par heure visionn\u00e9e par viewer",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -803,7 +803,7 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Ce que la communaut\u00e9 donne par rapport \u00e0 sa taille : les dons gagn\u00e9s par les streamers correspondant aux filtres Lieu et Streamer sur la p\u00e9riode s\u00e9lectionn\u00e9e, divis\u00e9s par leurs viewer-heures (le nombre de viewers additionn\u00e9 minute par minute sur la m\u00eame p\u00e9riode, en heures). Un viewer qui regarde pendant une heure vaut une viewer-heure : 5 \u20ac signifie 5 \u20ac r\u00e9colt\u00e9s pour chaque heure regard\u00e9e par un viewer. Les dons sans streamer (billets, boutique, anonymes) ne sont pas compt\u00e9s."
+      "description": "Ce que la communaut\u00e9 donne par rapport \u00e0 sa taille : les dons gagn\u00e9s par les streamers correspondant aux filtres Lieu et Streamer sur la p\u00e9riode s\u00e9lectionn\u00e9e, divis\u00e9s par leurs heures visionn\u00e9es par viewer (le nombre de viewers additionn\u00e9 minute par minute sur la m\u00eame p\u00e9riode, en heures). Un viewer qui regarde pendant une heure vaut une heure visionn\u00e9e par un viewer : 5 \u20ac signifie 5 \u20ac r\u00e9colt\u00e9s pour chaque heure regard\u00e9e par un viewer. Les dons sans streamer (billets, boutique, anonymes) ne sont pas compt\u00e9s."
     },
     {
       "id": 13,

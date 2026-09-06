@@ -242,9 +242,9 @@ DT = "least(x.gap_s, 300)"
 
 PER_VIEWER_HOUR_DESCRIPTION = (
     "Ce que la communauté donne par rapport à sa taille : les dons gagnés par les streamers correspondant aux "
-    "filtres Lieu et Streamer sur la période sélectionnée, divisés par leurs viewer-heures (le nombre de viewers "
+    "filtres Lieu et Streamer sur la période sélectionnée, divisés par leurs heures visionnées par viewer (le nombre de viewers "
     "additionné minute par minute sur la même période, en heures). Un viewer qui regarde pendant une heure vaut "
-    "une viewer-heure : 5 \u20ac signifie 5 \u20ac récoltés pour chaque heure regardée par un viewer. Les dons sans "
+    "une heure visionnée par un viewer : 5 \u20ac signifie 5 \u20ac récoltés pour chaque heure regardée par un viewer. Les dons sans "
     "streamer (billets, boutique, anonymes) ne sont pas comptés."
 )
 
@@ -264,11 +264,11 @@ def per_viewer_hour_sql(loc):
 
 
 VIEWER_HOURS_DESCRIPTION = (
-    "La taille de l'audience dans le temps, en viewer-heures : le nombre de viewers des streamers correspondant "
+    "La taille de l'audience dans le temps, en heures visionnées par viewer : le nombre de viewers des streamers correspondant "
     "aux filtres Lieu et Streamer, additionné minute par minute sur la période sélectionnée (chaque relevé compte "
     "le temps écoulé depuis le précédent, plafonné à 5 minutes pour que les trous dans les données ne comptent "
-    "pas). Un viewer qui regarde pendant une heure vaut une viewer-heure ; 1 000 viewers pendant 2 heures font "
-    "2 000 viewer-heures."
+    "pas). Un viewer qui regarde pendant une heure vaut une heure visionnée par un viewer ; 1 000 viewers pendant 2 heures font "
+    "2 000 heures visionnées par viewer."
 )
 
 
@@ -471,10 +471,10 @@ def main_panels():
         stat("Streamers en live",
              'SELECT streamers_online AS "En live", streamers_total AS "Total" FROM snapshot ORDER BY ts DESC LIMIT 1',
              0, w=8, y=8, color="blue", text_mode="value_and_name"),
-        stat("Viewer-heures", viewer_hours_sql(LOC), 16, w=8, y=4, unit="sishort", decimals=1, color="purple",
+        stat("Heures visionnées par viewer", viewer_hours_sql(LOC), 16, w=8, y=4, unit="sishort", decimals=1, color="purple",
              description=VIEWER_HOURS_DESCRIPTION),
         hours_stat(8, 8, LOC, y=8),
-        stat("Dons par viewer-heure", per_viewer_hour_sql(LOC), 16, w=8, y=8, unit="currencyEUR", decimals=2,
+        stat("Dons par heure visionnée par viewer", per_viewer_hour_sql(LOC), 16, w=8, y=8, unit="currencyEUR", decimals=2,
              color="green", description=PER_VIEWER_HOUR_DESCRIPTION),
 
         row("Global", 12),
@@ -535,7 +535,7 @@ def main_panels():
               "FROM v JOIN streamer_v st USING (twitch_id) LEFT JOIN cur USING (twitch_id) "
               "WHERE v.hours >= 1 AND " + LOC + " ORDER BY 3 DESC LIMIT 25",
               12, 56, w=12, money_cols=("Cagnotte",), hour_cols=("Heures de stream",), image_cols=("Avatar",), streamer_links=True,
-              description="Viewer-heures divisées par les heures en live sur la plage de temps sélectionnée : l'audience "
+              description="Heures visionnées par viewer divisées par les heures en live sur la plage de temps sélectionnée : l'audience "
                           "habituelle du streamer quand il est en live. Streamers avec au moins une heure de live. "
                           "Suit les filtres Lieu et Streamer."),
     ]
@@ -712,21 +712,21 @@ def insights_panels():
                  series_colors={"À un streamer": "green", "Sans streamer": "yellow"},
                  description="Gain du total de l'événement par heure de la journée, additionné sur la période sélectionnée "
                              "(tous lieux), séparé entre ce que les compteurs des streamers ont gagné et le reste. " + MIRROR_NOTE),
-        table("Dons par viewer-heure",
+        table("Dons par heure visionnée par viewer",
               "WITH v AS ("
               f"  SELECT x.twitch_id, sum(x.viewers * {DT}) / 3600.0 AS viewer_hours, "
               f"         sum({DT}) FILTER (WHERE x.online) / 3600.0 AS hours"
               "  FROM streamer_sample_v x WHERE $__timeFilter(x.ts) AND x.gap_s IS NOT NULL GROUP BY x.twitch_id"
               "), " + GAIN_CTE +
-              'SELECT st.profile_url AS "Avatar", st.display AS "Streamer", g.gained / v.viewer_hours AS "Par viewer-heure", '
-              'g.gained AS "Gagné", v.viewer_hours AS "Viewer-heures", v.hours AS "Heures", st.login AS login '
+              'SELECT st.profile_url AS "Avatar", st.display AS "Streamer", g.gained / v.viewer_hours AS "Par heure visionnée par viewer", '
+              'g.gained AS "Gagné", v.viewer_hours AS "Heures visionnées par viewer", v.hours AS "Heures", st.login AS login '
               "FROM g JOIN v USING (twitch_id) JOIN streamer_v st USING (twitch_id) "
               "WHERE NOT st.derived AND v.viewer_hours >= 100 AND " + LOC + " ORDER BY 3 DESC LIMIT 25",
-              12, 46, w=12, h=9, money_cols=("Par viewer-heure", "Gagné"), hour_cols=("Heures",), image_cols=("Avatar",),
+              12, 46, w=12, h=9, money_cols=("Par heure visionnée par viewer", "Gagné"), hour_cols=("Heures",), image_cols=("Avatar",),
               streamer_links=True,
-              description="Gagné sur la période sélectionnée divisé par les viewer-heures (viewers additionnés dans le "
+              description="Gagné sur la période sélectionnée divisé par les heures visionnées par viewer (viewers additionnés dans le "
                           "temps) : ce qu'une communauté donne par rapport à sa taille. Les streamers avec moins de "
-                          "100 viewer-heures sont exclus."),
+                          "100 heures visionnées par viewer sont exclus."),
         table("Tendance du moment (15 dernières minutes)",
               "WITH cur AS (SELECT max(ts) AS ts FROM snapshot), "
               "n AS (SELECT twitch_id, donation_total, viewers FROM streamer_sample_v, cur WHERE streamer_sample_v.ts = cur.ts), "
@@ -756,14 +756,14 @@ def insights_panels():
            0, 64, unit="currencyEUR",
            description="Gain du total de l'événement par minute, moyenné sur l'heure qui précède chaque point, comparé au "
                        "rythme moyen depuis le début. Un pic d'une heure suit chaque gros versement (boutique, billets)."),
-        ts("Dons par viewer-heure au fil du temps",
-           f"SELECT $__timeGroupAlias(x.ts, $__interval), sum(x.gain) / nullif(sum(x.viewers * {DT}) / 3600.0, 0) AS \"Dons par viewer-heure\" "
+        ts("Dons par heure visionnée par viewer au fil du temps",
+           f"SELECT $__timeGroupAlias(x.ts, $__interval), sum(x.gain) / nullif(sum(x.viewers * {DT}) / 3600.0, 0) AS \"Dons par heure visionnée par viewer\" "
            "FROM streamer_sample_v x JOIN streamer_v st USING (twitch_id) "
            "WHERE $__timeFilter(x.ts) AND NOT st.derived AND x.gap_s IS NOT NULL AND " + ORG + " AND " + LOC + " "
            "GROUP BY 1 ORDER BY 1",
            12, 64, unit="currencyEUR", legend=False, min_interval="30m",
            description="Générosité par intervalle : dons gagnés par les streamers correspondant au filtre Lieu divisés par "
-                       "leurs viewer-heures sur l'intervalle. Les chaînes de l'organisation (billets, boutique) sont exclues."),
+                       "leurs heures visionnées par viewer sur l'intervalle. Les chaînes de l'organisation (billets, boutique) sont exclues."),
         barchart("Viewers par heure de la journée (Europe/Paris)",
                  "SELECT to_char(h, 'FM00\"h\"') AS \"Heure\", round(avg(v)) AS \"Moyenne\", max(v) AS \"Pic\" FROM ("
                  "  SELECT extract(hour FROM s.ts AT TIME ZONE 'Europe/Paris') AS h, s.ts, sum(s.viewers) AS v"
@@ -916,7 +916,7 @@ def insights_panels():
            12, 131, unit="sishort", stack=True),
         table("Heures de stream par jeu",
               "SELECT coalesce(x.game, '(sans jeu)') AS \"Jeu\", sum(" + DT + ") / 3600.0 AS \"Heures\", "
-              "       count(DISTINCT x.twitch_id) AS \"Streamers\", sum(x.viewers * " + DT + ") / 3600.0 AS \"Viewer-heures\" "
+              "       count(DISTINCT x.twitch_id) AS \"Streamers\", sum(x.viewers * " + DT + ") / 3600.0 AS \"Heures visionnées par viewer\" "
               "FROM streamer_sample_v x JOIN streamer_v st USING (twitch_id) "
               "WHERE $__timeFilter(x.ts) AND NOT st.derived AND " + LOC + " AND x.online AND x.gap_s IS NOT NULL "
               "GROUP BY 1 ORDER BY 2 DESC LIMIT 25",
@@ -1070,8 +1070,8 @@ def streamer_panels():
              f"SELECT sum(x.viewers * {DT}) / nullif(sum({DT}) FILTER (WHERE x.online), 0) "
              "FROM streamer_sample_v x WHERE $__timeFilter(x.ts) AND x.twitch_id IN ($streamer) AND x.gap_s IS NOT NULL",
              14, w=5, y=8, unit="sishort", decimals=0, color="purple",
-             description="Viewer-heures divisées par les heures en live, sur la période et les streamers sélectionnés."),
-        stat("Viewer-heures", viewer_hours_sql("true"), 19, w=5, y=8, unit="sishort", decimals=1, color="purple",
+             description="Heures visionnées par viewer divisées par les heures en live, sur la période et les streamers sélectionnés."),
+        stat("Heures visionnées par viewer", viewer_hours_sql("true"), 19, w=5, y=8, unit="sishort", decimals=1, color="purple",
              description=VIEWER_HOURS_DESCRIPTION),
 
         # fourth row of tiles, full width, y=12
@@ -1088,7 +1088,7 @@ def streamer_panels():
              "FROM cur c, changed ch",
              0, w=12, y=12, unit="dtdhms", decimals=0, color="orange",
              description="Depuis combien de temps le streamer affiché est dans son état actuel (live ou hors ligne) avec le jeu actuel."),
-        stat("Dons par viewer-heure", per_viewer_hour_sql("true"), 12, w=12, y=12, unit="currencyEUR", decimals=2,
+        stat("Dons par heure visionnée par viewer", per_viewer_hour_sql("true"), 12, w=12, y=12, unit="currencyEUR", decimals=2,
              color="green", description=PER_VIEWER_HOUR_DESCRIPTION),
 
         # fifth row of tiles, y=16: neighbours in the ranking, live/offline split, longest session
