@@ -38,7 +38,7 @@ SELECT 'mistermv'::text                         AS login,
        'domingo'::text                          AS source_login,
        '2026-09-05 01:08:00+00'::timestamptz    AS rebase_ts,     -- first sample with the mirrored counter
        'mistermv-private'::text                 AS derived_id,    -- twitch_id of the derived row
-       'dons spéciaux du vieux monsieur'::text        AS derived_display;
+       'Cagnotte spéciale du Vieux Monsieur'::text        AS derived_display;
 
 -- streamer plus the derived row. `derived` marks rows that are not API entities.
 -- `location` is 'LAN' (on site) or 'Online' (from home).
