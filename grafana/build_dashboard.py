@@ -307,9 +307,7 @@ def main_panels():
              "SELECT coalesce(sum(donation_total), 0) FROM streamer_sample_v "
              "WHERE derived AND ts = (SELECT max(ts) FROM snapshot)",
              18, w=6, unit="currencyEUR", decimals=2, color="red",
-             description="The part of mistermv's counter that mirrors Domingo's since 01:08 UTC on Sept 5: donations to "
-                         "Domingo credited to both. Shown as the \"mistermv (private counter)\" entry in the leaderboards "
-                         "and left out of \"Donations not tied to a streamer\"."),
+             description="tkt"),
         # Viewers of the streamers matching the Location and Streamer filters (sum of the per-streamer counts,
         # which equals the API's global viewer count).
         stat("Viewers now",
