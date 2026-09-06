@@ -9,7 +9,7 @@
   "graphTooltip": 1,
   "refresh": "",
   "timepicker": {
-    "hidden": false,
+    "hidden": true,
     "refresh_intervals": []
   },
   "time": {

@@ -1273,7 +1273,8 @@ def dashboard_base(uid, title, variables, panels_, annotations=()):
         "editable": False,
         "graphTooltip": 1,
         "refresh": "",   # the event is over: nothing to refresh
-        "timepicker": {"hidden": False, "refresh_intervals": []},
+        # hidden time picker (it also hides the refresh button); from/to stay fixed at TIME_RANGE
+        "timepicker": {"hidden": True, "refresh_intervals": []},
         "time": TIME_RANGE,
         "schemaVersion": 39,
         "version": 1,
