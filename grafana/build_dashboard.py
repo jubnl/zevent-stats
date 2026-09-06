@@ -274,16 +274,24 @@ def reset_ids():
 
 
 
-def barchart(title, sql, x, y, w=12, h=9, x_field="", unit=None, description=None):
+def barchart(title, sql, x, y, w=12, h=9, x_field="", unit=None, description=None, series_colors=None,
+             stacking="none"):
+    """One bar per row of the table result. `series_colors` maps value column names to colours: with two or
+    more value columns the bars are drawn per series, side by side, with a legend (`stacking` "normal" stacks them)."""
     d = {"custom": {"fillOpacity": 80, "lineWidth": 1}, "color": {"mode": "fixed", "fixedColor": "green"}}
     if unit:
         d["unit"] = unit
     extra = {"description": description} if description else {}
+    multi = bool(series_colors)
+    overrides = [{"matcher": {"id": "byName", "options": name},
+                  "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": color}}]}
+                 for name, color in (series_colors or {}).items()]
     return panel(
         "barchart", title, sql, x, y, w, h, fmt="table",
-        fieldConfig={"defaults": d},
-        options={"orientation": "auto", "xField": x_field, "showValue": "never", "barWidth": 0.8,
-                 "legend": {"showLegend": False}, "tooltip": {"mode": "single", "sort": "none"}},
+        fieldConfig={"defaults": d, "overrides": overrides},
+        options={"orientation": "auto", "xField": x_field, "showValue": "never", "barWidth": 0.8, "stacking": stacking,
+                 "legend": {"showLegend": multi, "displayMode": "list", "placement": "bottom"},
+                 "tooltip": {"mode": "multi" if multi else "single", "sort": "none"}},
         **extra,
     )
 
@@ -430,14 +438,21 @@ def insights_panels():
               12, 5, w=12, h=9, money_cols=("Gain",), streamer_links=True, description=BLIP_NOTE),
 
         row("Patterns", 14),
+        # Global gain per snapshot split into what the streamer counters gained (all of them, no location
+        # filter) and the rest (total gain minus streamer gains: tickets, shop, anonymous), then summed by
+        # hour of the day. A snapshot without streamer samples counts fully as not tied to a streamer.
         barchart("Donations by hour of the day (Europe/Paris)",
-                 "SELECT to_char(h, 'FM00\"h\"') AS \"Hour\", sum(delta) AS \"Donated\" FROM ("
-                 "  SELECT extract(hour FROM ts AT TIME ZONE 'Europe/Paris') AS h, "
-                 f"         {gain_expr('donation_total')} AS delta"
-                 "  FROM snapshot WHERE $__timeFilter(ts)"
-                 ") d WHERE delta IS NOT NULL GROUP BY h ORDER BY h",
+                 "SELECT to_char(h, 'FM00\"h\"') AS \"Hour\", sum(sg) AS \"To a streamer\", "
+                 "       sum(g - sg) AS \"Not tied to a streamer\" FROM ("
+                 "  SELECT extract(hour FROM gl.ts AT TIME ZONE 'Europe/Paris') AS h, gl.g, coalesce(st.sg, 0) AS sg"
+                 f"  FROM (SELECT ts, {gain_expr('donation_total')} AS g FROM snapshot WHERE $__timeFilter(ts)) gl"
+                 "  LEFT JOIN (SELECT ts, sum(gain) AS sg FROM streamer_sample_v WHERE NOT derived AND $__timeFilter(ts)"
+                 "             GROUP BY ts) st USING (ts)"
+                 ") d WHERE g IS NOT NULL GROUP BY h ORDER BY h",
                  0, 15, x_field="Hour", unit="currencyEUR",
-                 description="Event total gained per hour of the day, summed over the selected range (all locations)."),
+                 series_colors={"To a streamer": "green", "Not tied to a streamer": "yellow"},
+                 description="Event total gained per hour of the day, summed over the selected range (all locations), "
+                             "split into what the streamer counters gained and the rest. " + MIRROR_NOTE),
         table("Donations per viewer-hour",
               "WITH v AS ("
               f"  SELECT x.twitch_id, sum(x.viewers * {DT}) / 3600.0 AS viewer_hours, "

@@ -519,7 +519,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT to_char(h, 'FM00\"h\"') AS \"Hour\", sum(delta) AS \"Donated\" FROM (  SELECT extract(hour FROM ts AT TIME ZONE 'Europe/Paris') AS h,          donation_total - lag(donation_total) OVER (ORDER BY ts) AS delta  FROM snapshot WHERE $__timeFilter(ts)) d WHERE delta IS NOT NULL GROUP BY h ORDER BY h",
+          "rawSql": "SELECT to_char(h, 'FM00\"h\"') AS \"Hour\", sum(sg) AS \"To a streamer\",        sum(g - sg) AS \"Not tied to a streamer\" FROM (  SELECT extract(hour FROM gl.ts AT TIME ZONE 'Europe/Paris') AS h, gl.g, coalesce(st.sg, 0) AS sg  FROM (SELECT ts, donation_total - lag(donation_total) OVER (ORDER BY ts) AS g FROM snapshot WHERE $__timeFilter(ts)) gl  LEFT JOIN (SELECT ts, sum(gain) AS sg FROM streamer_sample_v WHERE NOT derived AND $__timeFilter(ts)             GROUP BY ts) st USING (ts)) d WHERE g IS NOT NULL GROUP BY h ORDER BY h",
           "format": "table",
           "refId": "A"
         }
@@ -536,22 +536,56 @@
           },
           "unit": "currencyEUR"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "To a streamer"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Not tied to a streamer"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "yellow"
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "orientation": "auto",
         "xField": "Hour",
         "showValue": "never",
         "barWidth": 0.8,
+        "stacking": "none",
         "legend": {
-          "showLegend": false
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
         },
         "tooltip": {
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
         }
       },
-      "description": "Event total gained per hour of the day, summed over the selected range (all locations)."
+      "description": "Event total gained per hour of the day, summed over the selected range (all locations), split into what the streamer counters gained and the rest. All donations that could not be tied to a streamer: the event total minus the sum of the streamer counters. This holds donations made by people without picking a streamer (the Streamlabs Charity team page without a member), the tickets of the concert on Thursday, all shop donations, and so on. The derived \"mistermv (private counter)\" row is left out of the streamer sum: since 01:08 UTC on Sept 5 it mirrors Domingo's counter, which is already counted once."
     },
     {
       "id": 10,
