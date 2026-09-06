@@ -645,13 +645,13 @@ def insights_panels():
                  f"SELECT e.year::text AS \"Édition\", e.total AS \"Éditions précédentes\", NULL::numeric AS \"2026 (en cours)\" "
                  f"FROM {EDITIONS_VALUES} "
                  "UNION ALL (SELECT '2026', NULL, donation_total FROM snapshot ORDER BY ts DESC LIMIT 1) ORDER BY 1",
-                 8, 36, w=10, x_field="Édition", unit="currencyEUR", stacking="normal",
+                 8, 36, w=10, x_field="Édition", unit="currencyEUR", stacking="normal", orientation="vertical",
                  series_colors={"Éditions précédentes": "blue", "2026 (en cours)": "green"},
                  description="Total final des éditions précédentes et total actuel de cette année. Pas d'édition en 2023."),
-        stat(f"Record à battre ({RECORD_YEAR})", f"SELECT {RECORD}", 18, w=6, y=36, unit="currencyEUR", decimals=0, color="blue"),
+        stat(f"Record à battre ({RECORD_YEAR})", f"SELECT {RECORD}", 18, w=6, y=36, unit="currencyEUR", decimals=2, color="blue"),
         stat("Il manque, pour le battre",
              f"SELECT {RECORD} - donation_total FROM snapshot ORDER BY ts DESC LIMIT 1",
-             18, w=6, y=40, h=5, unit="currencyEUR", decimals=0, thresholds=[(None, "green"), (1, "orange")],
+             18, w=6, y=40, h=5, unit="currencyEUR", decimals=2, thresholds=[(None, "green"), (1, "orange")],
              mappings=[{"type": "range", "options": {"from": -1e12, "to": 0, "result": {"text": "Record battu !", "color": "green"}}}],
              description=f"Écart entre le total actuel et le record de {RECORD_YEAR}."),
 
@@ -667,7 +667,7 @@ def insights_panels():
                  "  LEFT JOIN (SELECT ts, sum(gain) AS sg FROM streamer_sample_v WHERE NOT derived AND $__timeFilter(ts)"
                  "             GROUP BY ts) st USING (ts)"
                  ") d WHERE g IS NOT NULL GROUP BY h ORDER BY h",
-                 0, 46, x_field="Heure", unit="currencyEUR",
+                 0, 46, x_field="Heure", unit="currencyEUR", orientation="vertical",
                  series_colors={"À un streamer": "green", "Sans streamer": "yellow"},
                  description="Gain du total de l'événement par heure de la journée, additionné sur la période sélectionnée "
                              "(tous lieux), séparé entre ce que les compteurs des streamers ont gagné et le reste. " + MIRROR_NOTE),
@@ -729,7 +729,7 @@ def insights_panels():
                  "  FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id)"
                  "  WHERE $__timeFilter(s.ts) AND NOT st.derived AND " + LOC + " GROUP BY s.ts"
                  ") x GROUP BY h ORDER BY h",
-                 0, 73, x_field="Heure", unit="sishort", series_colors={"Moyenne": "purple", "Pic": "blue"},
+                 0, 73, x_field="Heure", unit="sishort", series_colors={"Moyenne": "purple", "Pic": "blue"}, orientation="vertical",
                  description="Viewers cumulés des streamers correspondant au filtre Lieu, par heure de la journée sur la "
                              "période sélectionnée : moyenne des relevés et plus haut relevé."),
         table("Jour par jour (Europe/Paris)",

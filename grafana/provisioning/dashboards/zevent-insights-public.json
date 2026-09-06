@@ -1361,7 +1361,7 @@
         ]
       },
       "options": {
-        "orientation": "auto",
+        "orientation": "vertical",
         "xField": "\u00c9dition",
         "showValue": "never",
         "barWidth": 0.8,
@@ -1411,7 +1411,7 @@
             "fixedColor": "blue"
           },
           "unit": "currencyEUR",
-          "decimals": 0
+          "decimals": 2
         },
         "overrides": []
       },
@@ -1487,7 +1487,7 @@
             ]
           },
           "unit": "currencyEUR",
-          "decimals": 0
+          "decimals": 2
         },
         "overrides": []
       },
@@ -1591,7 +1591,7 @@
         ]
       },
       "options": {
-        "orientation": "auto",
+        "orientation": "vertical",
         "xField": "Heure",
         "showValue": "never",
         "barWidth": 0.8,
@@ -2103,7 +2103,7 @@
         ]
       },
       "options": {
-        "orientation": "auto",
+        "orientation": "vertical",
         "xField": "Heure",
         "showValue": "never",
         "barWidth": 0.8,
