@@ -503,6 +503,40 @@ def main_panels():
                     extra_join="JOIN g USING (twitch_id) ", money_cols=("Gagné",)),
         leaderboard("Top des heures de stream sur la période", 12, 44,
                     order_by="coalesce(h.hours, 0) DESC, cur.donation_total DESC"),
+        table("Top des pics de viewers sur la période",
+              "WITH pk AS ("
+              "  SELECT s.twitch_id, max(s.viewers) AS peak FROM streamer_sample_v s"
+              "  WHERE $__timeFilter(s.ts) AND NOT s.derived AND s.twitch_id IN ($streamer) GROUP BY s.twitch_id"
+              "), cur AS ("
+              "  SELECT twitch_id, viewers, donation_total FROM streamer_sample_v WHERE ts = (SELECT max(ts) FROM snapshot)"
+              "), top AS ("
+              "  SELECT pk.twitch_id, pk.peak FROM pk JOIN streamer_v st USING (twitch_id) WHERE pk.peak > 0 AND " + LOC +
+              "  ORDER BY pk.peak DESC LIMIT 25"
+              ") "
+              'SELECT st.profile_url AS "Avatar", st.display AS "Streamer", top.peak AS "Pic de viewers", '
+              "       (SELECT min(x.ts) FROM streamer_sample_v x WHERE x.twitch_id = top.twitch_id AND x.viewers = top.peak "
+              '        AND $__timeFilter(x.ts)) AS "Atteint à", '
+              'cur.viewers AS "Viewers", cur.donation_total AS "Cagnotte", st.login AS login '
+              "FROM top JOIN streamer_v st USING (twitch_id) LEFT JOIN cur USING (twitch_id) ORDER BY top.peak DESC",
+              0, 56, w=12, money_cols=("Cagnotte",), image_cols=("Avatar",), streamer_links=True,
+              description="Plus grand nombre de viewers atteint par chaque streamer dans la plage de temps sélectionnée, "
+                          "et le moment où il l'a atteint. Suit les filtres Lieu et Streamer."),
+        table("Top des viewers moyens en live sur la période",
+              "WITH v AS ("
+              f"  SELECT x.twitch_id, sum(x.viewers * {DT}) / 3600.0 AS viewer_hours, sum({DT}) FILTER (WHERE x.online) / 3600.0 AS hours"
+              "  FROM streamer_sample_v x WHERE $__timeFilter(x.ts) AND NOT x.derived AND x.twitch_id IN ($streamer) AND x.gap_s IS NOT NULL"
+              "  GROUP BY x.twitch_id"
+              "), cur AS ("
+              "  SELECT twitch_id, viewers, donation_total FROM streamer_sample_v WHERE ts = (SELECT max(ts) FROM snapshot)"
+              ") "
+              'SELECT st.profile_url AS "Avatar", st.display AS "Streamer", round(v.viewer_hours / v.hours) AS "Viewers moyens", '
+              'v.hours AS "Heures de stream", cur.viewers AS "Viewers", cur.donation_total AS "Cagnotte", st.login AS login '
+              "FROM v JOIN streamer_v st USING (twitch_id) LEFT JOIN cur USING (twitch_id) "
+              "WHERE v.hours >= 1 AND " + LOC + " ORDER BY 3 DESC LIMIT 25",
+              12, 56, w=12, money_cols=("Cagnotte",), hour_cols=("Heures de stream",), image_cols=("Avatar",), streamer_links=True,
+              description="Viewer-heures divisées par les heures en live sur la plage de temps sélectionnée : l'audience "
+                          "habituelle du streamer quand il est en live. Streamers avec au moins une heure de live. "
+                          "Suit les filtres Lieu et Streamer."),
     ]
 
 
