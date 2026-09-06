@@ -686,7 +686,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT ts AS time, donation_total AS \"Total\" FROM snapshot WHERE $__timeFilter(ts) ORDER BY 1",
+          "rawSql": "SELECT ts AS time, donation_total AS \"Total\", 3510682 AS \"2019 : 3,51 M\u20ac\", 5724377 AS \"2020 : 5,72 M\u20ac\", 10064480 AS \"2021 : 10,06 M\u20ac\", 10182126 AS \"2022 : 10,18 M\u20ac\", 10145881 AS \"2024 : 10,15 M\u20ac\", 16658660 AS \"2025 : 16,66 M\u20ac\" FROM snapshot WHERE $__timeFilter(ts) ORDER BY 1",
           "format": "time_series",
           "refId": "A"
         }
@@ -702,11 +702,49 @@
           },
           "unit": "currencyEUR"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "^20[0-9][0-9] :.*"
+            },
+            "properties": [
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    6,
+                    6
+                  ]
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 1
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8b949e"
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "legend": {
-          "showLegend": false,
+          "showLegend": true,
           "displayMode": "list",
           "placement": "bottom",
           "calcs": []
@@ -715,7 +753,8 @@
           "mode": "multi",
           "sort": "desc"
         }
-      }
+      },
+      "description": "En pointill\u00e9s, le total final des \u00e9ditions pr\u00e9c\u00e9dentes (depuis 2019)."
     },
     {
       "id": 13,

@@ -1230,19 +1230,297 @@
     },
     {
       "id": 16,
+      "type": "table",
+      "title": "\u00c9ditions pr\u00e9c\u00e9dentes",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 36,
+        "w": 8,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT e.year AS \"\u00c9dition\", e.name AS \"Nom\", e.total AS \"Total\",        (SELECT min(ts) FROM snapshot WHERE donation_total >= e.total) AS \"D\u00e9pass\u00e9 \u00e0\" FROM (VALUES (2016, 'Avenger Project', 170770), (2017, 'ZEvent', 451851), (2018, 'ZEvent', 1094731), (2019, 'ZEvent', 3510682), (2020, 'ZEvent', 5724377), (2021, 'ZEvent', 10064480), (2022, 'ZEvent', 10182126), (2024, 'ZEvent', 10145881), (2025, 'ZEvent', 16658660)) e(year, name, total) ORDER BY e.total DESC",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "minWidth": 50
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Total"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyEUR"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": []
+      },
+      "description": "Total final de chaque \u00e9dition et le moment o\u00f9 cette ann\u00e9e l'a d\u00e9pass\u00e9 (vide : pas encore). Pas d'\u00e9dition en 2023."
+    },
+    {
+      "id": 17,
+      "type": "barchart",
+      "title": "Total par \u00e9dition",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 36,
+        "w": 10,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT e.year::text AS \"\u00c9dition\", e.total AS \"\u00c9ditions pr\u00e9c\u00e9dentes\", NULL::numeric AS \"2026 (en cours)\" FROM (VALUES (2016, 'Avenger Project', 170770), (2017, 'ZEvent', 451851), (2018, 'ZEvent', 1094731), (2019, 'ZEvent', 3510682), (2020, 'ZEvent', 5724377), (2021, 'ZEvent', 10064480), (2022, 'ZEvent', 10182126), (2024, 'ZEvent', 10145881), (2025, 'ZEvent', 16658660)) e(year, name, total) UNION ALL (SELECT '2026', NULL, donation_total FROM snapshot ORDER BY ts DESC LIMIT 1) ORDER BY 1",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "fillOpacity": 80,
+            "lineWidth": 1
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "green"
+          },
+          "unit": "currencyEUR"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "\u00c9ditions pr\u00e9c\u00e9dentes"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "blue"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "2026 (en cours)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "orientation": "auto",
+        "xField": "\u00c9dition",
+        "showValue": "never",
+        "barWidth": 0.8,
+        "stacking": "normal",
+        "legend": {
+          "showLegend": true,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "description": "Total final des \u00e9ditions pr\u00e9c\u00e9dentes et total actuel de cette ann\u00e9e. Pas d'\u00e9dition en 2023."
+    },
+    {
+      "id": 18,
+      "type": "stat",
+      "title": "Record \u00e0 battre (2025)",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 36,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT 16658660",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "unit": "currencyEUR",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      }
+    },
+    {
+      "id": 19,
+      "type": "stat",
+      "title": "Il manque, pour le battre",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 40,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT 16658660 - donation_total FROM snapshot ORDER BY ts DESC LIMIT 1",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "type": "range",
+              "options": {
+                "from": -1000000000000.0,
+                "to": 0,
+                "result": {
+                  "text": "Record battu !",
+                  "color": "green"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "currencyEUR",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "description": "\u00c9cart entre le total actuel et le record de 2025."
+    },
+    {
+      "id": 20,
       "type": "row",
       "title": "Tendances",
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 36,
+        "y": 45,
         "w": 24,
         "h": 1
       },
       "panels": []
     },
     {
-      "id": 17,
+      "id": 21,
       "type": "barchart",
       "title": "Dons par heure de la journ\u00e9e (Europe/Paris)",
       "datasource": {
@@ -1251,7 +1529,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 37,
+        "y": 46,
         "w": 12,
         "h": 9
       },
@@ -1331,7 +1609,7 @@
       "description": "Gain du total de l'\u00e9v\u00e9nement par heure de la journ\u00e9e, additionn\u00e9 sur la p\u00e9riode s\u00e9lectionn\u00e9e (tous lieux), s\u00e9par\u00e9 entre ce que les compteurs des streamers ont gagn\u00e9 et le reste. Tous les dons qui n'ont pas pu \u00eatre rattach\u00e9s \u00e0 un streamer : le total de l'\u00e9v\u00e9nement moins la somme des compteurs des streamers. On y trouve les dons faits sans choisir de streamer (la page d'\u00e9quipe Streamlabs Charity sans membre), les billets du concert de jeudi, tous les dons de la boutique, etc."
     },
     {
-      "id": 18,
+      "id": 22,
       "type": "table",
       "title": "Dons par viewer-heure",
       "datasource": {
@@ -1340,7 +1618,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 37,
+        "y": 46,
         "w": 12,
         "h": 9
       },
@@ -1476,7 +1754,7 @@
       "description": "Gagn\u00e9 sur la p\u00e9riode s\u00e9lectionn\u00e9e divis\u00e9 par les viewer-heures (viewers additionn\u00e9s dans le temps) : ce qu'une communaut\u00e9 donne par rapport \u00e0 sa taille. Les streamers avec moins de 100 viewer-heures sont exclus."
     },
     {
-      "id": 19,
+      "id": 23,
       "type": "table",
       "title": "Tendance du moment (15 derni\u00e8res minutes)",
       "datasource": {
@@ -1485,7 +1763,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 46,
+        "y": 55,
         "w": 12,
         "h": 9
       },
@@ -1589,7 +1867,7 @@
       "description": "Streamers class\u00e9s par dons gagn\u00e9s sur les 15 derni\u00e8res minutes de donn\u00e9es, avec la variation du nombre de viewers (par rapport au dernier relev\u00e9 vieux d'au moins 15 minutes, en remontant jusqu'\u00e0 une heure)."
     },
     {
-      "id": 20,
+      "id": 24,
       "type": "timeseries",
       "title": "Dons gagn\u00e9s par intervalle, par lieu",
       "datasource": {
@@ -1598,7 +1876,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 46,
+        "y": 55,
         "w": 12,
         "h": 9
       },
@@ -1647,7 +1925,7 @@
       "interval": "5m"
     },
     {
-      "id": 21,
+      "id": 25,
       "type": "timeseries",
       "title": "Rythme des dons par minute (1 h glissante)",
       "datasource": {
@@ -1656,7 +1934,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 55,
+        "y": 64,
         "w": 12,
         "h": 9
       },
@@ -1700,7 +1978,7 @@
       "description": "Gain du total de l'\u00e9v\u00e9nement par minute, moyenn\u00e9 sur l'heure qui pr\u00e9c\u00e8de chaque point, compar\u00e9 au rythme moyen depuis le d\u00e9but. Un pic d'une heure suit chaque gros versement (boutique, billets)."
     },
     {
-      "id": 22,
+      "id": 26,
       "type": "timeseries",
       "title": "Dons par viewer-heure au fil du temps",
       "datasource": {
@@ -1709,7 +1987,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 55,
+        "y": 64,
         "w": 12,
         "h": 9
       },
@@ -1754,7 +2032,7 @@
       "description": "G\u00e9n\u00e9rosit\u00e9 par intervalle : dons gagn\u00e9s par les streamers correspondant au filtre Lieu divis\u00e9s par leurs viewer-heures sur l'intervalle. Les cha\u00eenes de l'organisation (billets, boutique) sont exclues."
     },
     {
-      "id": 23,
+      "id": 27,
       "type": "barchart",
       "title": "Viewers par heure de la journ\u00e9e (Europe/Paris)",
       "datasource": {
@@ -1763,7 +2041,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 64,
+        "y": 73,
         "w": 12,
         "h": 9
       },
@@ -1843,7 +2121,7 @@
       "description": "Viewers cumul\u00e9s des streamers correspondant au filtre Lieu, par heure de la journ\u00e9e sur la p\u00e9riode s\u00e9lectionn\u00e9e : moyenne des relev\u00e9s et plus haut relev\u00e9."
     },
     {
-      "id": 24,
+      "id": 28,
       "type": "table",
       "title": "Jour par jour (Europe/Paris)",
       "datasource": {
@@ -1852,7 +2130,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 64,
+        "y": 73,
         "w": 12,
         "h": 9
       },
@@ -1920,20 +2198,20 @@
       "description": "Par jour calendaire : gain du total de l'\u00e9v\u00e9nement et viewers (tous lieux), heures de stream et streamers pass\u00e9s en live (filtre Lieu)."
     },
     {
-      "id": 25,
+      "id": 29,
       "type": "row",
       "title": "R\u00e9partition",
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 73,
+        "y": 82,
         "w": 24,
         "h": 1
       },
       "panels": []
     },
     {
-      "id": 26,
+      "id": 30,
       "type": "barchart",
       "title": "Part des compteurs des streamers",
       "datasource": {
@@ -1942,7 +2220,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 74,
+        "y": 83,
         "w": 8,
         "h": 9
       },
@@ -1991,7 +2269,7 @@
       "description": "Part de la somme des compteurs des streamers (filtre Lieu) d\u00e9tenue par chacun des dix premiers, et par tous les autres r\u00e9unis, au dernier relev\u00e9."
     },
     {
-      "id": 27,
+      "id": 31,
       "type": "timeseries",
       "title": "Part d\u00e9tenue par le haut du classement",
       "datasource": {
@@ -2000,7 +2278,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 74,
+        "y": 83,
         "w": 8,
         "h": 9
       },
@@ -2044,7 +2322,7 @@
       "description": "Part de la somme des compteurs des streamers d\u00e9tenue par le premier, les dix premiers et les vingt-cinq premiers du classement, au fil du temps (tous lieux)."
     },
     {
-      "id": 28,
+      "id": 32,
       "type": "timeseries",
       "title": "Streamers par palier de cagnotte",
       "datasource": {
@@ -2053,7 +2331,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 74,
+        "y": 83,
         "w": 8,
         "h": 9
       },
@@ -2101,7 +2379,7 @@
       "description": "Nombre de streamers (filtre Lieu) dont la cagnotte est dans chaque tranche, au fil du temps."
     },
     {
-      "id": 29,
+      "id": 33,
       "type": "xychart",
       "title": "Viewers et dons, un point par streamer",
       "datasource": {
@@ -2110,7 +2388,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 83,
+        "y": 92,
         "w": 12,
         "h": 9
       },
@@ -2180,7 +2458,7 @@
       "description": "Chaque point est un streamer : ses viewers moyens quand il est en live (horizontal) et ce qu'il a gagn\u00e9 sur la p\u00e9riode (vertical), \u00e9chelles logarithmiques. Les points au-dessus du nuage sont les communaut\u00e9s qui donnent le plus par rapport \u00e0 leur taille. Survolez un point pour le nom."
     },
     {
-      "id": 30,
+      "id": 34,
       "type": "stat",
       "title": "Dons re\u00e7us pendant le live et hors live",
       "datasource": {
@@ -2189,7 +2467,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 83,
+        "y": 92,
         "w": 12,
         "h": 4
       },
@@ -2232,7 +2510,7 @@
       "description": "Dons gagn\u00e9s par les compteurs des streamers (filtre Lieu) sur la p\u00e9riode, selon que le streamer \u00e9tait en live ou non au moment du relev\u00e9."
     },
     {
-      "id": 31,
+      "id": 35,
       "type": "stat",
       "title": "Streamers dont la cagnotte d\u00e9passe",
       "datasource": {
@@ -2241,7 +2519,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 87,
+        "y": 96,
         "w": 12,
         "h": 5
       },
@@ -2282,20 +2560,20 @@
       "description": "Nombre de streamers (filtre Lieu) dont la cagnotte d\u00e9passe chaque seuil, au dernier relev\u00e9."
     },
     {
-      "id": 32,
+      "id": 36,
       "type": "row",
       "title": "Endurance et efficacit\u00e9",
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 92,
+        "y": 101,
         "w": 24,
         "h": 1
       },
       "panels": []
     },
     {
-      "id": 33,
+      "id": 37,
       "type": "table",
       "title": "Plus longues sessions en live",
       "datasource": {
@@ -2304,7 +2582,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 93,
+        "y": 102,
         "w": 12,
         "h": 9
       },
@@ -2424,7 +2702,7 @@
       "description": "Plus long passage en live sans interruption observ\u00e9 sur la p\u00e9riode (il peut avoir commenc\u00e9 avant), et la dur\u00e9e de la session en cours si le streamer est en live."
     },
     {
-      "id": 34,
+      "id": 38,
       "type": "table",
       "title": "Dons par heure de live",
       "datasource": {
@@ -2433,7 +2711,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 93,
+        "y": 102,
         "w": 12,
         "h": 9
       },
@@ -2569,20 +2847,20 @@
       "description": "Gagn\u00e9 sur la p\u00e9riode divis\u00e9 par les heures pass\u00e9es en live. Les streamers avec moins de 3 heures de live et les cha\u00eenes de l'organisation sont exclus."
     },
     {
-      "id": 35,
+      "id": 39,
       "type": "row",
       "title": "Sur place vs \u00e0 distance",
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 102,
+        "y": 111,
         "w": 24,
         "h": 1
       },
       "panels": []
     },
     {
-      "id": 36,
+      "id": 40,
       "type": "timeseries",
       "title": "Streamers en live par lieu",
       "datasource": {
@@ -2591,7 +2869,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 103,
+        "y": 112,
         "w": 12,
         "h": 9
       },
@@ -2638,7 +2916,7 @@
       }
     },
     {
-      "id": 37,
+      "id": 41,
       "type": "timeseries",
       "title": "Viewers par lieu",
       "datasource": {
@@ -2647,7 +2925,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 103,
+        "y": 112,
         "w": 12,
         "h": 9
       },
@@ -2694,7 +2972,7 @@
       }
     },
     {
-      "id": 38,
+      "id": 42,
       "type": "timeseries",
       "title": "Cagnottes par lieu",
       "datasource": {
@@ -2703,7 +2981,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 112,
+        "y": 121,
         "w": 12,
         "h": 9
       },
@@ -2751,7 +3029,7 @@
       "description": "Somme des compteurs des streamers sur place et \u00e0 distance, au fil du temps."
     },
     {
-      "id": 39,
+      "id": 43,
       "type": "stat",
       "title": "Part des dons sur place",
       "datasource": {
@@ -2760,7 +3038,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 112,
+        "y": 121,
         "w": 6,
         "h": 4
       },
@@ -2803,7 +3081,7 @@
       "description": "Part de la somme des compteurs des streamers d\u00e9tenue par les streamers sur place, au dernier relev\u00e9."
     },
     {
-      "id": 40,
+      "id": 44,
       "type": "stat",
       "title": "Cagnotte moyenne par streamer",
       "datasource": {
@@ -2812,7 +3090,7 @@
       },
       "gridPos": {
         "x": 18,
-        "y": 112,
+        "y": 121,
         "w": 6,
         "h": 4
       },
@@ -2854,7 +3132,7 @@
       }
     },
     {
-      "id": 41,
+      "id": 45,
       "type": "stat",
       "title": "Dons gagn\u00e9s sur la p\u00e9riode, par lieu",
       "datasource": {
@@ -2863,7 +3141,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 116,
+        "y": 125,
         "w": 12,
         "h": 5
       },
@@ -2905,20 +3183,20 @@
       }
     },
     {
-      "id": 42,
+      "id": 46,
       "type": "row",
       "title": "Jeux",
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 121,
+        "y": 130,
         "w": 24,
         "h": 1
       },
       "panels": []
     },
     {
-      "id": 43,
+      "id": 47,
       "type": "timeseries",
       "title": "Streamers en live par jeu",
       "datasource": {
@@ -2927,7 +3205,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 122,
+        "y": 131,
         "w": 12,
         "h": 9
       },
@@ -2974,7 +3252,7 @@
       }
     },
     {
-      "id": 44,
+      "id": 48,
       "type": "timeseries",
       "title": "Viewers par jeu",
       "datasource": {
@@ -2983,7 +3261,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 122,
+        "y": 131,
         "w": 12,
         "h": 9
       },
@@ -3030,7 +3308,7 @@
       }
     },
     {
-      "id": 45,
+      "id": 49,
       "type": "table",
       "title": "Heures de stream par jeu",
       "datasource": {
@@ -3039,7 +3317,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 131,
+        "y": 140,
         "w": 24,
         "h": 9
       },
@@ -3090,20 +3368,20 @@
       }
     },
     {
-      "id": 46,
+      "id": 50,
       "type": "row",
       "title": "Dons sans streamer",
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 140,
+        "y": 149,
         "w": 24,
         "h": 1
       },
       "panels": []
     },
     {
-      "id": 47,
+      "id": 51,
       "type": "timeseries",
       "title": "Au fil du temps (total moins tous les streamers)",
       "datasource": {
@@ -3112,7 +3390,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 141,
+        "y": 150,
         "w": 12,
         "h": 9
       },
@@ -3156,7 +3434,7 @@
       "description": "Tous les dons qui n'ont pas pu \u00eatre rattach\u00e9s \u00e0 un streamer : le total de l'\u00e9v\u00e9nement moins la somme des compteurs des streamers. On y trouve les dons faits sans choisir de streamer (la page d'\u00e9quipe Streamlabs Charity sans membre), les billets du concert de jeudi, tous les dons de la boutique, etc."
     },
     {
-      "id": 48,
+      "id": 52,
       "type": "timeseries",
       "title": "Par intervalle (gain total moins gains des streamers)",
       "datasource": {
@@ -3165,7 +3443,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 141,
+        "y": 150,
         "w": 12,
         "h": 9
       },
@@ -3211,20 +3489,20 @@
       "description": "Tous les dons qui n'ont pas pu \u00eatre rattach\u00e9s \u00e0 un streamer : le total de l'\u00e9v\u00e9nement moins la somme des compteurs des streamers. On y trouve les dons faits sans choisir de streamer (la page d'\u00e9quipe Streamlabs Charity sans membre), les billets du concert de jeudi, tous les dons de la boutique, etc."
     },
     {
-      "id": 49,
+      "id": 53,
       "type": "row",
       "title": "Qualit\u00e9 des donn\u00e9es",
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 150,
+        "y": 159,
         "w": 24,
         "h": 1
       },
       "panels": []
     },
     {
-      "id": 50,
+      "id": 54,
       "type": "stat",
       "title": "Relev\u00e9s sur la p\u00e9riode",
       "datasource": {
@@ -3233,7 +3511,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 151,
+        "y": 160,
         "w": 8,
         "h": 4
       },
@@ -3275,7 +3553,7 @@
       "description": "Nombre de relev\u00e9s de l'API dans la plage de temps (un par minute)."
     },
     {
-      "id": 51,
+      "id": 55,
       "type": "stat",
       "title": "Trous de collecte",
       "datasource": {
@@ -3284,7 +3562,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 151,
+        "y": 160,
         "w": 8,
         "h": 4
       },
@@ -3342,7 +3620,7 @@
       "description": "Nombre de fois o\u00f9 plus de 90 secondes s\u00e9parent deux relev\u00e9s (API injoignable ou collecteur arr\u00eat\u00e9)."
     },
     {
-      "id": 52,
+      "id": 56,
       "type": "stat",
       "title": "Rat\u00e9s de l'API",
       "datasource": {
@@ -3351,7 +3629,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 151,
+        "y": 160,
         "w": 8,
         "h": 4
       },
