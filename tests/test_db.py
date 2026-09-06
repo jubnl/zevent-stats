@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 import psycopg
 import pytest
 
-from zevent_tracker.db import ensure_schema, insert
+from zevent_tracker.db import ensure_schema, insert, recompute
 from zevent_tracker.parse import Parsed, Snapshot, StreamerSample
 
 URL = os.environ.get("TEST_DATABASE_URL")
@@ -108,5 +108,30 @@ def test_recompute_mirror_split():
         finally:
             conn.execute("delete from streamer_sample where twitch_id in ('own','src')")
             conn.execute("delete from streamer where twitch_id in ('own','src')")
+            conn.execute("delete from snapshot where ts = any(%s)", (ts,))
+            conn.commit()
+
+
+def test_recompute_fills_viewers_gain_and_offline_at():
+    """viewers_gain is the viewer delta; offline_at carries the latest offline ts forward (also across a
+    recompute that starts after the offline sample, via the seed row)."""
+    ts = [datetime(2030, 1, 5, 0, i, tzinfo=timezone.utc) for i in range(4)]
+    online = [True, False, True, True]
+    viewers = [10, 0, 7, 12]
+    with psycopg.connect(URL) as conn:
+        try:
+            for t, o, v in zip(ts, online, viewers):
+                insert(conn, Parsed(Snapshot(t, 0.0, v, 1, int(o)), [
+                    StreamerSample(t, "v1", "v1", "V1", None, None, o, None, v, 1.0)]))
+            rows = conn.execute("select viewers_gain, offline_at from streamer_sample where twitch_id = 'v1' order by ts").fetchall()
+            assert rows == [(None, None), (-10, ts[1]), (7, ts[1]), (5, ts[1])]
+            conn.execute("update streamer_sample set offline_at = null, viewers_gain = null where twitch_id = 'v1' and ts = %s", (ts[3],))
+            with conn.transaction():
+                recompute(conn, ts[3], mirror=None)
+            assert conn.execute("select viewers_gain, offline_at from streamer_sample where twitch_id = 'v1' and ts = %s",
+                                (ts[3],)).fetchone() == (5, ts[1])
+        finally:
+            conn.execute("delete from streamer_sample where twitch_id = 'v1'")
+            conn.execute("delete from streamer where twitch_id = 'v1'")
             conn.execute("delete from snapshot where ts = any(%s)", (ts,))
             conn.commit()

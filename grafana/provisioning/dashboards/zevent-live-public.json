@@ -112,6 +112,9 @@
       "tooltip": ""
     }
   ],
+  "annotations": {
+    "list": []
+  },
   "panels": [
     {
       "id": 1,

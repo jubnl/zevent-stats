@@ -49,6 +49,12 @@ SCHEMA_UPDATES = [
     "ALTER TABLE streamer_sample ADD COLUMN IF NOT EXISTS dup numeric(12,2)",
     "ALTER TABLE streamer_sample ADD COLUMN IF NOT EXISTS dup_gain numeric(12,2)",
     "ALTER TABLE streamer_sample ADD COLUMN IF NOT EXISTS rank integer",
+    # Added 2026-09-06 for the insights dashboard (viewer spikes, longest live sessions):
+    #   viewers_gain  viewers minus the streamer's previous sample (NULL on the first sample)
+    #   offline_at    ts of the streamer's latest offline sample at or before this one (NULL if never offline),
+    #                 so "live since" of an online sample is offline_at (or first_seen) without a window function
+    "ALTER TABLE streamer_sample ADD COLUMN IF NOT EXISTS viewers_gain integer",
+    "ALTER TABLE streamer_sample ADD COLUMN IF NOT EXISTS offline_at timestamptz",
 ]
 
 
@@ -57,8 +63,10 @@ def ensure_schema(conn: psycopg.Connection) -> None:
     with conn.transaction(), conn.cursor() as cur:
         for stmt in SCHEMA_UPDATES:
             cur.execute(stmt)
-        cur.execute("SELECT EXISTS (SELECT 1 FROM streamer_sample) AND NOT EXISTS "
-                    "(SELECT 1 FROM streamer_sample WHERE gap_s IS NOT NULL)")
+        # rows with a predecessor (gap_s set) but no viewers_gain were written before that column existed
+        cur.execute("SELECT (EXISTS (SELECT 1 FROM streamer_sample) AND NOT EXISTS "
+                    "(SELECT 1 FROM streamer_sample WHERE gap_s IS NOT NULL)) "
+                    "OR EXISTS (SELECT 1 FROM streamer_sample WHERE gap_s IS NOT NULL AND viewers_gain IS NULL)")
         if cur.fetchone()[0]:
             recompute(conn, None)
 
@@ -67,25 +75,31 @@ def ensure_schema(conn: psycopg.Connection) -> None:
 # All three statements take the rows at or after %(start)s::timestamptz (every row when start is NULL) and, for the
 # window functions, the streamer's last row before it, so an out-of-order insert only needs a recompute
 # from its timestamp. Rows whose values do not change are not written.
+# offline_at is a running maximum, so the seed row (the streamer's last row before start) contributes its
+# stored offline_at; rows in scope contribute their own ts when offline. greatest() ignores NULLs.
 GAIN_SQL = """
 WITH scope AS (
-  SELECT ts, twitch_id, donation_total FROM streamer_sample WHERE %(start)s::timestamptz IS NULL OR ts >= %(start)s::timestamptz
+  SELECT ts, twitch_id, donation_total, viewers, online, NULL::timestamptz AS seed_offline_at
+  FROM streamer_sample WHERE %(start)s::timestamptz IS NULL OR ts >= %(start)s::timestamptz
   UNION ALL
-  SELECT p.ts, p.twitch_id, p.donation_total
+  SELECT p.ts, p.twitch_id, p.donation_total, p.viewers, p.online, p.offline_at
   FROM (SELECT DISTINCT twitch_id FROM streamer_sample WHERE ts >= %(start)s::timestamptz) x
-  CROSS JOIN LATERAL (SELECT ts, twitch_id, donation_total FROM streamer_sample s
+  CROSS JOIN LATERAL (SELECT ts, twitch_id, donation_total, viewers, online, offline_at FROM streamer_sample s
                       WHERE s.twitch_id = x.twitch_id AND s.ts < %(start)s::timestamptz ORDER BY ts DESC LIMIT 1) p
   WHERE %(start)s::timestamptz IS NOT NULL
 ), calc AS (
   SELECT ts, twitch_id,
          donation_total - lag(donation_total) OVER w AS gain,
-         extract(epoch FROM ts - lag(ts) OVER w)::int AS gap_s
+         extract(epoch FROM ts - lag(ts) OVER w)::int AS gap_s,
+         viewers - lag(viewers) OVER w AS viewers_gain,
+         greatest(max(CASE WHEN NOT online THEN ts END) OVER w, max(seed_offline_at) OVER w) AS offline_at
   FROM scope WINDOW w AS (PARTITION BY twitch_id ORDER BY ts)
 )
-UPDATE streamer_sample s SET gain = c.gain, gap_s = c.gap_s
+UPDATE streamer_sample s SET gain = c.gain, gap_s = c.gap_s, viewers_gain = c.viewers_gain, offline_at = c.offline_at
 FROM calc c
 WHERE s.twitch_id = c.twitch_id AND s.ts = c.ts AND (%(start)s::timestamptz IS NULL OR s.ts >= %(start)s::timestamptz)
-  AND (s.gain IS DISTINCT FROM c.gain OR s.gap_s IS DISTINCT FROM c.gap_s)
+  AND (s.gain IS DISTINCT FROM c.gain OR s.gap_s IS DISTINCT FROM c.gap_s
+       OR s.viewers_gain IS DISTINCT FROM c.viewers_gain OR s.offline_at IS DISTINCT FROM c.offline_at)
 """
 
 # MisterMV's counter mirrors Domingo's from rebase_ts on (db/views.sql has the full story). Per sample:
@@ -137,7 +151,7 @@ FROM mirror_config c
 
 
 def recompute(conn: psycopg.Connection, start, mirror: tuple | None = None) -> None:
-    """Fill gain/gap_s, dup/dup_gain and rank for the samples at or after `start` (all when None).
+    """Fill gain/gap_s/viewers_gain/offline_at, dup/dup_gain and rank for the samples at or after `start` (all when None).
 
     `mirror` is (own twitch_id, source twitch_id, rebase_ts); by default it is read from the mirror_config
     view of db/views.sql (skipped when the view or the streamers do not exist yet).

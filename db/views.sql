@@ -54,17 +54,20 @@ FROM streamer st JOIN mirror_config c ON st.login = c.login;
 --   gain    donation gain since the streamer's previous sample (NULL on the first one)
 --   gap_s   seconds since that previous sample (NULL on the first one); cap it at 300 when summing time
 --   rank    position in the donation leaderboard at that ts
+--   viewers_gain  viewers gained since the streamer's previous sample
+--   offline_at    latest offline sample at or before this one; an online sample has been live since
+--                 coalesce(offline_at, first_seen)
 -- The derived row's gain at the rebase minute is NULL: that jump is not money moving that minute.
 CREATE VIEW streamer_sample_v AS
 SELECT ts, twitch_id, online, game, viewers,
        donation_total - coalesce(dup, 0) AS donation_total,
        gain - coalesce(dup_gain, 0)      AS gain,
-       gap_s, rank, false AS derived
+       gap_s, rank, viewers_gain, offline_at, false AS derived
 FROM streamer_sample
 UNION ALL
 SELECT s.ts, c.derived_id, false, NULL, 0, s.dup,
        CASE WHEN s.ts = c.rebase_ts THEN NULL ELSE s.dup_gain END,
-       s.gap_s, NULL, true
+       s.gap_s, NULL, NULL, NULL, true
 FROM streamer_sample s JOIN streamer st USING (twitch_id) JOIN mirror_config c ON st.login = c.login
 WHERE s.dup IS NOT NULL;
 

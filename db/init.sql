@@ -30,6 +30,8 @@ CREATE TABLE streamer_sample (
   dup            numeric(12,2),   -- MisterMV's mirrored amount (db/views.sql), NULL elsewhere
   dup_gain       numeric(12,2),   -- its increment at this sample
   rank           integer,         -- position by donation_total - dup among the streamers at this ts
+  viewers_gain   integer,         -- viewers minus the streamer's previous sample
+  offline_at     timestamptz,     -- ts of the streamer's latest offline sample at or before this one (NULL: never offline)
   PRIMARY KEY (twitch_id, ts)
 );
 CREATE INDEX streamer_sample_ts_idx ON streamer_sample (ts);

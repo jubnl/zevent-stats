@@ -191,6 +191,9 @@
       "tooltip": ""
     }
   ],
+  "annotations": {
+    "list": []
+  },
   "panels": [
     {
       "id": 1,
@@ -776,6 +779,250 @@
     },
     {
       "id": 13,
+      "type": "stat",
+      "title": "\u00c9cart avec le pr\u00e9c\u00e9dent",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "WITH cur AS (SELECT max(ts) AS ts FROM snapshot), me AS (SELECT s.rank, s.donation_total FROM streamer_sample_v s, cur WHERE s.ts = cur.ts        AND s.twitch_id IN (${streamer:sqlstring}) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT st.display AS name, s.donation_total - me.donation_total AS value FROM me, cur, streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE s.ts = cur.ts AND NOT s.derived AND s.rank < me.rank ORDER BY s.rank DESC LIMIT 1",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "yellow"
+          },
+          "unit": "currencyEUR",
+          "decimals": 0,
+          "noValue": "En t\u00eate !"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "justifyMode": "center"
+      },
+      "description": "Combien il manque pour d\u00e9passer le streamer juste devant au classement des dons, au dernier relev\u00e9.",
+      "transformations": [
+        {
+          "id": "rowsToFields",
+          "options": {
+            "mappings": [
+              {
+                "fieldName": "name",
+                "handlerKey": "field.name"
+              },
+              {
+                "fieldName": "value",
+                "handlerKey": "field.value"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "type": "stat",
+      "title": "Avance sur le suivant",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 16,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "WITH cur AS (SELECT max(ts) AS ts FROM snapshot), me AS (SELECT s.rank, s.donation_total FROM streamer_sample_v s, cur WHERE s.ts = cur.ts        AND s.twitch_id IN (${streamer:sqlstring}) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT st.display AS name, me.donation_total - s.donation_total AS value FROM me, cur, streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE s.ts = cur.ts AND NOT s.derived AND s.rank > me.rank ORDER BY s.rank ASC LIMIT 1",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "yellow"
+          },
+          "unit": "currencyEUR",
+          "decimals": 0,
+          "noValue": "Dernier"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "justifyMode": "center"
+      },
+      "description": "Avance sur le streamer juste derri\u00e8re au classement des dons, au dernier relev\u00e9.",
+      "transformations": [
+        {
+          "id": "rowsToFields",
+          "options": {
+            "mappings": [
+              {
+                "fieldName": "name",
+                "handlerKey": "field.name"
+              },
+              {
+                "fieldName": "value",
+                "handlerKey": "field.value"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "type": "stat",
+      "title": "Dons re\u00e7us en live et hors live",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 16,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT coalesce(sum(s.gain) FILTER (WHERE s.online), 0) AS \"En live\",        coalesce(sum(s.gain) FILTER (WHERE NOT s.online), 0) AS \"Hors live\" FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND s.twitch_id IN (${streamer:sqlstring}) AND $__timeFilter(s.ts) AND s.gain IS NOT NULL",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "green"
+          },
+          "unit": "currencyEUR",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value_and_name",
+        "justifyMode": "center"
+      },
+      "description": "Dons gagn\u00e9s sur la p\u00e9riode selon que le streamer \u00e9tait en live ou non au moment du relev\u00e9."
+    },
+    {
+      "id": 16,
+      "type": "stat",
+      "title": "Plus longue session en live",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 16,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT extract(epoch FROM max(s.ts - coalesce(s.offline_at, st.first_seen))) / 3600.0 FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND s.twitch_id IN (${streamer:sqlstring}) AND $__timeFilter(s.ts) AND s.online",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "green"
+          },
+          "unit": "suffix: h",
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "description": "Plus long passage en live sans interruption observ\u00e9 sur la p\u00e9riode (il peut avoir commenc\u00e9 avant)."
+    },
+    {
+      "id": 17,
       "type": "timeseries",
       "title": "Dons au fil du temps",
       "datasource": {
@@ -784,7 +1031,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 16,
+        "y": 20,
         "w": 12,
         "h": 9
       },
@@ -835,7 +1082,7 @@
       }
     },
     {
-      "id": 14,
+      "id": 18,
       "type": "timeseries",
       "title": "Viewers au fil du temps",
       "datasource": {
@@ -844,7 +1091,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 16,
+        "y": 20,
         "w": 12,
         "h": 9
       },
@@ -895,7 +1142,7 @@
       }
     },
     {
-      "id": 15,
+      "id": 19,
       "type": "timeseries",
       "title": "Dons gagn\u00e9s par intervalle",
       "datasource": {
@@ -904,7 +1151,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 25,
+        "y": 29,
         "w": 12,
         "h": 9
       },
@@ -961,7 +1208,7 @@
       "interval": "5m"
     },
     {
-      "id": 16,
+      "id": 20,
       "type": "timeseries",
       "title": "Rank au classement des dons au fil du temps",
       "datasource": {
@@ -970,7 +1217,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 25,
+        "y": 29,
         "w": 12,
         "h": 9
       },
@@ -1022,7 +1269,7 @@
       "description": "1 est la premi\u00e8re place ; plus c'est bas, mieux c'est."
     },
     {
-      "id": 17,
+      "id": 21,
       "type": "state-timeline",
       "title": "Jeux jou\u00e9s",
       "datasource": {
@@ -1031,7 +1278,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 34,
+        "y": 38,
         "w": 24,
         "h": 8
       },

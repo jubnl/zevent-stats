@@ -112,6 +112,32 @@
       "tooltip": ""
     }
   ],
+  "annotations": {
+    "list": [
+      {
+        "name": "Millions",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "zevent-pg"
+        },
+        "enable": true,
+        "hide": false,
+        "iconColor": "green",
+        "target": {
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH m AS (SELECT ts, floor(max(donation_total) OVER (ORDER BY ts) / 1e6) AS mil FROM snapshot WHERE $__timeFilter(ts)), c AS (SELECT ts, mil, lag(mil) OVER (ORDER BY ts) AS prev FROM m) SELECT ts AS time, mil::int || ' M\u20ac' AS text FROM c WHERE prev IS NOT NULL AND mil > prev ORDER BY ts",
+          "refId": "Anno"
+        },
+        "filter": {
+          "exclude": false,
+          "ids": [
+            12
+          ]
+        }
+      }
+    ]
+  },
   "panels": [
     {
       "id": 1,
