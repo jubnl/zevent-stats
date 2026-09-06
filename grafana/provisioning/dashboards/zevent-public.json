@@ -536,7 +536,7 @@
     {
       "id": 8,
       "type": "stat",
-      "title": "Heures visionn\u00e9es par viewer",
+      "title": "Heures visionn\u00e9es",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -1732,7 +1732,7 @@
         "showHeader": true,
         "sortBy": []
       },
-      "description": "Heures visionn\u00e9es par viewer divis\u00e9es par les heures en live sur la plage de temps s\u00e9lectionn\u00e9e : l'audience habituelle du streamer quand il est en live. Streamers avec au moins une heure de live. Suit les filtres Lieu et Streamer."
+      "description": "Heures visionn\u00e9es divis\u00e9es par les heures en live sur la plage de temps s\u00e9lectionn\u00e9e : l'audience habituelle du streamer quand il est en live. Streamers avec au moins une heure de live. Suit les filtres Lieu et Streamer."
     }
   ]
 }

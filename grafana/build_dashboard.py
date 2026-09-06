@@ -471,7 +471,7 @@ def main_panels():
         stat("Streamers en live",
              'SELECT streamers_online AS "En live", streamers_total AS "Total" FROM snapshot ORDER BY ts DESC LIMIT 1',
              0, w=8, y=8, color="blue", text_mode="value_and_name"),
-        stat("Heures visionnées par viewer", viewer_hours_sql(LOC), 16, w=8, y=4, unit="sishort", decimals=1, color="purple",
+        stat("Heures visionnées", viewer_hours_sql(LOC), 16, w=8, y=4, unit="sishort", decimals=1, color="purple",
              description=VIEWER_HOURS_DESCRIPTION),
         hours_stat(8, 8, LOC, y=8),
         stat("Dons par heure visionnée par viewer", per_viewer_hour_sql(LOC), 16, w=8, y=8, unit="currencyEUR", decimals=2,
@@ -535,7 +535,7 @@ def main_panels():
               "FROM v JOIN streamer_v st USING (twitch_id) LEFT JOIN cur USING (twitch_id) "
               "WHERE v.hours >= 1 AND " + LOC + " ORDER BY 3 DESC LIMIT 25",
               12, 56, w=12, money_cols=("Cagnotte",), hour_cols=("Heures de stream",), image_cols=("Avatar",), streamer_links=True,
-              description="Heures visionnées par viewer divisées par les heures en live sur la plage de temps sélectionnée : l'audience "
+              description="Heures visionnées divisées par les heures en live sur la plage de temps sélectionnée : l'audience "
                           "habituelle du streamer quand il est en live. Streamers avec au moins une heure de live. "
                           "Suit les filtres Lieu et Streamer."),
     ]
