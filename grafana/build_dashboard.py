@@ -446,11 +446,12 @@ def main_panels():
              12, w=6, unit="currencyEUR", decimals=2, color="yellow", description=MIRROR_NOTE),
         # replaced the "Cagnotte spéciale du Vieux Monsieur" tile on 2026-09-06 once the API corrected
         # mistermv's counter (db/views.sql): the derived row no longer exists at the latest snapshot.
-        stat(f"Il manque pour battre le record {RECORD_YEAR}",
-             f"SELECT {RECORD} - donation_total FROM snapshot ORDER BY ts DESC LIMIT 1",
+        # the record itself fell during the night of the 6th; the target everyone talks about is twice 2025
+        stat(f"Il manque pour doubler {RECORD_YEAR}",
+             f"SELECT {2 * RECORD} - donation_total FROM snapshot ORDER BY ts DESC LIMIT 1",
              18, w=6, unit="currencyEUR", decimals=2, thresholds=[(None, "green"), (1, "red")],
-             mappings=[{"type": "range", "options": {"from": -1e12, "to": 0, "result": {"text": "Record battu !", "color": "green"}}}],
-             description=f"Écart entre le total actuel et le record de {RECORD_YEAR} ({RECORD:,} €).".replace(",", " ")),
+             mappings=[{"type": "range", "options": {"from": -1e12, "to": 0, "result": {"text": "Objectif atteint !", "color": "green"}}}],
+             description=f"Écart entre le total actuel et le double du total de {RECORD_YEAR}, soit {2 * RECORD:,} €.".replace(f"{2 * RECORD:,}", f"{2 * RECORD:,}".replace(",", " "))),
         # Second and third tile rows: audience and rate tiles, three per row. Viewers of the streamers
         # matching the Location and Streamer filters (sum of the per-streamer counts, which equals the API's
         # global viewer count).

@@ -308,7 +308,7 @@
     {
       "id": 4,
       "type": "stat",
-      "title": "Il manque pour battre le record 2025",
+      "title": "Il manque pour doubler 2025",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -326,7 +326,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT 16658660 - donation_total FROM snapshot ORDER BY ts DESC LIMIT 1",
+          "rawSql": "SELECT 33317320 - donation_total FROM snapshot ORDER BY ts DESC LIMIT 1",
           "format": "table",
           "refId": "A"
         }
@@ -343,7 +343,7 @@
                 "from": -1000000000000.0,
                 "to": 0,
                 "result": {
-                  "text": "Record battu !",
+                  "text": "Objectif atteint !",
                   "color": "green"
                 }
               }
@@ -380,7 +380,7 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "\u00c9cart entre le total actuel et le record de 2025 (16 658 660 \u20ac)."
+      "description": "\u00c9cart entre le total actuel et le double du total de 2025, soit 33 317 320 \u20ac."
     },
     {
       "id": 5,
