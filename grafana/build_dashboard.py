@@ -1367,7 +1367,7 @@ def viewers_panels():
            "FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) "
            "WHERE $__timeFilter(s.ts) AND NOT st.derived AND s.twitch_id IN ($streamer) AND " + LOC + " "
            "GROUP BY 1, 2 ORDER BY 1",
-           0, 0, w=24, h=30, unit="sishort", stack=True, legend=False, min_interval="15m",
+           0, 0, w=24, h=18, unit="sishort", stack=True, legend=False, min_interval="15m",
            description="Les viewers de chaque streamer, empilés : le haut de la pile est le total des viewers des streamers "
                        "correspondant aux filtres Lieu et Streamer. Survolez une bande pour voir le streamer. Chaque point "
                        "est la moyenne sur l'intervalle (15 minutes au moins)."),
