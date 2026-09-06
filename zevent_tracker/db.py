@@ -41,7 +41,7 @@ SCHEMA_UPDATES = [
     # sum plain columns instead of running window functions over the whole history:
     #   gain      donation_total minus the streamer's previous sample (NULL on the first sample)
     #   gap_s     seconds since the streamer's previous sample (NULL on the first sample)
-    #   dup       MisterMV's mirrored amount at this sample (see db/views.sql), NULL elsewhere
+    #   dup       the part of MisterMV's counter that was not his (see db/views.sql), NULL elsewhere
     #   dup_gain  its increment at this sample
     #   rank      position by (donation_total - dup) among the streamers sampled at this ts
     "ALTER TABLE streamer_sample ADD COLUMN IF NOT EXISTS gain numeric(12,2)",
@@ -102,36 +102,52 @@ WHERE s.twitch_id = c.twitch_id AND s.ts = c.ts AND (%(start)s::timestamptz IS N
        OR s.viewers_gain IS DISTINCT FROM c.viewers_gain OR s.offline_at IS DISTINCT FROM c.offline_at)
 """
 
-# MisterMV's counter mirrors Domingo's from rebase_ts on (db/views.sql has the full story). Per sample:
-#   rebase minute            -> the whole jump is mirrored
-#   later, both gains known  -> least(own gain, source gain), floored at 0
-#   later, a gain missing    -> 0 (the mirrored amount is carried forward)
-# dup is the running sum, seeded with the last dup before %(start)s::timestamptz.
+# From rebase_ts to end_ts (exclusive) MisterMV's API counter was Domingo's total plus 1/factor of his own
+# donations (db/views.sql has the full story); at end_ts the API restored his real counter. dup is the
+# part of the counter that was not his (counter minus real own), so that donation_total - dup is his real
+# counter everywhere. Per sample:
+#   rebase minute            -> the whole jump (his real counter did not move)
+#   later, both gains known  -> factor * mirrored - (factor - 1) * counter gain, the mirrored gain being
+#                               least(counter gain, source gain) floored at 0
+#   later, a gain missing    -> 0 (carried forward)
+#   end minute               -> dup NULL (the counter is real again) and dup_gain = the whole drop, so the
+#                               correction counts as no gain in the views; later rows have both NULL
+# dup is the running sum, seeded with the last dup before %(start)s::timestamptz. end_ts NULL: no end.
 DUP_SQL = """
 WITH cfg AS (
-  SELECT %(own_id)s::text AS own_id, %(src_id)s::text AS src_id, %(rebase_ts)s::timestamptz AS rebase_ts
+  SELECT %(own_id)s::text AS own_id, %(src_id)s::text AS src_id, %(rebase_ts)s::timestamptz AS rebase_ts,
+         coalesce(%(end_ts)s::timestamptz, 'infinity'::timestamptz) AS end_ts, coalesce(%(factor)s::numeric, 1) AS factor
 ), rows AS (
-  SELECT s.ts, s.gain AS own_delta, d.gain AS src_delta, cfg.rebase_ts
+  SELECT s.ts, s.gain AS own_delta, d.gain AS src_delta, cfg.rebase_ts, cfg.end_ts, cfg.factor
   FROM streamer_sample s CROSS JOIN cfg
   LEFT JOIN streamer_sample d ON d.twitch_id = cfg.src_id AND d.ts = s.ts
-  WHERE s.twitch_id = cfg.own_id AND s.ts >= cfg.rebase_ts AND (%(start)s::timestamptz IS NULL OR s.ts >= %(start)s::timestamptz)
+  WHERE s.twitch_id = cfg.own_id AND s.ts >= cfg.rebase_ts AND s.ts <= cfg.end_ts
+    AND (%(start)s::timestamptz IS NULL OR s.ts >= %(start)s::timestamptz)
 ), calc AS (
-  SELECT ts,
-         CASE WHEN ts = rebase_ts THEN coalesce(own_delta, 0)
+  SELECT ts, end_ts,
+         CASE WHEN ts = rebase_ts OR ts = end_ts THEN coalesce(own_delta, 0)
               WHEN own_delta IS NULL OR src_delta IS NULL THEN 0
-              ELSE greatest(least(own_delta, src_delta), 0) END AS dup_gain
+              ELSE factor * greatest(least(own_delta, src_delta), 0) - (factor - 1) * own_delta END AS dup_gain
   FROM rows
 ), cum AS (
   SELECT ts, dup_gain,
+         CASE WHEN ts = end_ts THEN NULL ELSE
          coalesce((SELECT dup FROM streamer_sample p, cfg WHERE p.twitch_id = cfg.own_id AND p.ts >= cfg.rebase_ts
                    AND %(start)s::timestamptz IS NOT NULL AND p.ts < %(start)s::timestamptz ORDER BY p.ts DESC LIMIT 1), 0)
-         + sum(dup_gain) OVER (ORDER BY ts) AS dup
+         + sum(dup_gain) OVER (ORDER BY ts) END AS dup
   FROM calc
 )
 UPDATE streamer_sample s SET dup = c.dup, dup_gain = c.dup_gain
 FROM cum c, cfg
 WHERE s.twitch_id = cfg.own_id AND s.ts = c.ts
   AND (s.dup IS DISTINCT FROM c.dup OR s.dup_gain IS DISTINCT FROM c.dup_gain)
+"""
+
+# Rows after the end of the mirror carry no dup (clears values written before end_ts was known).
+DUP_END_SQL = """
+UPDATE streamer_sample SET dup = NULL, dup_gain = NULL
+WHERE twitch_id = %(own_id)s::text AND %(end_ts)s::timestamptz IS NOT NULL AND ts > %(end_ts)s::timestamptz
+  AND (dup IS NOT NULL OR dup_gain IS NOT NULL)
 """
 
 RANK_SQL = """
@@ -145,7 +161,7 @@ FROM calc c WHERE s.twitch_id = c.twitch_id AND s.ts = c.ts AND s.rank IS DISTIN
 
 MIRROR_CONFIG_SQL = """
 SELECT (SELECT twitch_id FROM streamer WHERE login = c.login),
-       (SELECT twitch_id FROM streamer WHERE login = c.source_login), c.rebase_ts
+       (SELECT twitch_id FROM streamer WHERE login = c.source_login), c.rebase_ts, c.end_ts, c.factor
 FROM mirror_config c
 """
 
@@ -153,8 +169,8 @@ FROM mirror_config c
 def recompute(conn: psycopg.Connection, start, mirror: tuple | None = None) -> None:
     """Fill gain/gap_s/viewers_gain/offline_at, dup/dup_gain and rank for the samples at or after `start` (all when None).
 
-    `mirror` is (own twitch_id, source twitch_id, rebase_ts); by default it is read from the mirror_config
-    view of db/views.sql (skipped when the view or the streamers do not exist yet).
+    `mirror` is (own twitch_id, source twitch_id, rebase_ts, end_ts or None, factor or None); by default it is
+    read from the mirror_config view of db/views.sql (skipped when the view or the streamers do not exist yet).
     """
     with conn.cursor() as cur:
         cur.execute(GAIN_SQL, {"start": start})
@@ -165,7 +181,10 @@ def recompute(conn: psycopg.Connection, start, mirror: tuple | None = None) -> N
                 row = cur.fetchone()
                 mirror = row if row and row[0] and row[1] else None
         if mirror:
-            cur.execute(DUP_SQL, {"start": start, "own_id": mirror[0], "src_id": mirror[1], "rebase_ts": mirror[2]})
+            own_id, src_id, rebase_ts, end_ts, factor = (tuple(mirror) + (None, None))[:5]
+            args = {"start": start, "own_id": own_id, "src_id": src_id, "rebase_ts": rebase_ts, "end_ts": end_ts, "factor": factor}
+            cur.execute(DUP_SQL, args)
+            cur.execute(DUP_END_SQL, args)
         cur.execute(RANK_SQL, {"start": start})
 
 

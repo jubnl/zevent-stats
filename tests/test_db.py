@@ -135,3 +135,33 @@ def test_recompute_fills_viewers_gain_and_offline_at():
             conn.execute("delete from streamer where twitch_id = 'v1'")
             conn.execute("delete from snapshot where ts = any(%s)", (ts,))
             conn.commit()
+
+
+def test_recompute_mirror_with_halving_and_end():
+    """Counter = source total + own/2 from the rebase to the end minute; the real counter comes back at the
+    end. dup is counter minus real own; at the end minute dup is NULL and dup_gain the whole drop."""
+    from zevent_tracker.db import recompute
+    ts = [datetime(2030, 1, 6, 0, i, tzinfo=timezone.utc) for i in range(5)]
+    own = [100.0, 350.0, 460.0, 470.0, 130.0]   # rebase: 300 + 100/2; then src +100 / own +20 -> +110, src +0 / own +20 -> +10; end: real 130
+    src = [300.0, 300.0, 400.0, 400.0, 400.0]
+    with psycopg.connect(URL) as conn:
+        try:
+            for t, a, b in zip(ts, own, src):
+                insert(conn, Parsed(Snapshot(t, 0.0, 0, 2, 2), [
+                    StreamerSample(t, "hv", "hv", "Hv", None, None, True, None, 0, a),
+                    StreamerSample(t, "hs", "hs", "Hs", None, None, True, None, 0, b)]))
+            with conn.transaction():
+                recompute(conn, ts[0], mirror=("hv", "hs", ts[1], ts[4], 2))
+            rows = conn.execute("select dup_gain, dup, rank from streamer_sample where twitch_id = 'hv' order by ts").fetchall()
+            # real own: 100, 100, 120, 140, 130 -> dup = counter - real own: -, 250, 340, 330, NULL
+            assert [(r[0], r[1]) for r in rows] == [(None, None), (250.0, 250.0), (90.0, 340.0), (-10.0, 330.0), (-340.0, None)]
+            assert [r[2] for r in rows] == [2, 2, 2, 2, 2]  # ranked on the real own counter, always below the source
+            # a recompute from after the end leaves the end row alone and clears nothing wrongly
+            with conn.transaction():
+                recompute(conn, ts[4], mirror=("hv", "hs", ts[1], ts[4], 2))
+            assert conn.execute("select dup, dup_gain from streamer_sample where twitch_id = 'hv' and ts = %s", (ts[4],)).fetchone() == (None, -340.0)
+        finally:
+            conn.execute("delete from streamer_sample where twitch_id in ('hv','hs')")
+            conn.execute("delete from streamer where twitch_id in ('hv','hs')")
+            conn.execute("delete from snapshot where ts = any(%s)", (ts,))
+            conn.commit()

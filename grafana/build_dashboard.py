@@ -443,11 +443,13 @@ def main_panels():
              "SELECT sn.donation_total - sum(s.donation_total) FROM snapshot sn JOIN streamer_sample_v s USING (ts) "
              "WHERE NOT s.derived AND sn.ts = (SELECT max(ts) FROM snapshot) GROUP BY sn.donation_total",
              12, w=6, unit="currencyEUR", decimals=2, color="yellow", description=MIRROR_NOTE),
-        stat("Cagnotte spéciale du Vieux Monsieur",
-             "SELECT coalesce(sum(donation_total), 0) FROM streamer_sample_v "
-             "WHERE derived AND ts = (SELECT max(ts) FROM snapshot)",
-             18, w=6, unit="currencyEUR", decimals=2, color="red",
-             description="tkt"),
+        # replaced the "Cagnotte spéciale du Vieux Monsieur" tile on 2026-09-06 once the API corrected
+        # mistermv's counter (db/views.sql): the derived row no longer exists at the latest snapshot.
+        stat(f"Il manque pour battre le record {RECORD_YEAR}",
+             f"SELECT {RECORD} - donation_total FROM snapshot ORDER BY ts DESC LIMIT 1",
+             18, w=6, unit="currencyEUR", decimals=2, thresholds=[(None, "green"), (1, "red")],
+             mappings=[{"type": "range", "options": {"from": -1e12, "to": 0, "result": {"text": "Record battu !", "color": "green"}}}],
+             description=f"Écart entre le total actuel et le record de {RECORD_YEAR} ({RECORD:,} €).".replace(",", " ")),
         # Second and third tile rows: audience and rate tiles, three per row. Viewers of the streamers
         # matching the Location and Streamer filters (sum of the per-streamer counts, which equals the API's
         # global viewer count).

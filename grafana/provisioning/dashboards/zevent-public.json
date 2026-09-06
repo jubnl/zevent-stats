@@ -296,7 +296,7 @@
     {
       "id": 4,
       "type": "stat",
-      "title": "Cagnotte sp\u00e9ciale du Vieux Monsieur",
+      "title": "Il manque pour battre le record 2025",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -314,7 +314,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT coalesce(sum(donation_total), 0) FROM streamer_sample_v WHERE derived AND ts = (SELECT max(ts) FROM snapshot)",
+          "rawSql": "SELECT 16658660 - donation_total FROM snapshot ORDER BY ts DESC LIMIT 1",
           "format": "table",
           "refId": "A"
         }
@@ -322,8 +322,33 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "fixed",
-            "fixedColor": "red"
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "type": "range",
+              "options": {
+                "from": -1000000000000.0,
+                "to": 0,
+                "result": {
+                  "text": "Record battu !",
+                  "color": "green"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
           },
           "unit": "currencyEUR",
           "decimals": 2
@@ -343,7 +368,7 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "tkt"
+      "description": "\u00c9cart entre le total actuel et le record de 2025 (16 658 660 \u20ac)."
     },
     {
       "id": 5,

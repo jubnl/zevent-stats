@@ -27,7 +27,7 @@ CREATE TABLE streamer_sample (
   -- derived facts, filled by the collector after each insert (zevent_tracker/db.py recompute()):
   gain           numeric(12,2),   -- donation_total minus the streamer's previous sample
   gap_s          integer,         -- seconds since the streamer's previous sample
-  dup            numeric(12,2),   -- MisterMV's mirrored amount (db/views.sql), NULL elsewhere
+  dup            numeric(12,2),   -- part of MisterMV's counter that was not his (db/views.sql), NULL elsewhere
   dup_gain       numeric(12,2),   -- its increment at this sample
   rank           integer,         -- position by donation_total - dup among the streamers at this ts
   viewers_gain   integer,         -- viewers minus the streamer's previous sample
