@@ -236,7 +236,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT coalesce(sum(least(s.gap_s, 300)) FILTER (WHERE s.online), 0) / 3600.0 FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' AND $__timeFilter(s.ts) AND s.twitch_id IN ($streamer) AND s.gap_s IS NOT NULL",
+          "rawSql": "SELECT coalesce(sum(least(s.gap_s, 300)) FILTER (WHERE s.online), 0) / 3600.0 AS \"Total\", coalesce(sum(least(s.gap_s, 300)) FILTER (WHERE s.online AND s.game = 'ZEVENT'), 0) / 3600.0 AS \"Dont cat\u00e9gorie ZEVENT\" FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' AND $__timeFilter(s.ts) AND s.twitch_id IN ($streamer) AND s.gap_s IS NOT NULL",
           "format": "table",
           "refId": "A"
         }
@@ -262,10 +262,10 @@
         },
         "colorMode": "value",
         "graphMode": "none",
-        "textMode": "value",
+        "textMode": "value_and_name",
         "justifyMode": "center"
       },
-      "description": "Temps total en live, additionn\u00e9 sur les streamers correspondant aux filtres Lieu et Streamer, dans la plage de temps s\u00e9lectionn\u00e9e. Chaque relev\u00e9 en live compte la minute \u00e9coul\u00e9e depuis le relev\u00e9 pr\u00e9c\u00e9dent (plafonn\u00e9e \u00e0 5 minutes, pour que les trous dans les donn\u00e9es ne comptent pas)."
+      "description": "Temps total en live, additionn\u00e9 sur les streamers correspondant aux filtres Lieu et Streamer, dans la plage de temps s\u00e9lectionn\u00e9e. Chaque relev\u00e9 en live compte la minute \u00e9coul\u00e9e depuis le relev\u00e9 pr\u00e9c\u00e9dent (plafonn\u00e9e \u00e0 5 minutes, pour que les trous dans les donn\u00e9es ne comptent pas). \u00ab Dont cat\u00e9gorie ZEVENT \u00bb : la part de ce temps pass\u00e9e avec la cat\u00e9gorie Twitch \u00ab ZEVENT \u00bb."
     },
     {
       "id": 4,

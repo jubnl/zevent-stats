@@ -192,9 +192,15 @@ LOC_QUERY = ("SELECT CASE location WHEN 'LAN' THEN 'Sur place (LAN)' ELSE 'À di
 LIVE_SECONDS = "least(s.gap_s, 300)"
 
 
-def hours_streamed_sql(loc):
+def hours_streamed_sql(loc, with_game=None):
+    """One column (the stat's value); with `with_game` two named columns, the total and the part spent in that
+    Twitch category, for a value_and_name stat."""
+    cols = f"coalesce(sum({LIVE_SECONDS}) FILTER (WHERE s.online), 0) / 3600.0"
+    if with_game:
+        cols = (f'{cols} AS "Total", coalesce(sum({LIVE_SECONDS}) FILTER (WHERE s.online AND s.game = \'{with_game}\'), 0) '
+                f'/ 3600.0 AS "Dont catégorie {with_game}"')
     return (
-        f"SELECT coalesce(sum({LIVE_SECONDS}) FILTER (WHERE s.online), 0) / 3600.0 "
+        f"SELECT {cols} "
         "FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) "
         f"WHERE NOT st.derived AND {loc} AND $__timeFilter(s.ts) AND s.twitch_id IN ($streamer) AND s.gap_s IS NOT NULL"
     )
@@ -937,8 +943,10 @@ def streamer_panels():
              "WITH " + GAIN_CTE + "SELECT coalesce(sum(g.gained), 0) FROM g JOIN streamer_v st USING (twitch_id) "
              "WHERE NOT st.derived AND g.twitch_id IN ($streamer)",
              9, w=5, y=4, unit="currencyEUR", decimals=2, color="orange"),
-        stat("Heures de stream", hours_streamed_sql("true"), 14, w=5, y=4, unit="suffix: h", decimals=1, color="green",
-             description=HOURS_DESCRIPTION),
+        stat("Heures de stream", hours_streamed_sql("true", with_game="ZEVENT"), 14, w=5, y=4, unit="suffix: h", decimals=1,
+             color="green", text_mode="value_and_name",
+             description=HOURS_DESCRIPTION + " « Dont catégorie ZEVENT » : la part de ce temps passée avec la catégorie "
+                                             "Twitch « ZEVENT »."),
         stat("Pic de viewers",
              f"SELECT coalesce(max(v), 0) FROM (SELECT s.ts, sum(s.viewers) AS v {sel} AND $__timeFilter(s.ts) GROUP BY s.ts) x",
              19, w=5, y=4, unit="sishort", color="purple", description="Plus grand nombre de viewers cumulés sur la période sélectionnée."),
@@ -1206,8 +1214,10 @@ def live_panels(loc, scope):
         stat(f"Pic de streamers en live ({scope})",
              f"SELECT max(n) FROM (SELECT count(*) AS n {latest} AND s.online GROUP BY s.ts) x",
              4, w=4, unit="sishort", color="blue"),
-        stat("Heures de stream", hours_streamed_sql(loc), 8, w=4, unit="suffix: h", decimals=1, color="green",
-             description=HOURS_DESCRIPTION),
+        stat("Heures de stream", hours_streamed_sql(loc, with_game="ZEVENT"), 8, w=4, unit="suffix: h", decimals=1,
+             color="green", text_mode="value_and_name",
+             description=HOURS_DESCRIPTION + " « Dont catégorie ZEVENT » : la part de ce temps passée avec la catégorie "
+                                             "Twitch « ZEVENT »."),
         ts(f"Streamers en live au fil du temps ({scope})",
            f'SELECT s.ts AS time, count(*) FILTER (WHERE s.online) AS "En live" {latest} AND $__timeFilter(s.ts) '
            "GROUP BY 1 ORDER BY 1",
