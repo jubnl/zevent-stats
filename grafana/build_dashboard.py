@@ -887,7 +887,7 @@ def hidden_var(name, sql):
 
 HERO_HTML = """
 <div style="display:flex;align-items:center;gap:28px;height:100%;padding:8px 12px">
-  <a href="https://twitch.tv/${hero_login}" target="_blank" rel="noopener">
+  <a href="https://twitch.tv/${hero_login}" target="_blank" rel="noopener" style="flex-shrink:0">
     <img src="${hero_avatar}" alt="${hero_display}"
          style="width:190px;height:190px;border-radius:50%;object-fit:cover;border:5px solid ${hero_color};display:block">
   </a>
@@ -897,12 +897,14 @@ HERO_HTML = """
     </div>
     <div style="font-size:17px;opacity:.75;margin-top:6px">
       <a href="https://twitch.tv/${hero_login}" target="_blank" rel="noopener" style="color:inherit">twitch.tv/${hero_login}</a>
-      &middot; <a href="${hero_donation}" target="_blank" rel="noopener" style="color:#3fb950;font-weight:600">Faire un don &#10084;</a>
       &middot; ${hero_location}
     </div>
     <div style="font-size:22px;margin-top:14px;font-weight:700">
       <span style="color:${hero_color}">&#9679; ${hero_status}</span>
       <span style="font-weight:500;opacity:.9;margin-left:8px">${hero_game}</span>
+    </div>
+    <div style="font-size:19px;margin-top:14px">
+      <a href="${hero_donation}" target="_blank" rel="noopener" style="color:#3fb950;font-weight:600;text-decoration:none">Faire un don &#10084;</a>
     </div>
   </div>
 </div>
