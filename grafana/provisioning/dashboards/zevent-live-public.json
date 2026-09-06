@@ -1,19 +1,16 @@
 {
   "uid": "zevent-live-public",
-  "title": "ZEVENT live",
+  "title": "ZEVENT timeline",
   "tags": [
     "zevent"
   ],
   "timezone": "browser",
   "editable": false,
   "graphTooltip": 1,
-  "refresh": "30s",
+  "refresh": "",
   "timepicker": {
     "hidden": false,
-    "refresh_intervals": [
-      "15s",
-      "30s"
-    ]
+    "refresh_intervals": []
   },
   "time": {
     "from": "2026-09-03T17:01:00.000Z",
@@ -157,7 +154,7 @@
     {
       "id": 1,
       "type": "stat",
-      "title": "Streamers en live ($location)",
+      "title": "Streamers ($location)",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -175,7 +172,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT count(*) FILTER (WHERE s.online AND ('$zevent_only' = '0' OR s.game = 'ZEVENT')) AS \"En live\", count(*) AS \"Total\" FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' AND s.ts = (SELECT max(ts) FROM snapshot)",
+          "rawSql": "SELECT count(DISTINCT s.twitch_id) FILTER (WHERE s.online AND ('$zevent_only' = '0' OR s.game = 'ZEVENT')) AS \"Pass\u00e9s en live\", count(DISTINCT s.twitch_id) AS \"Inscrits\" FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' AND $__timeFilter(s.ts)",
           "format": "table",
           "refId": "A"
         }
@@ -202,7 +199,7 @@
         "textMode": "value_and_name",
         "justifyMode": "center"
       },
-      "description": "Au dernier relev\u00e9. Avec le s\u00e9lecteur Cat\u00e9gorie sur \u00ab ZEVENT uniquement \u00bb, seul le temps pass\u00e9 avec la cat\u00e9gorie Twitch \u00ab ZEVENT \u00bb compte."
+      "description": "Streamers pass\u00e9s en live au moins une fois dans la plage de temps, et tous ceux list\u00e9s. Avec le s\u00e9lecteur Cat\u00e9gorie sur \u00ab ZEVENT uniquement \u00bb, seul le temps pass\u00e9 avec la cat\u00e9gorie Twitch \u00ab ZEVENT \u00bb compte."
     },
     {
       "id": 2,

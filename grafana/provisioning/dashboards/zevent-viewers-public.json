@@ -7,13 +7,10 @@
   "timezone": "browser",
   "editable": false,
   "graphTooltip": 1,
-  "refresh": "30s",
+  "refresh": "",
   "timepicker": {
     "hidden": false,
-    "refresh_intervals": [
-      "15s",
-      "30s"
-    ]
+    "refresh_intervals": []
   },
   "time": {
     "from": "2026-09-03T17:01:00.000Z",
@@ -89,7 +86,7 @@
     },
     {
       "type": "link",
-      "title": "Timeline live",
+      "title": "Timeline",
       "url": "/d/zevent-live-public?kiosk=1",
       "icon": "dashboard",
       "keepTime": true,

@@ -7,13 +7,10 @@
   "timezone": "browser",
   "editable": false,
   "graphTooltip": 1,
-  "refresh": "30s",
+  "refresh": "",
   "timepicker": {
     "hidden": false,
-    "refresh_intervals": [
-      "15s",
-      "30s"
-    ]
+    "refresh_intervals": []
   },
   "time": {
     "from": "2026-09-03T17:01:00.000Z",
@@ -65,7 +62,7 @@
     },
     {
       "type": "link",
-      "title": "Timeline live",
+      "title": "Timeline",
       "url": "/d/zevent-live-public?kiosk=1",
       "icon": "dashboard",
       "keepTime": true,
@@ -107,7 +104,7 @@
     {
       "id": 1,
       "type": "stat",
-      "title": "Rythme des dons, 10 derni\u00e8res min",
+      "title": "Rythme moyen sur l'\u00e9v\u00e9nement",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -125,7 +122,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH cur AS (SELECT ts, donation_total FROM snapshot ORDER BY ts DESC LIMIT 1), past AS (SELECT sn.donation_total FROM snapshot sn, cur WHERE sn.ts <= cur.ts - interval '10 minutes'          ORDER BY sn.ts DESC LIMIT 1) SELECT (cur.donation_total - past.donation_total) / 10 FROM cur, past",
+          "rawSql": "SELECT ((array_agg(donation_total ORDER BY ts DESC))[1] - (array_agg(donation_total ORDER BY ts))[1]) / greatest(extract(epoch FROM max(ts) - min(ts)) / 60, 1) FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz",
           "format": "table",
           "refId": "A"
         }
@@ -154,12 +151,12 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Gain du total de l'\u00e9v\u00e9nement par minute sur les 10 derni\u00e8res minutes de donn\u00e9es."
+      "description": "Total de l'\u00e9v\u00e9nement divis\u00e9 par sa dur\u00e9e, en euros par minute."
     },
     {
       "id": 2,
       "type": "stat",
-      "title": "Rythme moyen depuis le d\u00e9but",
+      "title": "Meilleure heure",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -177,7 +174,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT (max(donation_total) - min(donation_total)) / greatest(extract(epoch FROM max(ts) - min(ts)) / 60, 1) FROM snapshot",
+          "rawSql": "SELECT to_char(h, 'DD/MM \"\u00e0\" HH24\"h\"') || ' : ' || replace(replace(to_char(g, 'FM999,999,999'), ',', ' '), '.', ',') || ' \u20ac' FROM (  SELECT date_trunc('hour', ts AT TIME ZONE 'Europe/Paris') AS h, sum(delta) AS g FROM (    SELECT ts, donation_total - lag(donation_total) OVER (ORDER BY ts) AS delta FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz  ) d WHERE delta IS NOT NULL GROUP BY 1 ORDER BY 2 DESC LIMIT 1) x",
           "format": "table",
           "refId": "A"
         }
@@ -187,9 +184,7 @@
           "color": {
             "mode": "fixed",
             "fixedColor": "orange"
-          },
-          "unit": "currencyEUR",
-          "decimals": 2
+          }
         },
         "overrides": []
       },
@@ -198,7 +193,7 @@
           "calcs": [
             "lastNotNull"
           ],
-          "fields": "",
+          "fields": "/.*/",
           "values": false
         },
         "colorMode": "value",
@@ -206,12 +201,12 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Total de l'\u00e9v\u00e9nement par minute, sur tout l'\u00e9v\u00e9nement."
+      "description": "L'heure de la journ\u00e9e (heure de Paris) o\u00f9 le total de l'\u00e9v\u00e9nement a le plus progress\u00e9."
     },
     {
       "id": 3,
       "type": "stat",
-      "title": "Prochain million",
+      "title": "Plus grosse minute",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -229,214 +224,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT (floor(donation_total / 1e6) + 1) * 1e6 FROM snapshot ORDER BY ts DESC LIMIT 1",
-          "format": "table",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "green"
-          },
-          "unit": "currencyEUR",
-          "decimals": 0
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "value",
-        "graphMode": "none",
-        "textMode": "value",
-        "justifyMode": "center"
-      }
-    },
-    {
-      "id": 4,
-      "type": "stat",
-      "title": "Prochain million dans",
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "zevent-pg"
-      },
-      "gridPos": {
-        "x": 18,
-        "y": 0,
-        "w": 6,
-        "h": 4
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "zevent-pg"
-          },
-          "rawQuery": true,
-          "rawSql": "WITH cur AS (SELECT ts, donation_total FROM snapshot ORDER BY ts DESC LIMIT 1), past AS (SELECT sn.donation_total FROM snapshot sn, cur WHERE sn.ts <= cur.ts - interval '10 minutes'          ORDER BY sn.ts DESC LIMIT 1) SELECT CASE WHEN cur.donation_total > past.donation_total THEN ((floor(cur.donation_total / 1e6) + 1) * 1e6 - cur.donation_total) / ((cur.donation_total - past.donation_total) / 600.0) END FROM cur, past",
-          "format": "table",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "green"
-          },
-          "unit": "dtdurations",
-          "decimals": 0
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "value",
-        "graphMode": "none",
-        "textMode": "value",
-        "justifyMode": "center"
-      },
-      "description": "Au rythme des dons des 10 derni\u00e8res minutes."
-    },
-    {
-      "id": 5,
-      "type": "stat",
-      "title": "Total projet\u00e9 \u00e0 la fin (rythme 1 h)",
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "zevent-pg"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 4,
-        "w": 6,
-        "h": 4
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "zevent-pg"
-          },
-          "rawQuery": true,
-          "rawSql": "WITH cur AS (SELECT ts, donation_total FROM snapshot ORDER BY ts DESC LIMIT 1), d AS (SELECT ts, donation_total - lag(donation_total) OVER (ORDER BY ts) AS delta,              extract(epoch FROM ts - lag(ts) OVER (ORDER BY ts)) AS dt       FROM snapshot WHERE ts >= (SELECT ts FROM cur) - interval '1 hours' - interval '5 minutes'), pace AS (SELECT sum(d.delta) / nullif(sum(d.dt), 0) AS per_s FROM d, cur          WHERE d.ts > cur.ts - interval '1 hours' AND d.delta IS NOT NULL AND d.delta < 300000 AND d.dt <= 300) SELECT cur.donation_total + coalesce(pace.per_s, 0) * greatest(extract(epoch FROM '2026-09-06 23:00:00+00'::timestamptz - cur.ts), 0) FROM cur, pace",
-          "format": "table",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "green"
-          },
-          "unit": "currencyEUR",
-          "decimals": 2
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "value",
-        "graphMode": "none",
-        "textMode": "value",
-        "justifyMode": "center"
-      },
-      "description": "Total actuel plus le rythme de la derni\u00e8re heure tenu jusqu'\u00e0 la fin de l'\u00e9v\u00e9nement (lundi 01h00, heure de Paris). Les minutes avec un versement de 300 K\u20ac ou plus (boutique, gros dons ponctuels) ne comptent pas dans le rythme."
-    },
-    {
-      "id": 6,
-      "type": "stat",
-      "title": "Total projet\u00e9 \u00e0 la fin (rythme 6 h)",
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "zevent-pg"
-      },
-      "gridPos": {
-        "x": 6,
-        "y": 4,
-        "w": 6,
-        "h": 4
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "zevent-pg"
-          },
-          "rawQuery": true,
-          "rawSql": "WITH cur AS (SELECT ts, donation_total FROM snapshot ORDER BY ts DESC LIMIT 1), d AS (SELECT ts, donation_total - lag(donation_total) OVER (ORDER BY ts) AS delta,              extract(epoch FROM ts - lag(ts) OVER (ORDER BY ts)) AS dt       FROM snapshot WHERE ts >= (SELECT ts FROM cur) - interval '6 hours' - interval '5 minutes'), pace AS (SELECT sum(d.delta) / nullif(sum(d.dt), 0) AS per_s FROM d, cur          WHERE d.ts > cur.ts - interval '6 hours' AND d.delta IS NOT NULL AND d.delta < 300000 AND d.dt <= 300) SELECT cur.donation_total + coalesce(pace.per_s, 0) * greatest(extract(epoch FROM '2026-09-06 23:00:00+00'::timestamptz - cur.ts), 0) FROM cur, pace",
-          "format": "table",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "green"
-          },
-          "unit": "currencyEUR",
-          "decimals": 2
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "value",
-        "graphMode": "none",
-        "textMode": "value",
-        "justifyMode": "center"
-      },
-      "description": "Total actuel plus le rythme des 6 derni\u00e8res heures tenu jusqu'\u00e0 la fin de l'\u00e9v\u00e9nement (lundi 01h00, heure de Paris). Les minutes avec un versement de 300 K\u20ac ou plus (boutique, gros dons ponctuels) ne comptent pas dans le rythme."
-    },
-    {
-      "id": 7,
-      "type": "stat",
-      "title": "Derni\u00e8re heure, et hier \u00e0 la m\u00eame heure",
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "zevent-pg"
-      },
-      "gridPos": {
-        "x": 12,
-        "y": 4,
-        "w": 6,
-        "h": 4
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "zevent-pg"
-          },
-          "rawQuery": true,
-          "rawSql": "WITH cur AS (SELECT max(ts) AS at FROM snapshot) SELECT (SELECT (array_agg(donation_total ORDER BY ts DESC))[1] - (array_agg(donation_total ORDER BY ts))[1] FROM snapshot WHERE ts > cur.at - interval '1 hour') AS \"Derni\u00e8re heure\",        (SELECT (array_agg(donation_total ORDER BY ts DESC))[1] - (array_agg(donation_total ORDER BY ts))[1] FROM snapshot WHERE ts > cur.at - interval '25 hours'         AND ts <= cur.at - interval '24 hours') AS \"Hier, m\u00eame heure\" FROM cur",
+          "rawSql": "SELECT to_char(ts AT TIME ZONE 'Europe/Paris', 'DD/MM \"\u00e0\" HH24\"h\"MI') || ' : ' || replace(replace(to_char(delta, 'FM999,999,999'), ',', ' '), '.', ',') || ' \u20ac' FROM (  SELECT ts, donation_total - lag(donation_total) OVER (ORDER BY ts) AS delta FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz) d WHERE delta IS NOT NULL ORDER BY delta DESC LIMIT 1",
           "format": "table",
           "refId": "A"
         }
@@ -446,9 +234,7 @@
           "color": {
             "mode": "fixed",
             "fixedColor": "orange"
-          },
-          "unit": "currencyEUR",
-          "decimals": 0
+          }
         },
         "overrides": []
       },
@@ -457,27 +243,27 @@
           "calcs": [
             "lastNotNull"
           ],
-          "fields": "",
+          "fields": "/.*/",
           "values": false
         },
         "colorMode": "value",
         "graphMode": "none",
-        "textMode": "value_and_name",
+        "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Gain du total de l'\u00e9v\u00e9nement sur la derni\u00e8re heure de donn\u00e9es, et sur la m\u00eame heure 24 h plus t\u00f4t."
+      "description": "La minute o\u00f9 le total de l'\u00e9v\u00e9nement a le plus progress\u00e9 (le 5 septembre \u00e0 22h04, la boutique)."
     },
     {
-      "id": 8,
+      "id": 4,
       "type": "stat",
-      "title": "Dernier relev\u00e9 il y a",
+      "title": "Dernier palier franchi",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
       },
       "gridPos": {
         "x": 18,
-        "y": 4,
+        "y": 0,
         "w": 6,
         "h": 4
       },
@@ -488,7 +274,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT extract(epoch FROM now() - max(ts)) FROM snapshot",
+          "rawSql": "WITH m AS (  SELECT ts, floor(max(donation_total) OVER (ORDER BY ts) / 1e6) AS mil FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz), c AS (SELECT ts, mil, lag(mil) OVER (ORDER BY ts) AS prev FROM m) SELECT mil::int || ' M\u20ac le ' || to_char(ts AT TIME ZONE 'Europe/Paris', 'DD/MM \"\u00e0\" HH24\"h\"MI') FROM c WHERE prev IS NOT NULL AND mil > prev ORDER BY ts DESC LIMIT 1",
           "format": "table",
           "refId": "A"
         }
@@ -496,27 +282,9 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "thresholds"
-          },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "orange",
-                "value": 180
-              },
-              {
-                "color": "red",
-                "value": 600
-              }
-            ]
-          },
-          "unit": "dtdurations",
-          "decimals": 0
+            "mode": "fixed",
+            "fixedColor": "green"
+          }
         },
         "overrides": []
       },
@@ -525,7 +293,7 @@
           "calcs": [
             "lastNotNull"
           ],
-          "fields": "",
+          "fields": "/.*/",
           "values": false
         },
         "colorMode": "value",
@@ -533,23 +301,23 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "\u00c2ge du dernier relev\u00e9 de l'API (un relev\u00e9 par minute en temps normal)."
+      "description": "Le dernier million rond franchi par le total de l'\u00e9v\u00e9nement, et quand (heure de Paris)."
     },
     {
-      "id": 9,
+      "id": 5,
       "type": "row",
       "title": "Paliers et moments",
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 8,
+        "y": 4,
         "w": 24,
         "h": 1
       },
       "panels": []
     },
     {
-      "id": 10,
+      "id": 6,
       "type": "table",
       "title": "Les millions, un par un",
       "datasource": {
@@ -558,7 +326,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 9,
+        "y": 5,
         "w": 12,
         "h": 9
       },
@@ -634,7 +402,7 @@
       "description": "Quand le total de l'\u00e9v\u00e9nement a franchi chaque million rond (maximum glissant : une baisse du compteur ne peut pas franchir deux fois le m\u00eame million)."
     },
     {
-      "id": 11,
+      "id": 7,
       "type": "table",
       "title": "Plus gros gains en une minute",
       "datasource": {
@@ -643,7 +411,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 9,
+        "y": 5,
         "w": 12,
         "h": 9
       },
@@ -725,7 +493,7 @@
       "description": "Gains du compteur d'un streamer en une minute. Les cha\u00eenes de l'organisation (ZEVENT, ZEventPlays) sont exclues : leurs compteurs bougent par paquets (billets, boutique) et, avant le 4 sept. 22:58 CEST, viennent d'une source relev\u00e9e toutes les 30 minutes. Les gains sont mesur\u00e9s entre deux relev\u00e9s espac\u00e9s d'au plus 5 minutes, pour qu'un trou dans les donn\u00e9es ne compte pas comme une minute. Le retour \u00e0 la normale apr\u00e8s un rat\u00e9 de l'API (un compteur qui tombe \u00e0 0 et revient quelques minutes plus tard) est exclu : les lignes dont le streamer a perdu au moins 90 % du montant dans les 10 minutes pr\u00e9c\u00e9dentes sont ignor\u00e9es."
     },
     {
-      "id": 12,
+      "id": 8,
       "type": "table",
       "title": "Paliers des streamers",
       "datasource": {
@@ -734,7 +502,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 18,
+        "y": 14,
         "w": 12,
         "h": 9
       },
@@ -838,7 +606,7 @@
       "description": "Quand chaque streamer a franchi 100 K, 250 K, 500 K, 1 M, 2 M, 3 M ou 5 M\u20ac pour la premi\u00e8re fois (les franchissements dans la plage de temps s\u00e9lectionn\u00e9e, les plus r\u00e9cents en premier)."
     },
     {
-      "id": 13,
+      "id": 9,
       "type": "table",
       "title": "Changements de leader",
       "datasource": {
@@ -847,7 +615,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 18,
+        "y": 14,
         "w": 12,
         "h": 9
       },
@@ -951,7 +719,7 @@
       "description": "Chaque fois que la premi\u00e8re place du classement des dons a chang\u00e9 de mains, avec la cagnotte du nouveau leader \u00e0 ce moment."
     },
     {
-      "id": 14,
+      "id": 10,
       "type": "table",
       "title": "Plus gros bonds de viewers en une minute",
       "datasource": {
@@ -960,7 +728,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 27,
+        "y": 23,
         "w": 12,
         "h": 9
       },
@@ -1048,16 +816,16 @@
       "description": "Plus fortes hausses du nombre de viewers d'un streamer entre deux relev\u00e9s (raids, co-streams, moments forts). Les passages en live (de 0 viewer \u00e0 N) ne comptent pas."
     },
     {
-      "id": 15,
+      "id": 11,
       "type": "table",
-      "title": "Plus fortes mont\u00e9es au classement",
+      "title": "Plus fortes mont\u00e9es au classement (fin de l'\u00e9v\u00e9nement)",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
       },
       "gridPos": {
         "x": 12,
-        "y": 27,
+        "y": 23,
         "w": 12,
         "h": 9
       },
@@ -1238,10 +1006,10 @@
         "showHeader": true,
         "sortBy": []
       },
-      "description": "Places gagn\u00e9es (ou perdues, en rouge) au classement des dons depuis 1 h et depuis 24 h, au dernier relev\u00e9."
+      "description": "Places gagn\u00e9es (ou perdues, en rouge) au classement des dons depuis 1 h et depuis 24 h, \u00e0 la fin de l'\u00e9v\u00e9nement."
     },
     {
-      "id": 16,
+      "id": 12,
       "type": "table",
       "title": "\u00c9ditions pr\u00e9c\u00e9dentes",
       "datasource": {
@@ -1250,7 +1018,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 36,
+        "y": 32,
         "w": 8,
         "h": 9
       },
@@ -1302,7 +1070,7 @@
       "description": "Total final de chaque \u00e9dition et le moment o\u00f9 cette ann\u00e9e l'a d\u00e9pass\u00e9 (vide : pas encore). Pas d'\u00e9dition en 2023."
     },
     {
-      "id": 17,
+      "id": 13,
       "type": "barchart",
       "title": "Total par \u00e9dition",
       "datasource": {
@@ -1311,7 +1079,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 36,
+        "y": 32,
         "w": 10,
         "h": 9
       },
@@ -1322,7 +1090,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT e.year::text AS \"\u00c9dition\", e.total AS \"\u00c9ditions pr\u00e9c\u00e9dentes\", NULL::numeric AS \"2026 (en cours)\" FROM (VALUES (2016, 'Avenger Project', 170770), (2017, 'ZEvent', 451851), (2018, 'ZEvent', 1094731), (2019, 'ZEvent', 3510682), (2020, 'ZEvent', 5724377), (2021, 'ZEvent', 10064480), (2022, 'ZEvent', 10182126), (2024, 'ZEvent', 10145881), (2025, 'ZEvent', 16658660)) e(year, name, total) UNION ALL (SELECT '2026', NULL, donation_total FROM snapshot ORDER BY ts DESC LIMIT 1) ORDER BY 1",
+          "rawSql": "SELECT e.year::text AS \"\u00c9dition\", e.total AS \"\u00c9ditions pr\u00e9c\u00e9dentes\", NULL::numeric AS \"2026\" FROM (VALUES (2016, 'Avenger Project', 170770), (2017, 'ZEvent', 451851), (2018, 'ZEvent', 1094731), (2019, 'ZEvent', 3510682), (2020, 'ZEvent', 5724377), (2021, 'ZEvent', 10064480), (2022, 'ZEvent', 10182126), (2024, 'ZEvent', 10145881), (2025, 'ZEvent', 16658660)) e(year, name, total) UNION ALL (SELECT '2026', NULL, donation_total FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz ORDER BY ts DESC LIMIT 1) ORDER BY 1",
           "format": "table",
           "refId": "A"
         }
@@ -1358,7 +1126,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "2026 (en cours)"
+              "options": "2026"
             },
             "properties": [
               {
@@ -1403,7 +1171,7 @@
       "description": "Total final des \u00e9ditions pr\u00e9c\u00e9dentes et total actuel de cette ann\u00e9e. Pas d'\u00e9dition en 2023."
     },
     {
-      "id": 18,
+      "id": 14,
       "type": "stat",
       "title": "Record \u00e0 battre (2025)",
       "datasource": {
@@ -1412,7 +1180,7 @@
       },
       "gridPos": {
         "x": 18,
-        "y": 36,
+        "y": 32,
         "w": 6,
         "h": 4
       },
@@ -1454,7 +1222,7 @@
       }
     },
     {
-      "id": 19,
+      "id": 15,
       "type": "stat",
       "title": "Il manque, pour le battre",
       "datasource": {
@@ -1463,7 +1231,7 @@
       },
       "gridPos": {
         "x": 18,
-        "y": 40,
+        "y": 36,
         "w": 6,
         "h": 5
       },
@@ -1474,7 +1242,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT 16658660 - donation_total FROM snapshot ORDER BY ts DESC LIMIT 1",
+          "rawSql": "SELECT 16658660 - donation_total FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz ORDER BY ts DESC LIMIT 1",
           "format": "table",
           "refId": "A"
         }
@@ -1531,20 +1299,20 @@
       "description": "\u00c9cart entre le total actuel et le record de 2025."
     },
     {
-      "id": 20,
+      "id": 16,
       "type": "row",
       "title": "Tendances",
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 45,
+        "y": 41,
         "w": 24,
         "h": 1
       },
       "panels": []
     },
     {
-      "id": 21,
+      "id": 17,
       "type": "barchart",
       "title": "Dons par heure de la journ\u00e9e (Europe/Paris)",
       "datasource": {
@@ -1553,7 +1321,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 46,
+        "y": 42,
         "w": 12,
         "h": 9
       },
@@ -1645,7 +1413,7 @@
       "description": "Gain du total de l'\u00e9v\u00e9nement par heure de la journ\u00e9e, additionn\u00e9 sur la p\u00e9riode s\u00e9lectionn\u00e9e (tous lieux), s\u00e9par\u00e9 entre ce que les compteurs des streamers ont gagn\u00e9 et le reste. Tous les dons qui n'ont pas pu \u00eatre rattach\u00e9s \u00e0 un streamer : le total de l'\u00e9v\u00e9nement moins la somme des compteurs des streamers. On y trouve les dons faits sans choisir de streamer (la page d'\u00e9quipe Streamlabs Charity sans membre), les billets du concert de jeudi, tous les dons de la boutique, etc."
     },
     {
-      "id": 22,
+      "id": 18,
       "type": "table",
       "title": "Dons par heure visionn\u00e9e par viewer",
       "datasource": {
@@ -1654,7 +1422,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 46,
+        "y": 42,
         "w": 12,
         "h": 9
       },
@@ -1790,16 +1558,16 @@
       "description": "Gagn\u00e9 sur la p\u00e9riode s\u00e9lectionn\u00e9e divis\u00e9 par les heures visionn\u00e9es par viewer (viewers additionn\u00e9s dans le temps) : ce qu'une communaut\u00e9 donne par rapport \u00e0 sa taille. Les streamers avec moins de 100 heures visionn\u00e9es par viewer sont exclus."
     },
     {
-      "id": 23,
+      "id": 19,
       "type": "table",
-      "title": "Tendance du moment (15 derni\u00e8res minutes)",
+      "title": "Le sprint final (derni\u00e8re heure de l'\u00e9v\u00e9nement)",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
       },
       "gridPos": {
         "x": 0,
-        "y": 55,
+        "y": 51,
         "w": 12,
         "h": 9
       },
@@ -1810,7 +1578,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH cur AS (SELECT max(ts) AS ts FROM snapshot), n AS (SELECT twitch_id, donation_total, viewers FROM streamer_sample_v, cur WHERE streamer_sample_v.ts = cur.ts), p AS (SELECT DISTINCT ON (ss.twitch_id) ss.twitch_id, ss.donation_total, ss.viewers FROM streamer_sample_v ss, cur       WHERE ss.ts BETWEEN cur.ts - interval '60 minutes' AND cur.ts - interval '15 minutes'       ORDER BY ss.twitch_id, ss.ts DESC) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", n.donation_total - p.donation_total AS \"Gagn\u00e9\", n.viewers AS \"Viewers\", n.viewers - p.viewers AS \"Variation viewers\", st.login AS login FROM n JOIN p USING (twitch_id) JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY 3 DESC LIMIT 25",
+          "rawSql": "WITH cur AS (SELECT max(ts) AS ts FROM snapshot), f AS (SELECT s.twitch_id, sum(s.gain) AS gained, max(s.viewers) AS peak FROM streamer_sample_v s, cur       WHERE s.ts > cur.ts - interval '1 hour' AND s.ts <= cur.ts AND NOT s.derived AND s.gain IS NOT NULL GROUP BY s.twitch_id) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", f.gained AS \"Gagn\u00e9\", f.peak AS \"Pic de viewers\", st.login AS login FROM f JOIN streamer_v st USING (twitch_id) WHERE coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY f.gained DESC LIMIT 25",
           "format": "table",
           "refId": "A"
         }
@@ -1900,10 +1668,10 @@
         "showHeader": true,
         "sortBy": []
       },
-      "description": "Streamers class\u00e9s par dons gagn\u00e9s sur les 15 derni\u00e8res minutes de donn\u00e9es, avec la variation du nombre de viewers (par rapport au dernier relev\u00e9 vieux d'au moins 15 minutes, en remontant jusqu'\u00e0 une heure)."
+      "description": "Dons gagn\u00e9s par chaque streamer pendant la derni\u00e8re heure de l'\u00e9v\u00e9nement, et son pic de viewers sur cette heure."
     },
     {
-      "id": 24,
+      "id": 20,
       "type": "timeseries",
       "title": "Dons gagn\u00e9s par intervalle, par lieu",
       "datasource": {
@@ -1912,7 +1680,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 55,
+        "y": 51,
         "w": 12,
         "h": 9
       },
@@ -1961,7 +1729,7 @@
       "interval": "5m"
     },
     {
-      "id": 25,
+      "id": 21,
       "type": "timeseries",
       "title": "Rythme des dons par minute (1 h glissante)",
       "datasource": {
@@ -1970,7 +1738,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 64,
+        "y": 60,
         "w": 12,
         "h": 9
       },
@@ -2014,7 +1782,7 @@
       "description": "Gain du total de l'\u00e9v\u00e9nement par minute, moyenn\u00e9 sur l'heure qui pr\u00e9c\u00e8de chaque point, compar\u00e9 au rythme moyen depuis le d\u00e9but. Un pic d'une heure suit chaque gros versement (boutique, billets)."
     },
     {
-      "id": 26,
+      "id": 22,
       "type": "timeseries",
       "title": "Dons par heure visionn\u00e9e par viewer au fil du temps",
       "datasource": {
@@ -2023,7 +1791,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 64,
+        "y": 60,
         "w": 12,
         "h": 9
       },
@@ -2068,7 +1836,7 @@
       "description": "G\u00e9n\u00e9rosit\u00e9 par intervalle : dons gagn\u00e9s par les streamers correspondant au filtre Lieu divis\u00e9s par leurs heures visionn\u00e9es par viewer sur l'intervalle. Les cha\u00eenes de l'organisation (billets, boutique) sont exclues."
     },
     {
-      "id": 27,
+      "id": 23,
       "type": "barchart",
       "title": "Viewers par heure de la journ\u00e9e (Europe/Paris)",
       "datasource": {
@@ -2077,7 +1845,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 73,
+        "y": 69,
         "w": 12,
         "h": 9
       },
@@ -2169,7 +1937,7 @@
       "description": "Viewers cumul\u00e9s des streamers correspondant au filtre Lieu, par heure de la journ\u00e9e sur la p\u00e9riode s\u00e9lectionn\u00e9e : moyenne des relev\u00e9s et plus haut relev\u00e9."
     },
     {
-      "id": 28,
+      "id": 24,
       "type": "table",
       "title": "Jour par jour (Europe/Paris)",
       "datasource": {
@@ -2178,7 +1946,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 73,
+        "y": 69,
         "w": 12,
         "h": 9
       },
@@ -2246,20 +2014,20 @@
       "description": "Par jour calendaire : gain du total de l'\u00e9v\u00e9nement et viewers (tous lieux), heures de stream et streamers pass\u00e9s en live (filtre Lieu)."
     },
     {
-      "id": 29,
+      "id": 25,
       "type": "row",
       "title": "R\u00e9partition",
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 82,
+        "y": 78,
         "w": 24,
         "h": 1
       },
       "panels": []
     },
     {
-      "id": 30,
+      "id": 26,
       "type": "barchart",
       "title": "Part des compteurs des streamers",
       "datasource": {
@@ -2268,7 +2036,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 83,
+        "y": 79,
         "w": 8,
         "h": 9
       },
@@ -2279,7 +2047,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH cur AS (SELECT s.twitch_id, s.donation_total FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id)              WHERE s.ts = (SELECT max(ts) FROM snapshot) AND NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$'), r AS (SELECT twitch_id, donation_total, row_number() OVER (ORDER BY donation_total DESC) AS rn,              sum(donation_total) OVER () AS tot, count(*) OVER () AS n FROM cur) SELECT CASE WHEN rn <= 10 THEN rn || '. ' || st.display ELSE 'Les ' || (n - 10) || ' autres' END AS \"Streamer\",        sum(donation_total / nullif(tot, 0)) AS \"Part\" FROM r JOIN streamer_v st USING (twitch_id) GROUP BY 1, rn <= 10 ORDER BY min(rn)",
+          "rawSql": "WITH cur AS (SELECT s.twitch_id, s.donation_total FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id)              WHERE s.ts = (SELECT max(ts) FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz) AND NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$'), r AS (SELECT twitch_id, donation_total, row_number() OVER (ORDER BY donation_total DESC) AS rn,              sum(donation_total) OVER () AS tot, count(*) OVER () AS n FROM cur) SELECT CASE WHEN rn <= 10 THEN rn || '. ' || st.display ELSE 'Les ' || (n - 10) || ' autres' END AS \"Streamer\",        sum(donation_total / nullif(tot, 0)) AS \"Part\" FROM r JOIN streamer_v st USING (twitch_id) GROUP BY 1, rn <= 10 ORDER BY min(rn)",
           "format": "table",
           "refId": "A"
         }
@@ -2327,10 +2095,10 @@
           "sort": "none"
         }
       },
-      "description": "Part de la somme des compteurs des streamers (filtre Lieu) d\u00e9tenue par chacun des dix premiers, et par tous les autres r\u00e9unis, au dernier relev\u00e9."
+      "description": "Part de la somme des compteurs des streamers (filtre Lieu) d\u00e9tenue par chacun des dix premiers, et par tous les autres r\u00e9unis, \u00e0 la fin de l'\u00e9v\u00e9nement."
     },
     {
-      "id": 31,
+      "id": 27,
       "type": "timeseries",
       "title": "Part d\u00e9tenue par le haut du classement",
       "datasource": {
@@ -2339,7 +2107,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 83,
+        "y": 79,
         "w": 8,
         "h": 9
       },
@@ -2383,7 +2151,7 @@
       "description": "Part de la somme des compteurs des streamers d\u00e9tenue par le premier, les dix premiers et les vingt-cinq premiers du classement, au fil du temps (tous lieux)."
     },
     {
-      "id": 32,
+      "id": 28,
       "type": "timeseries",
       "title": "Streamers par palier de cagnotte",
       "datasource": {
@@ -2392,7 +2160,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 83,
+        "y": 79,
         "w": 8,
         "h": 9
       },
@@ -2440,7 +2208,7 @@
       "description": "Nombre de streamers (filtre Lieu) dont la cagnotte est dans chaque tranche, au fil du temps."
     },
     {
-      "id": 33,
+      "id": 29,
       "type": "xychart",
       "title": "Viewers et dons, un point par streamer",
       "datasource": {
@@ -2449,7 +2217,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 92,
+        "y": 88,
         "w": 12,
         "h": 9
       },
@@ -2519,7 +2287,7 @@
       "description": "Chaque point est un streamer : ses viewers moyens quand il est en live (horizontal) et ce qu'il a gagn\u00e9 sur la p\u00e9riode (vertical), \u00e9chelles logarithmiques. Les points au-dessus du nuage sont les communaut\u00e9s qui donnent le plus par rapport \u00e0 leur taille. Survolez un point pour le nom."
     },
     {
-      "id": 34,
+      "id": 30,
       "type": "stat",
       "title": "Dons re\u00e7us pendant le live et hors live",
       "datasource": {
@@ -2528,7 +2296,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 92,
+        "y": 88,
         "w": 12,
         "h": 4
       },
@@ -2571,7 +2339,7 @@
       "description": "Dons gagn\u00e9s par les compteurs des streamers (filtre Lieu) sur la p\u00e9riode, selon que le streamer \u00e9tait en live ou non au moment du relev\u00e9."
     },
     {
-      "id": 35,
+      "id": 31,
       "type": "stat",
       "title": "Streamers dont la cagnotte d\u00e9passe",
       "datasource": {
@@ -2580,7 +2348,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 96,
+        "y": 92,
         "w": 12,
         "h": 5
       },
@@ -2591,7 +2359,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT count(*) FILTER (WHERE s.donation_total >= 1e3) AS \"1 K\u20ac\", count(*) FILTER (WHERE s.donation_total >= 1e4) AS \"10 K\u20ac\",        count(*) FILTER (WHERE s.donation_total >= 1e5) AS \"100 K\u20ac\", count(*) FILTER (WHERE s.donation_total >= 1e6) AS \"1 M\u20ac\" FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE s.ts = (SELECT max(ts) FROM snapshot) AND NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$'",
+          "rawSql": "SELECT count(*) FILTER (WHERE s.donation_total >= 1e3) AS \"1 K\u20ac\", count(*) FILTER (WHERE s.donation_total >= 1e4) AS \"10 K\u20ac\",        count(*) FILTER (WHERE s.donation_total >= 1e5) AS \"100 K\u20ac\", count(*) FILTER (WHERE s.donation_total >= 1e6) AS \"1 M\u20ac\" FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE s.ts = (SELECT max(ts) FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz) AND NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$'",
           "format": "table",
           "refId": "A"
         }
@@ -2618,23 +2386,23 @@
         "textMode": "value_and_name",
         "justifyMode": "center"
       },
-      "description": "Nombre de streamers (filtre Lieu) dont la cagnotte d\u00e9passe chaque seuil, au dernier relev\u00e9."
+      "description": "Nombre de streamers (filtre Lieu) dont la cagnotte d\u00e9passe chaque seuil, \u00e0 la fin de l'\u00e9v\u00e9nement."
     },
     {
-      "id": 36,
+      "id": 32,
       "type": "row",
       "title": "Endurance et efficacit\u00e9",
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 101,
+        "y": 97,
         "w": 24,
         "h": 1
       },
       "panels": []
     },
     {
-      "id": 37,
+      "id": 33,
       "type": "table",
       "title": "Plus longues sessions en live",
       "datasource": {
@@ -2643,7 +2411,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 102,
+        "y": 98,
         "w": 12,
         "h": 9
       },
@@ -2654,7 +2422,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH s AS (  SELECT x.twitch_id, max(x.ts - coalesce(x.offline_at, st.first_seen)) AS longest  FROM streamer_sample_v x JOIN streamer_v st USING (twitch_id)  WHERE $__timeFilter(x.ts) AND x.online AND NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' GROUP BY x.twitch_id), cur AS (  SELECT x.twitch_id, CASE WHEN x.online THEN x.ts - coalesce(x.offline_at, st.first_seen) END AS current  FROM streamer_sample_v x JOIN streamer_v st USING (twitch_id) WHERE x.ts = (SELECT max(ts) FROM snapshot)) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", extract(epoch FROM s.longest) / 3600.0 AS \"Plus longue session\",        extract(epoch FROM cur.current) / 3600.0 AS \"Session en cours\", st.login AS login FROM s JOIN streamer_v st USING (twitch_id) LEFT JOIN cur USING (twitch_id) ORDER BY s.longest DESC LIMIT 25",
+          "rawSql": "WITH s AS (  SELECT x.twitch_id, max(x.ts - coalesce(x.offline_at, st.first_seen)) AS longest  FROM streamer_sample_v x JOIN streamer_v st USING (twitch_id)  WHERE $__timeFilter(x.ts) AND x.online AND NOT st.derived AND coalesce(st.location, '') ~ '^(${location:regex})$' GROUP BY x.twitch_id), cur AS (  SELECT x.twitch_id, CASE WHEN x.online THEN x.ts - coalesce(x.offline_at, st.first_seen) END AS current  FROM streamer_sample_v x JOIN streamer_v st USING (twitch_id) WHERE x.ts = (SELECT max(ts) FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz)) SELECT st.profile_url AS \"Avatar\", st.display AS \"Streamer\", extract(epoch FROM s.longest) / 3600.0 AS \"Plus longue session\",        extract(epoch FROM cur.current) / 3600.0 AS \"Session en cours\", st.login AS login FROM s JOIN streamer_v st USING (twitch_id) LEFT JOIN cur USING (twitch_id) ORDER BY s.longest DESC LIMIT 25",
           "format": "table",
           "refId": "A"
         }
@@ -2763,7 +2531,7 @@
       "description": "Plus long passage en live sans interruption observ\u00e9 sur la p\u00e9riode (il peut avoir commenc\u00e9 avant), et la dur\u00e9e de la session en cours si le streamer est en live."
     },
     {
-      "id": 38,
+      "id": 34,
       "type": "table",
       "title": "Dons par heure de live",
       "datasource": {
@@ -2772,7 +2540,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 102,
+        "y": 98,
         "w": 12,
         "h": 9
       },
@@ -2908,20 +2676,20 @@
       "description": "Gagn\u00e9 sur la p\u00e9riode divis\u00e9 par les heures pass\u00e9es en live. Les streamers avec moins de 3 heures de live et les cha\u00eenes de l'organisation sont exclus."
     },
     {
-      "id": 39,
+      "id": 35,
       "type": "row",
       "title": "Sur place vs \u00e0 distance",
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 111,
+        "y": 107,
         "w": 24,
         "h": 1
       },
       "panels": []
     },
     {
-      "id": 40,
+      "id": 36,
       "type": "timeseries",
       "title": "Streamers en live par lieu",
       "datasource": {
@@ -2930,7 +2698,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 112,
+        "y": 108,
         "w": 12,
         "h": 9
       },
@@ -2977,7 +2745,7 @@
       }
     },
     {
-      "id": 41,
+      "id": 37,
       "type": "timeseries",
       "title": "Viewers par lieu",
       "datasource": {
@@ -2986,7 +2754,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 112,
+        "y": 108,
         "w": 12,
         "h": 9
       },
@@ -3033,7 +2801,7 @@
       }
     },
     {
-      "id": 42,
+      "id": 38,
       "type": "timeseries",
       "title": "Cagnottes par lieu",
       "datasource": {
@@ -3042,7 +2810,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 121,
+        "y": 117,
         "w": 12,
         "h": 9
       },
@@ -3090,7 +2858,7 @@
       "description": "Somme des compteurs des streamers sur place et \u00e0 distance, au fil du temps."
     },
     {
-      "id": 43,
+      "id": 39,
       "type": "stat",
       "title": "Part des dons sur place",
       "datasource": {
@@ -3099,7 +2867,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 121,
+        "y": 117,
         "w": 6,
         "h": 4
       },
@@ -3110,7 +2878,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT sum(s.donation_total) FILTER (WHERE st.location = 'LAN') / nullif(sum(s.donation_total), 0) FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE s.ts = (SELECT max(ts) FROM snapshot) AND NOT st.derived",
+          "rawSql": "SELECT sum(s.donation_total) FILTER (WHERE st.location = 'LAN') / nullif(sum(s.donation_total), 0) FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE s.ts = (SELECT max(ts) FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz) AND NOT st.derived",
           "format": "table",
           "refId": "A"
         }
@@ -3139,10 +2907,10 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Part de la somme des compteurs des streamers d\u00e9tenue par les streamers sur place, au dernier relev\u00e9."
+      "description": "Part de la somme des compteurs des streamers d\u00e9tenue par les streamers sur place, \u00e0 la fin de l'\u00e9v\u00e9nement."
     },
     {
-      "id": 44,
+      "id": 40,
       "type": "stat",
       "title": "Cagnotte moyenne par streamer",
       "datasource": {
@@ -3151,7 +2919,7 @@
       },
       "gridPos": {
         "x": 18,
-        "y": 121,
+        "y": 117,
         "w": 6,
         "h": 4
       },
@@ -3162,7 +2930,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT avg(s.donation_total) FILTER (WHERE st.location = 'LAN') AS \"Sur place\",        avg(s.donation_total) FILTER (WHERE st.location = 'Online') AS \"\u00c0 distance\" FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE s.ts = (SELECT max(ts) FROM snapshot) AND NOT st.derived",
+          "rawSql": "SELECT avg(s.donation_total) FILTER (WHERE st.location = 'LAN') AS \"Sur place\",        avg(s.donation_total) FILTER (WHERE st.location = 'Online') AS \"\u00c0 distance\" FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE s.ts = (SELECT max(ts) FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz) AND NOT st.derived",
           "format": "table",
           "refId": "A"
         }
@@ -3193,7 +2961,7 @@
       }
     },
     {
-      "id": 45,
+      "id": 41,
       "type": "stat",
       "title": "Dons gagn\u00e9s sur la p\u00e9riode, par lieu",
       "datasource": {
@@ -3202,7 +2970,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 125,
+        "y": 121,
         "w": 12,
         "h": 5
       },
@@ -3244,20 +3012,20 @@
       }
     },
     {
-      "id": 46,
+      "id": 42,
       "type": "row",
       "title": "Jeux",
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 130,
+        "y": 126,
         "w": 24,
         "h": 1
       },
       "panels": []
     },
     {
-      "id": 47,
+      "id": 43,
       "type": "timeseries",
       "title": "Streamers en live par jeu",
       "datasource": {
@@ -3266,7 +3034,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 131,
+        "y": 127,
         "w": 12,
         "h": 9
       },
@@ -3313,7 +3081,7 @@
       }
     },
     {
-      "id": 48,
+      "id": 44,
       "type": "timeseries",
       "title": "Viewers par jeu",
       "datasource": {
@@ -3322,7 +3090,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 131,
+        "y": 127,
         "w": 12,
         "h": 9
       },
@@ -3369,7 +3137,7 @@
       }
     },
     {
-      "id": 49,
+      "id": 45,
       "type": "table",
       "title": "Heures de stream par jeu",
       "datasource": {
@@ -3378,7 +3146,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 140,
+        "y": 136,
         "w": 24,
         "h": 9
       },
@@ -3429,20 +3197,20 @@
       }
     },
     {
-      "id": 50,
+      "id": 46,
       "type": "row",
       "title": "Dons sans streamer",
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 149,
+        "y": 145,
         "w": 24,
         "h": 1
       },
       "panels": []
     },
     {
-      "id": 51,
+      "id": 47,
       "type": "timeseries",
       "title": "Au fil du temps (total moins tous les streamers)",
       "datasource": {
@@ -3451,7 +3219,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 150,
+        "y": 146,
         "w": 12,
         "h": 9
       },
@@ -3495,7 +3263,7 @@
       "description": "Tous les dons qui n'ont pas pu \u00eatre rattach\u00e9s \u00e0 un streamer : le total de l'\u00e9v\u00e9nement moins la somme des compteurs des streamers. On y trouve les dons faits sans choisir de streamer (la page d'\u00e9quipe Streamlabs Charity sans membre), les billets du concert de jeudi, tous les dons de la boutique, etc."
     },
     {
-      "id": 52,
+      "id": 48,
       "type": "timeseries",
       "title": "Par intervalle (gain total moins gains des streamers)",
       "datasource": {
@@ -3504,7 +3272,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 150,
+        "y": 146,
         "w": 12,
         "h": 9
       },
@@ -3550,20 +3318,20 @@
       "description": "Tous les dons qui n'ont pas pu \u00eatre rattach\u00e9s \u00e0 un streamer : le total de l'\u00e9v\u00e9nement moins la somme des compteurs des streamers. On y trouve les dons faits sans choisir de streamer (la page d'\u00e9quipe Streamlabs Charity sans membre), les billets du concert de jeudi, tous les dons de la boutique, etc."
     },
     {
-      "id": 53,
+      "id": 49,
       "type": "row",
       "title": "Qualit\u00e9 des donn\u00e9es",
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 159,
+        "y": 155,
         "w": 24,
         "h": 1
       },
       "panels": []
     },
     {
-      "id": 54,
+      "id": 50,
       "type": "stat",
       "title": "Relev\u00e9s sur la p\u00e9riode",
       "datasource": {
@@ -3572,7 +3340,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 160,
+        "y": 156,
         "w": 8,
         "h": 4
       },
@@ -3614,7 +3382,7 @@
       "description": "Nombre de relev\u00e9s de l'API dans la plage de temps (un par minute)."
     },
     {
-      "id": 55,
+      "id": 51,
       "type": "stat",
       "title": "Trous de collecte",
       "datasource": {
@@ -3623,7 +3391,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 160,
+        "y": 156,
         "w": 8,
         "h": 4
       },
@@ -3681,7 +3449,7 @@
       "description": "Nombre de fois o\u00f9 plus de 90 secondes s\u00e9parent deux relev\u00e9s (API injoignable ou collecteur arr\u00eat\u00e9)."
     },
     {
-      "id": 56,
+      "id": 52,
       "type": "stat",
       "title": "Rat\u00e9s de l'API",
       "datasource": {
@@ -3690,7 +3458,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 160,
+        "y": 156,
         "w": 8,
         "h": 4
       },

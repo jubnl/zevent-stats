@@ -7,13 +7,10 @@
   "timezone": "browser",
   "editable": false,
   "graphTooltip": 1,
-  "refresh": "30s",
+  "refresh": "",
   "timepicker": {
     "hidden": false,
-    "refresh_intervals": [
-      "15s",
-      "30s"
-    ]
+    "refresh_intervals": []
   },
   "time": {
     "from": "2026-09-03T17:01:00.000Z",
@@ -31,8 +28,8 @@
           "type": "grafana-postgresql-datasource",
           "uid": "zevent-pg"
         },
-        "query": "SELECT st.display AS __text, st.twitch_id AS __value FROM streamer_v st JOIN streamer_sample_v s USING (twitch_id) WHERE s.ts = (SELECT max(ts) FROM snapshot) AND NOT st.derived ORDER BY s.donation_total DESC",
-        "definition": "SELECT st.display AS __text, st.twitch_id AS __value FROM streamer_v st JOIN streamer_sample_v s USING (twitch_id) WHERE s.ts = (SELECT max(ts) FROM snapshot) AND NOT st.derived ORDER BY s.donation_total DESC",
+        "query": "SELECT st.display AS __text, st.twitch_id AS __value FROM streamer_v st JOIN streamer_sample_v s USING (twitch_id) WHERE s.ts = (SELECT max(ts) FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz) AND NOT st.derived ORDER BY s.donation_total DESC",
+        "definition": "SELECT st.display AS __text, st.twitch_id AS __value FROM streamer_v st JOIN streamer_sample_v s USING (twitch_id) WHERE s.ts = (SELECT max(ts) FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz) AND NOT st.derived ORDER BY s.donation_total DESC",
         "multi": false,
         "includeAll": false,
         "refresh": 1,
@@ -46,7 +43,7 @@
           "type": "grafana-postgresql-datasource",
           "uid": "zevent-pg"
         },
-        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.twitch_id IN (${streamer:sqlstring}) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT st.display FROM cur JOIN streamer_v st USING (twitch_id)",
+        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers, s.rank FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz) AND s.twitch_id IN (${streamer:sqlstring}) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT st.display FROM cur JOIN streamer_v st USING (twitch_id)",
         "definition": "hero_display",
         "hide": 2,
         "refresh": 2,
@@ -62,7 +59,7 @@
           "type": "grafana-postgresql-datasource",
           "uid": "zevent-pg"
         },
-        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.twitch_id IN (${streamer:sqlstring}) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT st.login FROM cur JOIN streamer_v st USING (twitch_id)",
+        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers, s.rank FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz) AND s.twitch_id IN (${streamer:sqlstring}) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT st.login FROM cur JOIN streamer_v st USING (twitch_id)",
         "definition": "hero_login",
         "hide": 2,
         "refresh": 2,
@@ -78,7 +75,7 @@
           "type": "grafana-postgresql-datasource",
           "uid": "zevent-pg"
         },
-        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.twitch_id IN (${streamer:sqlstring}) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT coalesce(st.profile_url, '') FROM cur JOIN streamer_v st USING (twitch_id)",
+        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers, s.rank FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz) AND s.twitch_id IN (${streamer:sqlstring}) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT coalesce(st.profile_url, '') FROM cur JOIN streamer_v st USING (twitch_id)",
         "definition": "hero_avatar",
         "hide": 2,
         "refresh": 2,
@@ -94,7 +91,7 @@
           "type": "grafana-postgresql-datasource",
           "uid": "zevent-pg"
         },
-        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.twitch_id IN (${streamer:sqlstring}) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT 'https://zevent.fr/don/' || st.display FROM cur JOIN streamer_v st USING (twitch_id)",
+        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers, s.rank FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz) AND s.twitch_id IN (${streamer:sqlstring}) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT 'https://zevent.fr/don/' || st.display FROM cur JOIN streamer_v st USING (twitch_id)",
         "definition": "hero_donation",
         "hide": 2,
         "refresh": 2,
@@ -110,7 +107,7 @@
           "type": "grafana-postgresql-datasource",
           "uid": "zevent-pg"
         },
-        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.twitch_id IN (${streamer:sqlstring}) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT CASE st.location WHEN 'LAN' THEN 'Sur place au ZEVENT' WHEN 'Online' THEN 'En stream \u00e0 distance' ELSE '' END FROM cur JOIN streamer_v st USING (twitch_id)",
+        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers, s.rank FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz) AND s.twitch_id IN (${streamer:sqlstring}) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT CASE st.location WHEN 'LAN' THEN 'Sur place au ZEVENT' WHEN 'Online' THEN 'En stream \u00e0 distance' ELSE '' END FROM cur JOIN streamer_v st USING (twitch_id)",
         "definition": "hero_location",
         "hide": 2,
         "refresh": 2,
@@ -126,7 +123,7 @@
           "type": "grafana-postgresql-datasource",
           "uid": "zevent-pg"
         },
-        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.twitch_id IN (${streamer:sqlstring}) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT CASE WHEN cur.online THEN 'LIVE' ELSE 'HORS LIGNE' END FROM cur",
+        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers, s.rank FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz) AND s.twitch_id IN (${streamer:sqlstring}) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT 'Rang final : ' || cur.rank FROM cur",
         "definition": "hero_status",
         "hide": 2,
         "refresh": 2,
@@ -142,24 +139,8 @@
           "type": "grafana-postgresql-datasource",
           "uid": "zevent-pg"
         },
-        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.twitch_id IN (${streamer:sqlstring}) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT CASE WHEN cur.online THEN '#3fb950' ELSE '#8b949e' END FROM cur",
+        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers, s.rank FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz) AND s.twitch_id IN (${streamer:sqlstring}) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT '#3fb950' FROM cur",
         "definition": "hero_color",
-        "hide": 2,
-        "refresh": 2,
-        "multi": false,
-        "includeAll": false,
-        "sort": 0,
-        "current": {}
-      },
-      {
-        "name": "hero_game",
-        "type": "query",
-        "datasource": {
-          "type": "grafana-postgresql-datasource",
-          "uid": "zevent-pg"
-        },
-        "query": "WITH cur AS (SELECT s.twitch_id, s.online, s.game, s.viewers FROM streamer_sample_v s WHERE s.ts = (SELECT max(ts) FROM snapshot) AND s.twitch_id IN (${streamer:sqlstring}) AND NOT s.derived ORDER BY s.donation_total DESC LIMIT 1) SELECT CASE WHEN cur.online THEN coalesce(cur.game, '') ELSE '' END FROM cur",
-        "definition": "hero_game",
         "hide": 2,
         "refresh": 2,
         "multi": false,
@@ -184,7 +165,7 @@
     },
     {
       "type": "link",
-      "title": "Timeline live",
+      "title": "Timeline",
       "url": "/d/zevent-live-public?kiosk=1",
       "icon": "dashboard",
       "keepTime": true,
@@ -236,13 +217,13 @@
       },
       "options": {
         "mode": "html",
-        "content": "<div style=\"display:flex;align-items:center;gap:28px;height:100%;padding:8px 12px\">\n  <a href=\"https://twitch.tv/${hero_login}\" target=\"_blank\" rel=\"noopener\" style=\"flex-shrink:0\">\n    <img src=\"${hero_avatar}\" alt=\"${hero_display}\"\n         style=\"width:190px;height:190px;border-radius:50%;object-fit:cover;border:5px solid ${hero_color};display:block\">\n  </a>\n  <div style=\"min-width:0\">\n    <div style=\"font-size:44px;font-weight:800;line-height:1.05;letter-spacing:-0.5px\">\n      <a href=\"https://twitch.tv/${hero_login}\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit;text-decoration:none\">${hero_display}</a>\n    </div>\n    <div style=\"font-size:17px;opacity:.75;margin-top:6px\">\n      <a href=\"https://twitch.tv/${hero_login}\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit\">twitch.tv/${hero_login}</a>\n      &middot; ${hero_location}\n    </div>\n    <div style=\"font-size:22px;margin-top:14px;font-weight:700\">\n      <span style=\"color:${hero_color}\">&#9679; ${hero_status}</span>\n      <span style=\"font-weight:500;opacity:.9;margin-left:8px\">${hero_game}</span>\n    </div>\n    <div style=\"font-size:19px;margin-top:14px\">\n      <a href=\"${hero_donation}\" target=\"_blank\" rel=\"noopener\" style=\"color:#3fb950;font-weight:600;text-decoration:none\">Faire un don &#10084;</a>\n    </div>\n  </div>\n</div>"
+        "content": "<div style=\"display:flex;align-items:center;gap:28px;height:100%;padding:8px 12px\">\n  <a href=\"https://twitch.tv/${hero_login}\" target=\"_blank\" rel=\"noopener\" style=\"flex-shrink:0\">\n    <img src=\"${hero_avatar}\" alt=\"${hero_display}\"\n         style=\"width:190px;height:190px;border-radius:50%;object-fit:cover;border:5px solid ${hero_color};display:block\">\n  </a>\n  <div style=\"min-width:0\">\n    <div style=\"font-size:44px;font-weight:800;line-height:1.05;letter-spacing:-0.5px\">\n      <a href=\"https://twitch.tv/${hero_login}\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit;text-decoration:none\">${hero_display}</a>\n    </div>\n    <div style=\"font-size:17px;opacity:.75;margin-top:6px\">\n      <a href=\"https://twitch.tv/${hero_login}\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit\">twitch.tv/${hero_login}</a>\n      &middot; ${hero_location}\n    </div>\n    <div style=\"font-size:22px;margin-top:14px;font-weight:700\">\n      <span style=\"color:${hero_color}\">&#9679; ${hero_status}</span>\n    </div>\n    <div style=\"font-size:19px;margin-top:14px\">\n      <a href=\"${hero_donation}\" target=\"_blank\" rel=\"noopener\" style=\"color:#3fb950;font-weight:600;text-decoration:none\">Faire un don &#10084;</a>\n    </div>\n  </div>\n</div>"
       }
     },
     {
       "id": 2,
       "type": "stat",
-      "title": "Cagnotte perso",
+      "title": "Cagnotte finale",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -260,7 +241,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT coalesce(sum(s.donation_total), 0) FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND s.twitch_id IN (${streamer:sqlstring}) AND s.ts = (SELECT max(ts) FROM snapshot)",
+          "rawSql": "SELECT coalesce(sum(s.donation_total), 0) FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND s.twitch_id IN (${streamer:sqlstring}) AND s.ts = (SELECT max(ts) FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz)",
           "format": "table",
           "refId": "A"
         }
@@ -293,7 +274,7 @@
     {
       "id": 3,
       "type": "stat",
-      "title": "Rank",
+      "title": "Rang final",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -311,7 +292,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT min(rank) FROM streamer_sample_v WHERE ts = (SELECT max(ts) FROM snapshot) AND NOT derived AND twitch_id IN (${streamer:sqlstring})",
+          "rawSql": "SELECT min(rank) FROM streamer_sample_v WHERE ts = (SELECT max(ts) FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz) AND NOT derived AND twitch_id IN (${streamer:sqlstring})",
           "format": "table",
           "refId": "A"
         }
@@ -339,12 +320,12 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Position au classement des dons au dernier relev\u00e9 (la meilleure des streamers s\u00e9lectionn\u00e9s)."
+      "description": "Position au classement des dons \u00e0 la fin de l'\u00e9v\u00e9nement."
     },
     {
       "id": 4,
       "type": "stat",
-      "title": "Viewers actuels",
+      "title": "Meilleur rang",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -362,7 +343,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT coalesce(sum(s.viewers), 0) FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND s.twitch_id IN (${streamer:sqlstring}) AND s.ts = (SELECT max(ts) FROM snapshot)",
+          "rawSql": "SELECT min(rank) FROM streamer_sample_v WHERE $__timeFilter(ts) AND NOT derived AND twitch_id IN (${streamer:sqlstring})",
           "format": "table",
           "refId": "A"
         }
@@ -371,7 +352,7 @@
         "defaults": {
           "color": {
             "mode": "fixed",
-            "fixedColor": "purple"
+            "fixedColor": "yellow"
           },
           "unit": "sishort"
         },
@@ -389,7 +370,8 @@
         "graphMode": "none",
         "textMode": "value",
         "justifyMode": "center"
-      }
+      },
+      "description": "Meilleure position atteinte au classement des dons dans la plage de temps s\u00e9lectionn\u00e9e."
     },
     {
       "id": 5,
@@ -566,7 +548,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT coalesce(sum(s.donation_total), 0) / nullif((SELECT donation_total FROM snapshot ORDER BY ts DESC LIMIT 1), 0) FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND s.twitch_id IN (${streamer:sqlstring}) AND s.ts = (SELECT max(ts) FROM snapshot)",
+          "rawSql": "SELECT coalesce(sum(s.donation_total), 0) / nullif((SELECT donation_total FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz ORDER BY ts DESC LIMIT 1), 0) FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND s.twitch_id IN (${streamer:sqlstring}) AND s.ts = (SELECT max(ts) FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz)",
           "format": "table",
           "refId": "A"
         }
@@ -595,7 +577,7 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Compteurs des streamers s\u00e9lectionn\u00e9s divis\u00e9s par le total de l'\u00e9v\u00e9nement, au dernier relev\u00e9."
+      "description": "Compteurs des streamers s\u00e9lectionn\u00e9s divis\u00e9s par le total de l'\u00e9v\u00e9nement, \u00e0 la fin de l'\u00e9v\u00e9nement."
     },
     {
       "id": 9,
@@ -704,7 +686,7 @@
     {
       "id": 11,
       "type": "stat",
-      "title": "Dans cet \u00e9tat depuis",
+      "title": "Meilleure heure",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -722,7 +704,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH cur AS (  SELECT twitch_id, ts, online, game FROM streamer_sample_v  WHERE ts = (SELECT max(ts) FROM snapshot) AND twitch_id IN (${streamer:sqlstring}) AND NOT derived  ORDER BY donation_total DESC LIMIT 1), changed AS (  SELECT max(s.ts) AS at FROM cur c JOIN streamer_sample_v s USING (twitch_id)  WHERE s.online <> c.online OR s.game IS DISTINCT FROM c.game) SELECT extract(epoch FROM c.ts - coalesce(ch.at, (SELECT first_seen FROM streamer_v st WHERE st.twitch_id = c.twitch_id))) FROM cur c, changed ch",
+          "rawSql": "SELECT to_char(h, 'DD/MM \"\u00e0\" HH24\"h\"') || ' : ' || replace(replace(to_char(g, 'FM999,999,999'), ',', ' '), '.', ',') || ' \u20ac' FROM (  SELECT date_trunc('hour', s.ts AT TIME ZONE 'Europe/Paris') AS h, sum(s.gain) AS g FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE NOT st.derived AND s.twitch_id IN (${streamer:sqlstring})  AND $__timeFilter(s.ts) AND s.gain IS NOT NULL GROUP BY 1 ORDER BY 2 DESC LIMIT 1) x",
           "format": "table",
           "refId": "A"
         }
@@ -732,9 +714,7 @@
           "color": {
             "mode": "fixed",
             "fixedColor": "orange"
-          },
-          "unit": "dtdhms",
-          "decimals": 0
+          }
         },
         "overrides": []
       },
@@ -743,7 +723,7 @@
           "calcs": [
             "lastNotNull"
           ],
-          "fields": "",
+          "fields": "/.*/",
           "values": false
         },
         "colorMode": "value",
@@ -751,7 +731,7 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Depuis combien de temps le streamer affich\u00e9 est dans son \u00e9tat actuel (live ou hors ligne) avec le jeu actuel."
+      "description": "L'heure (heure de Paris) o\u00f9 la cagnotte du streamer a le plus progress\u00e9, dans la plage de temps s\u00e9lectionn\u00e9e."
     },
     {
       "id": 12,
@@ -856,7 +836,7 @@
         "textMode": "value_and_name",
         "justifyMode": "center"
       },
-      "description": "Combien il manque pour d\u00e9passer le streamer juste devant au classement des dons, au dernier relev\u00e9.",
+      "description": "Combien il manque pour d\u00e9passer le streamer juste devant au classement des dons, \u00e0 la fin de l'\u00e9v\u00e9nement.",
       "transformations": [
         {
           "id": "rowsToFields",
@@ -926,7 +906,7 @@
         "textMode": "value_and_name",
         "justifyMode": "center"
       },
-      "description": "Avance sur le streamer juste derri\u00e8re au classement des dons, au dernier relev\u00e9.",
+      "description": "Avance sur le streamer juste derri\u00e8re au classement des dons, \u00e0 la fin de l'\u00e9v\u00e9nement.",
       "transformations": [
         {
           "id": "rowsToFields",
