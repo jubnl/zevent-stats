@@ -265,7 +265,7 @@
         "textMode": "value",
         "justifyMode": "center"
       },
-      "description": "Tous les dons qui n'ont pas pu \u00eatre rattach\u00e9s \u00e0 un streamer : le total de l'\u00e9v\u00e9nement moins la somme des compteurs des streamers. On y trouve les dons faits sans choisir de streamer (la page d'\u00e9quipe Streamlabs Charity sans membre), les billets du concert de jeudi, tous les dons de la boutique, etc. La ligne d\u00e9riv\u00e9e \"Cagnotte sp\u00e9ciale du Vieux Monsieur\" est exclue de la somme des streamers : depuis le 5 sept. \u00e0 01:08 UTC, elle refl\u00e8te le compteur de Domingo, qui est d\u00e9j\u00e0 compt\u00e9 une fois."
+      "description": "Tous les dons qui n'ont pas pu \u00eatre rattach\u00e9s \u00e0 un streamer : le total de l'\u00e9v\u00e9nement moins la somme des compteurs des streamers. On y trouve les dons faits sans choisir de streamer (la page d'\u00e9quipe Streamlabs Charity sans membre), les billets du concert de jeudi, tous les dons de la boutique, etc."
     },
     {
       "id": 4,

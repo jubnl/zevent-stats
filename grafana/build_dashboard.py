@@ -156,9 +156,7 @@ def gain_expr(col):
 MIRROR_NOTE = (
     "Tous les dons qui n'ont pas pu être rattachés à un streamer : le total de l'événement moins la somme des "
     "compteurs des streamers. On y trouve les dons faits sans choisir de streamer (la page d'équipe Streamlabs "
-    "Charity sans membre), les billets du concert de jeudi, tous les dons de la boutique, etc. La ligne dérivée "
-    "\"Cagnotte spéciale du Vieux Monsieur\" est exclue de la somme des streamers : depuis le 5 sept. à 01:08 UTC, elle "
-    "reflète le compteur de Domingo, qui est déjà compté une fois."
+    "Charity sans membre), les billets du concert de jeudi, tous les dons de la boutique, etc."
 )
 
 
