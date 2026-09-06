@@ -1,0 +1,190 @@
+{
+  "uid": "zevent-viewers-public",
+  "title": "ZEVENT viewers",
+  "tags": [
+    "zevent"
+  ],
+  "timezone": "browser",
+  "editable": false,
+  "graphTooltip": 1,
+  "refresh": "30s",
+  "timepicker": {
+    "hidden": false,
+    "refresh_intervals": [
+      "15s",
+      "30s"
+    ]
+  },
+  "time": {
+    "from": "2026-09-03T17:01:00.000Z",
+    "to": "now"
+  },
+  "schemaVersion": 39,
+  "version": 1,
+  "templating": {
+    "list": [
+      {
+        "name": "location",
+        "label": "Lieu",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "zevent-pg"
+        },
+        "query": "SELECT CASE location WHEN 'LAN' THEN 'Sur place (LAN)' ELSE '\u00c0 distance (online)' END AS __text, location AS __value FROM streamer_v WHERE location IS NOT NULL GROUP BY location ORDER BY location",
+        "definition": "SELECT CASE location WHEN 'LAN' THEN 'Sur place (LAN)' ELSE '\u00c0 distance (online)' END AS __text, location AS __value FROM streamer_v WHERE location IS NOT NULL GROUP BY location ORDER BY location",
+        "multi": true,
+        "includeAll": true,
+        "refresh": 1,
+        "sort": 0,
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "allValue": ".*"
+      },
+      {
+        "name": "streamer",
+        "label": "Streamer",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "zevent-pg"
+        },
+        "query": "SELECT display AS __text, twitch_id AS __value FROM streamer_v st WHERE coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY lower(display)",
+        "definition": "SELECT display AS __text, twitch_id AS __value FROM streamer_v st WHERE coalesce(st.location, '') ~ '^(${location:regex})$' ORDER BY lower(display)",
+        "multi": true,
+        "includeAll": true,
+        "refresh": 1,
+        "sort": 0,
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        }
+      }
+    ]
+  },
+  "links": [
+    {
+      "type": "link",
+      "title": "Stats principales",
+      "url": "/d/zevent-public?kiosk=1",
+      "icon": "dashboard",
+      "keepTime": true,
+      "includeVars": false,
+      "targetBlank": false,
+      "asDropdown": false,
+      "tags": [],
+      "tooltip": ""
+    },
+    {
+      "type": "link",
+      "title": "Timeline live",
+      "url": "/d/zevent-live-public?kiosk=1",
+      "icon": "dashboard",
+      "keepTime": true,
+      "includeVars": false,
+      "targetBlank": false,
+      "asDropdown": false,
+      "tags": [],
+      "tooltip": ""
+    },
+    {
+      "type": "link",
+      "title": "Analyses",
+      "url": "/d/zevent-insights-public?kiosk=1",
+      "icon": "dashboard",
+      "keepTime": true,
+      "includeVars": false,
+      "targetBlank": false,
+      "asDropdown": false,
+      "tags": [],
+      "tooltip": ""
+    },
+    {
+      "type": "link",
+      "title": "Streamer",
+      "url": "/d/zevent-streamer-public?kiosk=1",
+      "icon": "dashboard",
+      "keepTime": true,
+      "includeVars": false,
+      "targetBlank": false,
+      "asDropdown": false,
+      "tags": [],
+      "tooltip": ""
+    }
+  ],
+  "annotations": {
+    "list": []
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Viewers de chaque streamer au fil du temps ($location, $streamer)",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 30
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT $__timeGroupAlias(s.ts, $__interval), st.display AS metric, sum(s.viewers)::float / count(DISTINCT s.ts) AS value FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(s.ts) AND NOT st.derived AND s.twitch_id IN ($streamer) AND coalesce(st.location, '') ~ '^(${location:regex})$' GROUP BY 1, 2 ORDER BY 1",
+          "format": "time_series",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 60,
+            "showPoints": "auto",
+            "pointSize": 4,
+            "spanNulls": true,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            }
+          },
+          "unit": "sishort"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "showLegend": false,
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "desc"
+        }
+      },
+      "interval": "15m",
+      "description": "Les viewers de chaque streamer, empil\u00e9s : le haut de la pile est le total des viewers des streamers correspondant aux filtres Lieu et Streamer. Survolez une bande pour voir le streamer. Chaque point est la moyenne sur l'intervalle (15 minutes au moins)."
+    }
+  ]
+}

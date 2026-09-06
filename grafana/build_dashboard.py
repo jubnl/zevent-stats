@@ -7,6 +7,7 @@ each has buttons to the others:
   zevent-insights-public.json  ZEVENT insights: milestones and pace, notable moments, patterns, on site vs
                                remote, games, donations not tied to a streamer. Location filter
   zevent-streamer-public.json  ZEVENT streamer: one or a few streamers in detail; opens on the current leader
+  zevent-viewers-public.json   ZEVENT viewers: the viewers of every streamer stacked over time
 The "-public" uid suffix is kept because the URLs are published (the proxy redirects / to /d/zevent-public).
 """
 import copy
@@ -1198,6 +1199,7 @@ DASHBOARDS = [  # (uid, button title)
     ("zevent-live-public", "Timeline live"),
     ("zevent-insights-public", "Analyses"),
     ("zevent-streamer-public", "Streamer"),
+    ("zevent-viewers-public", "Viewers"),
 ]
 
 
@@ -1352,6 +1354,27 @@ def live_panels(loc, scope):
 
 
 # ---------------------------------------------------------------------------------------------------
+# ZEVENT viewers: one chart, the viewers of every streamer stacked over time. Rows are bucketed by the
+# chart interval (15 minutes at least: ~340 streamers x 300 buckets is what a browser stacks comfortably)
+# and each bucket holds the average of the per-minute counts, so the top of the stack is the total viewer
+# count. The datasource orders the series by name whatever the query's order, so the stack is alphabetical
+# bottom to top; the legend is off (hover a band for the name), and the Location and Streamer filters apply.
+def viewers_panels():
+    reset_ids()
+    return [
+        ts("Viewers de chaque streamer au fil du temps ($location, $streamer)",
+           "SELECT $__timeGroupAlias(s.ts, $__interval), st.display AS metric, sum(s.viewers)::float / count(DISTINCT s.ts) AS value "
+           "FROM streamer_sample_v s JOIN streamer_v st USING (twitch_id) "
+           "WHERE $__timeFilter(s.ts) AND NOT st.derived AND s.twitch_id IN ($streamer) AND " + LOC + " "
+           "GROUP BY 1, 2 ORDER BY 1",
+           0, 0, w=24, h=30, unit="sishort", stack=True, legend=False, min_interval="15m",
+           description="Les viewers de chaque streamer, empilés : le haut de la pile est le total des viewers des streamers "
+                       "correspondant aux filtres Lieu et Streamer. Survolez une bande pour voir le streamer. Chaque point "
+                       "est la moyenne sur l'intervalle (15 minutes au moins)."),
+    ]
+
+
+# ---------------------------------------------------------------------------------------------------
 here = Path(__file__).parent
 
 
@@ -1368,6 +1391,7 @@ write(dashboard_base("zevent-public", "ZEVENT", [LOCATION_VAR, streamer_var(LOC)
 write(dashboard_base("zevent-live-public", "ZEVENT live", [LOCATION_VAR_LAN, streamer_var(LOC), ZEVENT_ONLY_VAR],
                      live_panels(LOC, "$location")))
 write(dashboard_base("zevent-insights-public", "ZEVENT analyses", [LOCATION_VAR], insights_panels()))
+write(dashboard_base("zevent-viewers-public", "ZEVENT viewers", [LOCATION_VAR, streamer_var(LOC)], viewers_panels()))
 def single_select(dash, name):
     """Rewrite IN ($name) as IN (${name:sqlstring}) in every query: a single-select value is inserted unquoted."""
     a, b = f"IN (${name})", f"IN (${{{name}:sqlstring}})"
