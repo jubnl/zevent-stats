@@ -144,7 +144,7 @@
         "filter": {
           "exclude": false,
           "ids": [
-            12
+            11
           ]
         }
       }
@@ -154,7 +154,7 @@
     {
       "id": 1,
       "type": "stat",
-      "title": "Total des dons",
+      "title": "Total final de l'\u00e9v\u00e9nement",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "zevent-pg"
@@ -162,7 +162,7 @@
       "gridPos": {
         "x": 0,
         "y": 0,
-        "w": 6,
+        "w": 8,
         "h": 4
       },
       "targets": [
@@ -172,7 +172,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "SELECT donation_total FROM snapshot ORDER BY ts DESC LIMIT 1",
+          "rawSql": "SELECT replace(replace(to_char(donation_total, 'FM999,999,999.00'), ',', ' '), '.', ',') || ' \u20ac' FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz ORDER BY ts DESC LIMIT 1",
           "format": "table",
           "refId": "A"
         }
@@ -182,9 +182,7 @@
           "color": {
             "mode": "fixed",
             "fixedColor": "green"
-          },
-          "unit": "currencyEUR",
-          "decimals": 2
+          }
         },
         "overrides": []
       },
@@ -193,58 +191,7 @@
           "calcs": [
             "lastNotNull"
           ],
-          "fields": "",
-          "values": false
-        },
-        "colorMode": "value",
-        "graphMode": "none",
-        "textMode": "value",
-        "justifyMode": "center"
-      }
-    },
-    {
-      "id": 2,
-      "type": "stat",
-      "title": "Total final de l'\u00e9v\u00e9nement",
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "zevent-pg"
-      },
-      "gridPos": {
-        "x": 6,
-        "y": 0,
-        "w": 6,
-        "h": 4
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "zevent-pg"
-          },
-          "rawQuery": true,
-          "rawSql": "SELECT donation_total FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz ORDER BY ts DESC LIMIT 1",
-          "format": "table",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "orange"
-          },
-          "unit": "currencyEUR",
-          "decimals": 2
-        },
-        "overrides": []
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
+          "fields": "/.*/",
           "values": false
         },
         "colorMode": "value",
@@ -255,7 +202,7 @@
       "description": "Total de l'\u00e9v\u00e9nement au dernier relev\u00e9 avant la fin des dons, le lundi 7 septembre \u00e0 01h11 (heure de Paris)."
     },
     {
-      "id": 3,
+      "id": 2,
       "type": "stat",
       "title": "Dons sans streamer",
       "datasource": {
@@ -263,9 +210,9 @@
         "uid": "zevent-pg"
       },
       "gridPos": {
-        "x": 12,
+        "x": 8,
         "y": 0,
-        "w": 6,
+        "w": 8,
         "h": 4
       },
       "targets": [
@@ -307,7 +254,7 @@
       "description": "Tous les dons qui n'ont pas pu \u00eatre rattach\u00e9s \u00e0 un streamer : le total de l'\u00e9v\u00e9nement moins la somme des compteurs des streamers. On y trouve les dons faits sans choisir de streamer (la page d'\u00e9quipe Streamlabs Charity sans membre), les billets du concert de jeudi, tous les dons de la boutique, etc."
     },
     {
-      "id": 4,
+      "id": 3,
       "type": "stat",
       "title": "Il manque pour doubler 2025",
       "datasource": {
@@ -315,9 +262,9 @@
         "uid": "zevent-pg"
       },
       "gridPos": {
-        "x": 18,
+        "x": 16,
         "y": 0,
-        "w": 6,
+        "w": 8,
         "h": 4
       },
       "targets": [
@@ -384,7 +331,7 @@
       "description": "\u00c9cart entre le total actuel et le double du total de 2025, soit 33 317 320 \u20ac."
     },
     {
-      "id": 5,
+      "id": 4,
       "type": "stat",
       "title": "Viewers actuels",
       "datasource": {
@@ -435,7 +382,7 @@
       "description": "Viewers des streamers correspondant aux filtres Lieu et Streamer, au dernier relev\u00e9."
     },
     {
-      "id": 6,
+      "id": 5,
       "type": "stat",
       "title": "Pic de viewers",
       "datasource": {
@@ -486,7 +433,7 @@
       "description": "Plus grand nombre de viewers cumul\u00e9s des streamers correspondant aux filtres Lieu et Streamer, dans la plage de temps s\u00e9lectionn\u00e9e."
     },
     {
-      "id": 7,
+      "id": 6,
       "type": "stat",
       "title": "Streamers en live",
       "datasource": {
@@ -535,7 +482,7 @@
       }
     },
     {
-      "id": 8,
+      "id": 7,
       "type": "stat",
       "title": "Heures visionn\u00e9es",
       "datasource": {
@@ -587,7 +534,7 @@
       "description": "La taille de l'audience dans le temps, en heures visionn\u00e9es par viewer : le nombre de viewers des streamers correspondant aux filtres Lieu et Streamer, additionn\u00e9 minute par minute sur la p\u00e9riode s\u00e9lectionn\u00e9e (chaque relev\u00e9 compte le temps \u00e9coul\u00e9 depuis le pr\u00e9c\u00e9dent, plafonn\u00e9 \u00e0 5 minutes pour que les trous dans les donn\u00e9es ne comptent pas). Un viewer qui regarde pendant une heure vaut une heure visionn\u00e9e par un viewer ; 1 000 viewers pendant 2 heures font 2 000 heures visionn\u00e9es par viewer."
     },
     {
-      "id": 9,
+      "id": 8,
       "type": "stat",
       "title": "Heures de stream",
       "datasource": {
@@ -639,7 +586,7 @@
       "description": "Temps total en live, additionn\u00e9 sur les streamers correspondant aux filtres Lieu et Streamer, dans la plage de temps s\u00e9lectionn\u00e9e. Chaque relev\u00e9 en live compte la minute \u00e9coul\u00e9e depuis le relev\u00e9 pr\u00e9c\u00e9dent (plafonn\u00e9e \u00e0 5 minutes, pour que les trous dans les donn\u00e9es ne comptent pas)."
     },
     {
-      "id": 10,
+      "id": 9,
       "type": "stat",
       "title": "Dons par heure visionn\u00e9e par viewer",
       "datasource": {
@@ -691,7 +638,7 @@
       "description": "Ce que la communaut\u00e9 donne par rapport \u00e0 sa taille : les dons gagn\u00e9s par les streamers correspondant aux filtres Lieu et Streamer sur la p\u00e9riode s\u00e9lectionn\u00e9e, divis\u00e9s par leurs heures visionn\u00e9es par viewer (le nombre de viewers additionn\u00e9 minute par minute sur la m\u00eame p\u00e9riode, en heures). Un viewer qui regarde pendant une heure vaut une heure visionn\u00e9e par un viewer : 5 \u20ac signifie 5 \u20ac r\u00e9colt\u00e9s pour chaque heure regard\u00e9e par un viewer. Les dons sans streamer (billets, boutique, anonymes) ne sont pas compt\u00e9s."
     },
     {
-      "id": 11,
+      "id": 10,
       "type": "row",
       "title": "Global",
       "collapsed": false,
@@ -704,7 +651,7 @@
       "panels": []
     },
     {
-      "id": 12,
+      "id": 11,
       "type": "timeseries",
       "title": "Total des dons au fil du temps",
       "datasource": {
@@ -795,7 +742,7 @@
       "description": "En pointill\u00e9s, le total final des \u00e9ditions pr\u00e9c\u00e9dentes (depuis 2019)."
     },
     {
-      "id": 13,
+      "id": 12,
       "type": "timeseries",
       "title": "Viewers au fil du temps",
       "datasource": {
@@ -847,7 +794,7 @@
       }
     },
     {
-      "id": 14,
+      "id": 13,
       "type": "timeseries",
       "title": "Dons par intervalle",
       "datasource": {
@@ -901,7 +848,7 @@
       "interval": "5m"
     },
     {
-      "id": 15,
+      "id": 14,
       "type": "timeseries",
       "title": "Streamers en live",
       "datasource": {
@@ -953,7 +900,7 @@
       }
     },
     {
-      "id": 16,
+      "id": 15,
       "type": "row",
       "title": "Classements (dernier relev\u00e9, $location)",
       "collapsed": false,
@@ -966,7 +913,7 @@
       "panels": []
     },
     {
-      "id": 17,
+      "id": 16,
       "type": "table",
       "title": "Top par dons",
       "datasource": {
@@ -1094,7 +1041,7 @@
       }
     },
     {
-      "id": 18,
+      "id": 17,
       "type": "table",
       "title": "Top par viewers",
       "datasource": {
@@ -1222,7 +1169,7 @@
       }
     },
     {
-      "id": 19,
+      "id": 18,
       "type": "table",
       "title": "Top des gains sur la p\u00e9riode",
       "datasource": {
@@ -1366,7 +1313,7 @@
       }
     },
     {
-      "id": 20,
+      "id": 19,
       "type": "table",
       "title": "Top des heures de stream sur la p\u00e9riode",
       "datasource": {
@@ -1494,7 +1441,7 @@
       }
     },
     {
-      "id": 21,
+      "id": 20,
       "type": "table",
       "title": "Top des pics de viewers sur la p\u00e9riode",
       "datasource": {
@@ -1607,7 +1554,7 @@
       "description": "Plus grand nombre de viewers atteint par chaque streamer dans la plage de temps s\u00e9lectionn\u00e9e, et le moment o\u00f9 il l'a atteint. Suit les filtres Lieu et Streamer."
     },
     {
-      "id": 22,
+      "id": 21,
       "type": "table",
       "title": "Top des viewers moyens en live sur la p\u00e9riode",
       "datasource": {

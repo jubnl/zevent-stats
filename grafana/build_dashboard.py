@@ -44,7 +44,7 @@ def panel(ptype, title, sql, x, y, w, h, fmt="time_series", **extra):
 
 
 def stat(title, sql, x, w=6, y=0, unit=None, decimals=None, color="green", text_mode="value", description=None,
-         thresholds=None, transformations=None, no_value=None, h=4, mappings=None):
+         thresholds=None, transformations=None, no_value=None, h=4, mappings=None, text_field=False):
     """`thresholds` colours the value by steps [(from_value_or_None, colour), ...] instead of a fixed colour;
     `mappings` is a list of Grafana value mappings (e.g. a range shown as text)."""
     d = {"color": {"mode": "fixed", "fixedColor": color}}
@@ -66,7 +66,8 @@ def stat(title, sql, x, w=6, y=0, unit=None, decimals=None, color="green", text_
         "stat", title, sql, x, y, w, h, fmt="table",
         fieldConfig={"defaults": d},
         options={
-            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": False},
+            # fields "" = numeric fields only; a stat showing a text column needs "/.*/"
+            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "/.*/" if text_field else "", "values": False},
             "colorMode": "value", "graphMode": "none", "textMode": text_mode, "justifyMode": "center",
         },
         **extra,
@@ -435,25 +436,25 @@ ORG = "st.login NOT IN ('zevent', 'zeventplays')"
 def main_panels():
     reset_ids()
     return [
-        stat("Total des dons", "SELECT donation_total FROM snapshot ORDER BY ts DESC LIMIT 1", 0, w=6,
-             unit="currencyEUR", decimals=2),
         # replaced "Dons, dernière heure" once the event ended: the total at the end of the fixed time range,
         # frozen whatever the API does afterwards
+        # formatted in SQL ("32 891 874,15 €"): Grafana's currency unit would abbreviate it to €32.89M
         stat("Total final de l'événement",
-             f"SELECT donation_total FROM snapshot WHERE ts <= '{TIME_RANGE['to']}'::timestamptz ORDER BY ts DESC LIMIT 1", 6,
-             w=6, unit="currencyEUR", decimals=2, color="orange",
+             "SELECT replace(replace(to_char(donation_total, 'FM999,999,999.00'), ',', ' '), '.', ',') || ' €' "
+             f"FROM snapshot WHERE ts <= '{TIME_RANGE['to']}'::timestamptz ORDER BY ts DESC LIMIT 1", 0,
+             w=8, color="green", text_field=True,
              description="Total de l'événement au dernier relevé avant la fin des dons, le lundi 7 septembre à 01h11 "
                          "(heure de Paris)."),
         stat("Dons sans streamer",
              "SELECT sn.donation_total - sum(s.donation_total) FROM snapshot sn JOIN streamer_sample_v s USING (ts) "
              "WHERE NOT s.derived AND sn.ts = (SELECT max(ts) FROM snapshot) GROUP BY sn.donation_total",
-             12, w=6, unit="currencyEUR", decimals=2, color="yellow", description=MIRROR_NOTE),
+             8, w=8, unit="currencyEUR", decimals=2, color="yellow", description=MIRROR_NOTE),
         # replaced the "Cagnotte spéciale du Vieux Monsieur" tile on 2026-09-06 once the API corrected
         # mistermv's counter (db/views.sql): the derived row no longer exists at the latest snapshot.
         # the record itself fell during the night of the 6th; the target everyone talks about is twice 2025
         stat(f"Il manque pour doubler {RECORD_YEAR}",
              f"SELECT {2 * RECORD} - donation_total FROM snapshot ORDER BY ts DESC LIMIT 1",
-             18, w=6, unit="currencyEUR", decimals=2, thresholds=[(None, "green"), (1, "red")],
+             16, w=8, unit="currencyEUR", decimals=2, thresholds=[(None, "green"), (1, "red")],
              mappings=[{"type": "range", "options": {"from": -1e12, "to": 0, "result": {"text": "Objectif atteint !", "color": "green"}}}],
              description=f"Écart entre le total actuel et le double du total de {RECORD_YEAR}, soit {2 * RECORD:,} €.".replace(f"{2 * RECORD:,}", f"{2 * RECORD:,}".replace(",", " "))),
         # Second and third tile rows: audience and rate tiles, three per row. Viewers of the streamers
