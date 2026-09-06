@@ -157,7 +157,7 @@ MIRROR_NOTE = (
     "Tous les dons qui n'ont pas pu être rattachés à un streamer : le total de l'événement moins la somme des "
     "compteurs des streamers. On y trouve les dons faits sans choisir de streamer (la page d'équipe Streamlabs "
     "Charity sans membre), les billets du concert de jeudi, tous les dons de la boutique, etc. La ligne dérivée "
-    "\"dons spéciaux du vieux monsieur\" est exclue de la somme des streamers : depuis le 5 sept. à 01:08 UTC, elle "
+    "\"Cagnotte spéciale du Vieux Monsieur\" est exclue de la somme des streamers : depuis le 5 sept. à 01:08 UTC, elle "
     "reflète le compteur de Domingo, qui est déjà compté une fois."
 )
 
@@ -329,7 +329,7 @@ def main_panels():
              "SELECT sn.donation_total - sum(s.donation_total) FROM snapshot sn JOIN streamer_sample_v s USING (ts) "
              "WHERE NOT s.derived AND sn.ts = (SELECT max(ts) FROM snapshot) GROUP BY sn.donation_total",
              12, w=6, unit="currencyEUR", decimals=2, color="yellow", description=MIRROR_NOTE),
-        stat("Dons spéciaux du Vieux Monsieur",
+        stat("Cagnotte spéciale du Vieux Monsieur",
              "SELECT coalesce(sum(donation_total), 0) FROM streamer_sample_v "
              "WHERE derived AND ts = (SELECT max(ts) FROM snapshot)",
              18, w=6, unit="currencyEUR", decimals=2, color="red",
@@ -537,7 +537,7 @@ def insights_panels():
         row("Dons sans streamer", 62),
         ts("Au fil du temps (total moins tous les streamers)",
            'SELECT sn.ts AS time, sn.donation_total - sum(s.donation_total) FILTER (WHERE NOT s.derived) AS "Sans streamer", '
-           'coalesce(sum(s.donation_total) FILTER (WHERE s.derived), 0) AS "dons spéciaux du vieux monsieur" '
+           'coalesce(sum(s.donation_total) FILTER (WHERE s.derived), 0) AS "Cagnotte spéciale du Vieux Monsieur" '
            'FROM snapshot sn JOIN streamer_sample_v s USING (ts) '
            'WHERE $__timeFilter(sn.ts) GROUP BY sn.ts, sn.donation_total ORDER BY 1',
            0, 63, unit="currencyEUR", description=MIRROR_NOTE),
