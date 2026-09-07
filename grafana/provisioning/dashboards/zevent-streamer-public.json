@@ -1300,7 +1300,7 @@
             "uid": "zevent-pg"
           },
           "rawQuery": true,
-          "rawSql": "WITH g AS (SELECT g.*, CASE g.category   WHEN 'donation' THEN (SELECT min(s.ts) FROM streamer_sample_v s WHERE s.twitch_id = g.twitch_id AND s.donation_total >= g.amount)   WHEN 'global' THEN (SELECT min(ts) FROM snapshot WHERE donation_total >= g.amount) END AS reached_at   FROM donation_goal g WHERE g.twitch_id IN (${streamer:sqlstring})) SELECT replace(replace(regexp_replace(to_char(g.amount, 'FM999,999,999.00'), '\\.00$', ''), ',', ' '), '.', ',') || ' \u20ac' AS \"Montant\", g.name AS \"Donation goal\", CASE g.category WHEN 'donation' THEN 'Palier' WHEN 'global' THEN 'Cagnotte globale' WHEN 'donation_equal' THEN 'Don exact' WHEN 'donation_more_than' THEN 'Don \u2265 montant' WHEN 'donation_largest' THEN 'Plus gros don' WHEN 'recurent' THEN 'R\u00e9current' WHEN 'incentive' THEN 'Incentive' ELSE g.category END AS \"Type\", CASE WHEN g.reached THEN 'Atteint' ELSE 'Non atteint' END AS \"Statut\", to_char(g.reached_at AT TIME ZONE 'Europe/Paris', 'DD/MM \"\u00e0\" HH24\"h\"MI') AS \"Atteint le\", CASE cardinality(g.links) WHEN 0 THEN NULL WHEN 1 THEN 'Voir' ELSE 'Voir (' || cardinality(g.links) || ')' END AS \"Clip\", g.links[1] AS clip_url FROM g ORDER BY g.amount, g.position",
+          "rawSql": "WITH g AS (SELECT g.*, CASE g.category   WHEN 'donation' THEN (SELECT min(s.ts) FROM streamer_sample_v s WHERE s.twitch_id = g.twitch_id AND s.donation_total >= g.amount)   WHEN 'global' THEN (SELECT min(ts) FROM snapshot WHERE donation_total >= g.amount) END AS reached_at   FROM donation_goal g WHERE g.twitch_id IN (${streamer:sqlstring})) SELECT replace(replace(regexp_replace(to_char(g.amount, 'FM999,999,999.00'), '\\.00$', ''), ',', ' '), '.', ',') || ' \u20ac' AS \"Montant\", g.name AS \"Donation goal\", CASE g.category WHEN 'donation' THEN 'Palier' WHEN 'global' THEN 'Cagnotte globale' WHEN 'donation_equal' THEN 'Don exact' WHEN 'donation_more_than' THEN 'Don \u2265 montant' WHEN 'donation_largest' THEN 'Plus gros don' WHEN 'recurent' THEN 'R\u00e9current' WHEN 'incentive' THEN 'Incentive' ELSE g.category END AS \"Type\", CASE WHEN g.reached THEN 'Atteint' ELSE 'Non atteint' END AS \"Statut\", to_char(g.reached_at AT TIME ZONE 'Europe/Paris', 'DD/MM \"\u00e0\" HH24\"h\"MI') AS \"Atteint le\", CASE WHEN g.links[1] ~ 'twitch\\.tv/.+/clip/' THEN 'Twitch' WHEN g.links[1] ~ 'twitch\\.tv/videos/' THEN 'VOD' WHEN g.links[1] ~ 'youtu' THEN 'YouTube' WHEN g.links[1] ~ '\\.(png|jpe?g|gif|webp)' THEN 'Image' WHEN g.links[1] IS NOT NULL THEN 'Lien' END AS \"Clip\", g.links[1] AS clip_url_1, CASE WHEN g.links[2] ~ 'twitch\\.tv/.+/clip/' THEN 'Twitch' WHEN g.links[2] ~ 'twitch\\.tv/videos/' THEN 'VOD' WHEN g.links[2] ~ 'youtu' THEN 'YouTube' WHEN g.links[2] ~ '\\.(png|jpe?g|gif|webp)' THEN 'Image' WHEN g.links[2] IS NOT NULL THEN 'Lien' END AS \"Clip 2\", g.links[2] AS clip_url_2, CASE WHEN g.links[3] ~ 'twitch\\.tv/.+/clip/' THEN 'Twitch' WHEN g.links[3] ~ 'twitch\\.tv/videos/' THEN 'VOD' WHEN g.links[3] ~ 'youtu' THEN 'YouTube' WHEN g.links[3] ~ '\\.(png|jpe?g|gif|webp)' THEN 'Image' WHEN g.links[3] IS NOT NULL THEN 'Lien' END AS \"Clip 3\", g.links[3] AS clip_url_3, CASE WHEN g.links[4] ~ 'twitch\\.tv/.+/clip/' THEN 'Twitch' WHEN g.links[4] ~ 'twitch\\.tv/videos/' THEN 'VOD' WHEN g.links[4] ~ 'youtu' THEN 'YouTube' WHEN g.links[4] ~ '\\.(png|jpe?g|gif|webp)' THEN 'Image' WHEN g.links[4] IS NOT NULL THEN 'Lien' END AS \"Clip 4\", g.links[4] AS clip_url_4, CASE WHEN g.links[5] ~ 'twitch\\.tv/.+/clip/' THEN 'Twitch' WHEN g.links[5] ~ 'twitch\\.tv/videos/' THEN 'VOD' WHEN g.links[5] ~ 'youtu' THEN 'YouTube' WHEN g.links[5] ~ '\\.(png|jpe?g|gif|webp)' THEN 'Image' WHEN g.links[5] IS NOT NULL THEN 'Lien' END AS \"Clip 5\", g.links[5] AS clip_url_5 FROM g ORDER BY g.amount, g.position",
           "format": "table",
           "refId": "A"
         }
@@ -1370,8 +1370,8 @@
                 "id": "links",
                 "value": [
                   {
-                    "title": "Ouvrir le clip",
-                    "url": "${__data.fields.clip_url}",
+                    "title": "Ouvrir",
+                    "url": "${__data.fields.clip_url_1}",
                     "targetBlank": true
                   }
                 ]
@@ -1381,7 +1381,95 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "clip_url"
+              "options": "Clip 2"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Ouvrir",
+                    "url": "${__data.fields.clip_url_2}",
+                    "targetBlank": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Clip 3"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Ouvrir",
+                    "url": "${__data.fields.clip_url_3}",
+                    "targetBlank": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Clip 4"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Ouvrir",
+                    "url": "${__data.fields.clip_url_4}",
+                    "targetBlank": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Clip 5"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Ouvrir",
+                    "url": "${__data.fields.clip_url_5}",
+                    "targetBlank": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "^clip_url_\\d+$"
             },
             "properties": [
               {

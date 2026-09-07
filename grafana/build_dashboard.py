@@ -1129,6 +1129,21 @@ GOALS_NOTE = ("Donation goals tels qu'affichés sur zevent.gdoc.fr (evenmorestat
               "globale pour un goal global) dépasse le montant, heure de Paris.")
 
 
+# Columns for a goal's proof links (the most seen in 2026 is 5; a goal with more only shows the first ones).
+MAX_GOAL_LINKS = 5
+
+
+def clip_col(i):
+    return "Clip" if i == 1 else f"Clip {i}"
+
+
+def link_title(expr):
+    """What a proof link points at, from its URL: the text of the cell that opens it."""
+    return (f"CASE WHEN {expr} ~ 'twitch\\.tv/.+/clip/' THEN 'Twitch' WHEN {expr} ~ 'twitch\\.tv/videos/' THEN 'VOD' "
+            f"WHEN {expr} ~ 'youtu' THEN 'YouTube' WHEN {expr} ~ '\\.(png|jpe?g|gif|webp)' THEN 'Image' "
+            f"WHEN {expr} IS NOT NULL THEN 'Lien' END")
+
+
 def short(expr, n):
     return f"CASE WHEN length({expr}) > {n} THEN left({expr}, {n - 1}) || '…' ELSE {expr} END"
 
@@ -1161,20 +1176,23 @@ def goals_table(x, y):
         'g.name AS "Donation goal", ' + GOAL_TYPE + ' AS "Type", '
         "CASE WHEN g.reached THEN 'Atteint' ELSE 'Non atteint' END AS \"Statut\", "
         "to_char(g.reached_at AT TIME ZONE 'Europe/Paris', 'DD/MM \"à\" HH24\"h\"MI') AS \"Atteint le\", "
-        # proof links (clips, VODs): the first one opens from the Clip cell, the count says if there are more
-        "CASE cardinality(g.links) WHEN 0 THEN NULL WHEN 1 THEN 'Voir' ELSE 'Voir (' || cardinality(g.links) || ')' END AS \"Clip\", "
-        "g.links[1] AS clip_url "
-        "FROM g ORDER BY g.amount, g.position",
+        # proof links (clips, VODs, images): one column per slot, the visible cell says what the link is and
+        # opens it, the hidden clip_url_N column carries the URL. Several links on one cell are not an option:
+        # Grafana shows every configured link in the cell's menu, including the slots empty for that row.
+        + ", ".join(f"{link_title(f'g.links[{i}]')} AS \"{clip_col(i)}\", g.links[{i}] AS clip_url_{i}"
+                    for i in range(1, MAX_GOAL_LINKS + 1))
+        + " FROM g ORDER BY g.amount, g.position",
         x, y, w=24, h=16, description=GOALS_NOTE,
         overrides=[
             {"matcher": {"id": "byName", "options": "Montant"},
              "properties": [{"id": "custom.width", "value": 130}, {"id": "custom.align", "value": "right"}]},
             {"matcher": {"id": "byName", "options": "Type"}, "properties": [{"id": "custom.width", "value": 140}]},
             {"matcher": {"id": "byName", "options": "Atteint le"}, "properties": [{"id": "custom.width", "value": 130}]},
-            {"matcher": {"id": "byName", "options": "Clip"},
-             "properties": [{"id": "custom.width", "value": 90},
-                            {"id": "links", "value": [{"title": "Ouvrir le clip", "url": "${__data.fields.clip_url}", "targetBlank": True}]}]},
-            {"matcher": {"id": "byName", "options": "clip_url"}, "properties": [{"id": "custom.hidden", "value": True}]},
+            *[{"matcher": {"id": "byName", "options": clip_col(i)},
+               "properties": [{"id": "custom.width", "value": 90},
+                              {"id": "links", "value": [{"title": "Ouvrir", "url": "${__data.fields.clip_url_%d}" % i, "targetBlank": True}]}]}
+              for i in range(1, MAX_GOAL_LINKS + 1)],
+            {"matcher": {"id": "byRegexp", "options": "^clip_url_\\d+$"}, "properties": [{"id": "custom.hidden", "value": True}]},
             {"matcher": {"id": "byName", "options": "Donation goal"},
              "properties": [{"id": "custom.cellOptions", "value": {"type": "auto", "wrapText": True}}]},
             {"matcher": {"id": "byName", "options": "Statut"},
