@@ -1160,7 +1160,10 @@ def goals_table(x, y):
         GOALS_CTE + "SELECT replace(replace(regexp_replace(to_char(g.amount, 'FM999,999,999.00'), '\\.00$', ''), ',', ' '), '.', ',') || ' €' AS \"Montant\", "
         'g.name AS "Donation goal", ' + GOAL_TYPE + ' AS "Type", '
         "CASE WHEN g.reached THEN 'Atteint' ELSE 'Non atteint' END AS \"Statut\", "
-        "to_char(g.reached_at AT TIME ZONE 'Europe/Paris', 'DD/MM \"à\" HH24\"h\"MI') AS \"Atteint le\" "
+        "to_char(g.reached_at AT TIME ZONE 'Europe/Paris', 'DD/MM \"à\" HH24\"h\"MI') AS \"Atteint le\", "
+        # proof links (clips, VODs): the first one opens from the Clip cell, the count says if there are more
+        "CASE cardinality(g.links) WHEN 0 THEN NULL WHEN 1 THEN 'Voir' ELSE 'Voir (' || cardinality(g.links) || ')' END AS \"Clip\", "
+        "g.links[1] AS clip_url "
         "FROM g ORDER BY g.amount, g.position",
         x, y, w=24, h=16, description=GOALS_NOTE,
         overrides=[
@@ -1168,6 +1171,10 @@ def goals_table(x, y):
              "properties": [{"id": "custom.width", "value": 130}, {"id": "custom.align", "value": "right"}]},
             {"matcher": {"id": "byName", "options": "Type"}, "properties": [{"id": "custom.width", "value": 140}]},
             {"matcher": {"id": "byName", "options": "Atteint le"}, "properties": [{"id": "custom.width", "value": 130}]},
+            {"matcher": {"id": "byName", "options": "Clip"},
+             "properties": [{"id": "custom.width", "value": 90},
+                            {"id": "links", "value": [{"title": "Ouvrir le clip", "url": "${__data.fields.clip_url}", "targetBlank": True}]}]},
+            {"matcher": {"id": "byName", "options": "clip_url"}, "properties": [{"id": "custom.hidden", "value": True}]},
             {"matcher": {"id": "byName", "options": "Donation goal"},
              "properties": [{"id": "custom.cellOptions", "value": {"type": "auto", "wrapText": True}}]},
             {"matcher": {"id": "byName", "options": "Statut"},
