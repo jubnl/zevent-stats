@@ -18,8 +18,9 @@ services:
       retries: 10
     restart: unless-stopped
 
-  # Grafana: anonymous read-only, provisioned dashboards, fixed time range, 30s refresh.
-  # Published as zevent.jubnl.ch; the proxy redirects / to /d/zevent-public?kiosk.
+  # Grafana: anonymous read-only, provisioned dashboards, fixed time range (the event is over).
+  # Published as zevent.jubnl.ch through nginx below (host port 3030, what Traefik points at); Grafana
+  # itself is only reachable on the loopback port 3031 for debugging.
   grafana-public:
     image: grafana/grafana-oss:11.3.0
     environment:
@@ -40,12 +41,26 @@ services:
       - grafana-public-data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
     ports:
-      - "3030:3000"
+      - "127.0.0.1:3031:3000"
     depends_on:
       db:
         condition: service_healthy
     restart: unless-stopped
 
+  # Caching reverse proxy in front of Grafana (etc/nginx/zevent.conf): caches the POST /api/ds/query
+  # panel queries on disk, which Cloudflare cannot do. Takes the host port Traefik targets.
+  nginx:
+    image: nginx:1.27-alpine
+    volumes:
+      - ./etc/nginx/zevent.conf:/etc/nginx/conf.d/default.conf:ro
+      - nginx-cache:/var/cache/nginx
+    ports:
+      - "3030:3000"
+    depends_on:
+      - grafana-public
+    restart: unless-stopped
+
 volumes:
   pgdata:
   grafana-public-data:
+  nginx-cache:
