@@ -1097,12 +1097,7 @@ def streamer_panels():
            'SELECT $__timeGroupAlias(d.ts, $__interval), st.display AS metric, st.login AS login, sum(d.gain) AS value '
            'FROM streamer_sample_v d JOIN streamer_v st USING (twitch_id) '
            'WHERE $__timeFilter(d.ts) AND d.twitch_id IN ($streamer) AND d.gain IS NOT NULL GROUP BY 1, 2, 3 ORDER BY 1',
-           0, 29, unit="currencyEUR", bars=True, stack=True, min_interval="5m", streamer_links=True),
-        ts("Rank au classement des dons au fil du temps",
-           "SELECT r.ts AS time, st.display AS metric, st.login AS login, r.rank AS value "
-           "FROM streamer_sample_v r JOIN streamer_v st USING (twitch_id) "
-           "WHERE $__timeFilter(r.ts) AND r.twitch_id IN ($streamer) AND r.rank IS NOT NULL ORDER BY 1",
-           12, 29, unit="sishort", streamer_links=True, description="1 est la première place ; plus c'est bas, mieux c'est."),
+           0, 29, w=24, unit="currencyEUR", bars=True, stack=True, min_interval="5m", streamer_links=True),
         game_timeline(0, 38),
     ]
 

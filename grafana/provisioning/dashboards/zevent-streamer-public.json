@@ -967,7 +967,7 @@
       "gridPos": {
         "x": 0,
         "y": 29,
-        "w": 12,
+        "w": 24,
         "h": 9
       },
       "targets": [
@@ -1024,67 +1024,6 @@
     },
     {
       "id": 17,
-      "type": "timeseries",
-      "title": "Rank au classement des dons au fil du temps",
-      "datasource": {
-        "type": "grafana-postgresql-datasource",
-        "uid": "zevent-pg"
-      },
-      "gridPos": {
-        "x": 12,
-        "y": 29,
-        "w": 12,
-        "h": 9
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "grafana-postgresql-datasource",
-            "uid": "zevent-pg"
-          },
-          "rawQuery": true,
-          "rawSql": "SELECT r.ts AS time, st.display AS metric, st.login AS login, r.rank AS value FROM streamer_sample_v r JOIN streamer_v st USING (twitch_id) WHERE $__timeFilter(r.ts) AND r.twitch_id IN (${streamer:sqlstring}) AND r.rank IS NOT NULL ORDER BY 1",
-          "format": "time_series",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "lineWidth": 2,
-            "fillOpacity": 10,
-            "showPoints": "auto",
-            "pointSize": 4,
-            "spanNulls": true
-          },
-          "unit": "sishort",
-          "displayName": "${__field.labels.metric}",
-          "links": [
-            {
-              "title": "Ouvrir sur Twitch",
-              "url": "https://twitch.tv/${__field.labels.login}",
-              "targetBlank": true
-            }
-          ]
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": {
-          "showLegend": true,
-          "displayMode": "list",
-          "placement": "bottom",
-          "calcs": []
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "description": "1 est la premi\u00e8re place ; plus c'est bas, mieux c'est."
-    },
-    {
-      "id": 18,
       "type": "state-timeline",
       "title": "Jeux jou\u00e9s",
       "datasource": {
