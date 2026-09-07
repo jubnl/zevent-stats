@@ -110,4 +110,9 @@ def main() -> None:
         from .external import main as pull_external
         pull_external(sys.argv[2:])
         return
+    if sys.argv[1:2] == ["pull-goals"]:
+        # donation goals of every streamer -> raw-goals/donation_goals.json + db/donation_goals.sql
+        from .goals import main as pull_goals
+        pull_goals(sys.argv[2:])
+        return
     run(cfg)

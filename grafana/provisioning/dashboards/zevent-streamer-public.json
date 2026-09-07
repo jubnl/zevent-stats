@@ -201,7 +201,30 @@
     }
   ],
   "annotations": {
-    "list": []
+    "list": [
+      {
+        "name": "Donation goals",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "zevent-pg"
+        },
+        "enable": true,
+        "hide": false,
+        "iconColor": "yellow",
+        "target": {
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH g AS (SELECT g.*, CASE g.category   WHEN 'donation' THEN (SELECT min(s.ts) FROM streamer_sample_v s WHERE s.twitch_id = g.twitch_id AND s.donation_total >= g.amount)   WHEN 'global' THEN (SELECT min(ts) FROM snapshot WHERE donation_total >= g.amount) END AS reached_at   FROM donation_goal g WHERE g.twitch_id IN (${streamer:sqlstring})) SELECT g.reached_at AS time, replace(replace(to_char(g.amount, 'FM999,999,999'), ',', ' '), '.', ',') || ' \u20ac' || ' : ' || CASE WHEN length(g.name) > 80 THEN left(g.name, 79) || '\u2026' ELSE g.name END AS text FROM g WHERE g.reached AND g.reached_at IS NOT NULL AND $__timeFilter(g.reached_at) ORDER BY 1",
+          "refId": "Anno"
+        },
+        "filter": {
+          "exclude": false,
+          "ids": [
+            17
+          ]
+        }
+      }
+    ]
   },
   "panels": [
     {
@@ -838,6 +861,158 @@
     },
     {
       "id": 14,
+      "type": "stat",
+      "title": "Donation goals atteints",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 20,
+        "w": 8,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "WITH g AS (SELECT g.*, CASE g.category   WHEN 'donation' THEN (SELECT min(s.ts) FROM streamer_sample_v s WHERE s.twitch_id = g.twitch_id AND s.donation_total >= g.amount)   WHEN 'global' THEN (SELECT min(ts) FROM snapshot WHERE donation_total >= g.amount) END AS reached_at   FROM donation_goal g WHERE g.twitch_id IN (${streamer:sqlstring})) SELECT CASE WHEN count(*) = 0 THEN 'Aucun' ELSE count(*) FILTER (WHERE g.reached) || ' / ' || count(*) END FROM g",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "yellow"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/.*/",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "description": "Goals atteints sur le nombre de goals du streamer, d'apr\u00e8s zevent.gdoc.fr."
+    },
+    {
+      "id": 15,
+      "type": "stat",
+      "title": "Dernier goal atteint",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 20,
+        "w": 8,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "WITH g AS (SELECT g.*, CASE g.category   WHEN 'donation' THEN (SELECT min(s.ts) FROM streamer_sample_v s WHERE s.twitch_id = g.twitch_id AND s.donation_total >= g.amount)   WHEN 'global' THEN (SELECT min(ts) FROM snapshot WHERE donation_total >= g.amount) END AS reached_at   FROM donation_goal g WHERE g.twitch_id IN (${streamer:sqlstring})) SELECT replace(replace(to_char(g.amount, 'FM999,999,999'), ',', ' '), '.', ',') || ' \u20ac' || ' : ' || CASE WHEN length(g.name) > 90 THEN left(g.name, 89) || '\u2026' ELSE g.name END FROM g WHERE g.reached ORDER BY g.reached_at DESC NULLS LAST, g.amount DESC LIMIT 1",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "green"
+          },
+          "noValue": "Aucun"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/.*/",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "description": "Le goal atteint le plus r\u00e9cemment (le plus gros montant si l'heure est inconnue)."
+    },
+    {
+      "id": 16,
+      "type": "stat",
+      "title": "Premier goal manqu\u00e9",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 20,
+        "w": 8,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "WITH g AS (SELECT g.*, CASE g.category   WHEN 'donation' THEN (SELECT min(s.ts) FROM streamer_sample_v s WHERE s.twitch_id = g.twitch_id AND s.donation_total >= g.amount)   WHEN 'global' THEN (SELECT min(ts) FROM snapshot WHERE donation_total >= g.amount) END AS reached_at   FROM donation_goal g WHERE g.twitch_id IN (${streamer:sqlstring})) SELECT replace(replace(to_char(g.amount, 'FM999,999,999'), ',', ' '), '.', ',') || ' \u20ac' || ' : ' || CASE WHEN length(g.name) > 90 THEN left(g.name, 89) || '\u2026' ELSE g.name END || CASE WHEN g.category = 'donation' AND g.amount > f.total THEN ' (il manquait ' || replace(replace(to_char(g.amount - f.total, 'FM999,999,999'), ',', ' '), '.', ',') || ' \u20ac' || ')' ELSE '' END FROM g, (SELECT (SELECT coalesce(sum(s.donation_total), 0) FROM streamer_sample_v s WHERE s.twitch_id IN (${streamer:sqlstring}) AND NOT s.derived AND s.ts = (SELECT max(ts) FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz)) AS total) f WHERE NOT g.reached ORDER BY g.amount, g.position LIMIT 1",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "orange"
+          },
+          "noValue": "Tous les goals sont atteints !"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/.*/",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "description": "Le plus petit goal non atteint, et ce qu'il manquait au compteur final pour y arriver."
+    },
+    {
+      "id": 17,
       "type": "timeseries",
       "title": "Dons au fil du temps",
       "datasource": {
@@ -846,7 +1021,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 20,
+        "y": 24,
         "w": 12,
         "h": 9
       },
@@ -894,10 +1069,11 @@
           "mode": "multi",
           "sort": "desc"
         }
-      }
+      },
+      "description": "Les marqueurs jaunes indiquent le moment o\u00f9 chaque donation goal a \u00e9t\u00e9 atteint."
     },
     {
-      "id": 15,
+      "id": 18,
       "type": "timeseries",
       "title": "Viewers au fil du temps",
       "datasource": {
@@ -906,7 +1082,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 20,
+        "y": 24,
         "w": 12,
         "h": 9
       },
@@ -957,7 +1133,7 @@
       }
     },
     {
-      "id": 16,
+      "id": 19,
       "type": "timeseries",
       "title": "Dons gagn\u00e9s par intervalle",
       "datasource": {
@@ -966,7 +1142,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 29,
+        "y": 33,
         "w": 24,
         "h": 9
       },
@@ -1023,7 +1199,7 @@
       "interval": "5m"
     },
     {
-      "id": 17,
+      "id": 20,
       "type": "state-timeline",
       "title": "Jeux jou\u00e9s",
       "datasource": {
@@ -1032,7 +1208,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 38,
+        "y": 42,
         "w": 24,
         "h": 8
       },
@@ -1102,6 +1278,142 @@
         }
       ],
       "description": "Ce que chaque streamer s\u00e9lectionn\u00e9 jouait en live ; les trous sont du temps hors ligne."
+    },
+    {
+      "id": 21,
+      "type": "table",
+      "title": "Donation goals",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 50,
+        "w": 24,
+        "h": 16
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "WITH g AS (SELECT g.*, CASE g.category   WHEN 'donation' THEN (SELECT min(s.ts) FROM streamer_sample_v s WHERE s.twitch_id = g.twitch_id AND s.donation_total >= g.amount)   WHEN 'global' THEN (SELECT min(ts) FROM snapshot WHERE donation_total >= g.amount) END AS reached_at   FROM donation_goal g WHERE g.twitch_id IN (${streamer:sqlstring})) SELECT replace(replace(regexp_replace(to_char(g.amount, 'FM999,999,999.00'), '\\.00$', ''), ',', ' '), '.', ',') || ' \u20ac' AS \"Montant\", g.name AS \"Donation goal\", CASE g.category WHEN 'donation' THEN 'Palier' WHEN 'global' THEN 'Cagnotte globale' WHEN 'donation_equal' THEN 'Don exact' WHEN 'donation_more_than' THEN 'Don \u2265 montant' WHEN 'donation_largest' THEN 'Plus gros don' WHEN 'recurent' THEN 'R\u00e9current' WHEN 'incentive' THEN 'Incentive' ELSE g.category END AS \"Type\", CASE WHEN g.reached THEN 'Atteint' ELSE 'Non atteint' END AS \"Statut\", to_char(g.reached_at AT TIME ZONE 'Europe/Paris', 'DD/MM \"\u00e0\" HH24\"h\"MI') AS \"Atteint le\" FROM g ORDER BY g.amount, g.position",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "minWidth": 50
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Montant"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 130
+              },
+              {
+                "id": "custom.align",
+                "value": "right"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Type"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 140
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Atteint le"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 130
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Donation goal"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "auto",
+                  "wrapText": true
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Statut"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 120
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "Atteint": {
+                        "color": "green",
+                        "index": 0
+                      },
+                      "Non atteint": {
+                        "color": "orange",
+                        "index": 1
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": []
+      },
+      "description": "Donation goals tels qu'affich\u00e9s sur zevent.gdoc.fr (evenmorestats). \u00ab Atteint \u00bb est le statut du site ; \u00ab Atteint le \u00bb est notre lecture des relev\u00e9s : premier relev\u00e9 o\u00f9 le compteur du streamer (ou la cagnotte globale pour un goal global) d\u00e9passe le montant, heure de Paris."
     }
   ]
 }

@@ -7,7 +7,7 @@ each has buttons to the others:
   zevent-live-public.json      ZEVENT live: one row per streamer, green while live; Location defaults to on site
   zevent-insights-public.json  ZEVENT insights: milestones and pace, notable moments, patterns, on site vs
                                remote, games, donations not tied to a streamer. Location filter
-  zevent-streamer-public.json  ZEVENT streamer: one or a few streamers in detail; opens on the current leader
+  zevent-streamer-public.json  ZEVENT streamer: one streamer in detail, with their donation goals; opens on the leader
   zevent-viewers-public.json   ZEVENT viewers: the viewers of every streamer stacked over time
 The "-public" uid suffix is kept because the URLs are published (the proxy redirects / to /d/zevent-public).
 """
@@ -136,8 +136,8 @@ def twitch_link(var):
 
 
 def table(title, sql, x, y, w=8, h=12, money_cols=(), duration_cols=(), hour_cols=(), image_cols=(), percent_cols=(),
-          streamer_links=False, description=None, delta_cols=()):
-    overrides = [
+          streamer_links=False, description=None, delta_cols=(), overrides=()):
+    overrides = list(overrides) + [
                     # signed movement: green when positive, red when negative
                     {"matcher": {"id": "byName", "options": c},
                      "properties": [{"id": "custom.cellOptions", "value": {"type": "color-text"}},
@@ -1085,21 +1085,109 @@ def streamer_panels():
              12, w=12, y=16, unit="suffix: h", decimals=1, color="green",
              description="Plus long passage en live sans interruption observé sur la période (il peut avoir commencé avant)."),
 
+        # sixth row of tiles, y=20: donation goals
+        *goal_tiles(20),
+
         ts("Dons au fil du temps",
            'SELECT s.ts AS time, st.display AS metric, st.login AS login, s.donation_total AS value '
            f'{sel} AND $__timeFilter(s.ts) ORDER BY 1',
-           0, 20, unit="currencyEUR", streamer_links=True),
+           0, 24, unit="currencyEUR", streamer_links=True,
+           description="Les marqueurs jaunes indiquent le moment où chaque donation goal a été atteint."),
         ts("Viewers au fil du temps",
            'SELECT s.ts AS time, st.display AS metric, st.login AS login, s.viewers AS value '
            f'{sel} AND $__timeFilter(s.ts) ORDER BY 1',
-           12, 20, unit="sishort", streamer_links=True),
+           12, 24, unit="sishort", streamer_links=True),
         ts("Dons gagnés par intervalle",
            'SELECT $__timeGroupAlias(d.ts, $__interval), st.display AS metric, st.login AS login, sum(d.gain) AS value '
            'FROM streamer_sample_v d JOIN streamer_v st USING (twitch_id) '
            'WHERE $__timeFilter(d.ts) AND d.twitch_id IN ($streamer) AND d.gain IS NOT NULL GROUP BY 1, 2, 3 ORDER BY 1',
-           0, 29, w=24, unit="currencyEUR", bars=True, stack=True, min_interval="5m", streamer_links=True),
-        game_timeline(0, 38),
+           0, 33, w=24, unit="currencyEUR", bars=True, stack=True, min_interval="5m", streamer_links=True),
+        game_timeline(0, 42),
+        goals_table(0, 50),
     ]
+
+
+# Donation goals: table donation_goal, filled from db/donation_goals.sql (`main.py pull-goals`, see
+# zevent_tracker/goals.py). `reached` is the site's flag (evenmorestats); reached_at is our own reading of the
+# samples: the first sample where the streamer's counter (for 'global' goals: the event total) was at or above
+# the amount. Only threshold goals get a time; a goal on a single donation (donation_equal, ...) has none.
+GOALS_CTE = (
+    "WITH g AS (SELECT g.*, CASE g.category "
+    "  WHEN 'donation' THEN (SELECT min(s.ts) FROM streamer_sample_v s WHERE s.twitch_id = g.twitch_id AND s.donation_total >= g.amount) "
+    "  WHEN 'global' THEN (SELECT min(ts) FROM snapshot WHERE donation_total >= g.amount) END AS reached_at "
+    "  FROM donation_goal g WHERE g.twitch_id IN ($streamer)) "
+)
+GOAL_TYPE = ("CASE g.category WHEN 'donation' THEN 'Palier' WHEN 'global' THEN 'Cagnotte globale' "
+             "WHEN 'donation_equal' THEN 'Don exact' WHEN 'donation_more_than' THEN 'Don ≥ montant' "
+             "WHEN 'donation_largest' THEN 'Plus gros don' WHEN 'recurent' THEN 'Récurrent' "
+             "WHEN 'incentive' THEN 'Incentive' ELSE g.category END")
+# the streamer's counter at the end of the event (frozen by freeze_sql)
+FINAL_TOTAL = ("(SELECT coalesce(sum(s.donation_total), 0) FROM streamer_sample_v s "
+               "WHERE s.twitch_id IN ($streamer) AND NOT s.derived AND s.ts = (SELECT max(ts) FROM snapshot))")
+GOALS_NOTE = ("Donation goals tels qu'affichés sur zevent.gdoc.fr (evenmorestats). « Atteint » est le statut du site ; "
+              "« Atteint le » est notre lecture des relevés : premier relevé où le compteur du streamer (ou la cagnotte "
+              "globale pour un goal global) dépasse le montant, heure de Paris.")
+
+
+def short(expr, n):
+    return f"CASE WHEN length({expr}) > {n} THEN left({expr}, {n - 1}) || '…' ELSE {expr} END"
+
+
+def goal_tiles(y):
+    return [
+        stat("Donation goals atteints",
+             GOALS_CTE + "SELECT CASE WHEN count(*) = 0 THEN 'Aucun' ELSE count(*) FILTER (WHERE g.reached) || ' / ' || count(*) END FROM g",
+             0, w=8, y=y, color="yellow", text_field=True,
+             description="Goals atteints sur le nombre de goals du streamer, d'après zevent.gdoc.fr."),
+        stat("Dernier goal atteint",
+             GOALS_CTE + f"SELECT {eur_text('g.amount')} || ' : ' || {short('g.name', 90)} FROM g WHERE g.reached "
+             "ORDER BY g.reached_at DESC NULLS LAST, g.amount DESC LIMIT 1",
+             8, w=8, y=y, color="green", text_field=True, no_value="Aucun",
+             description="Le goal atteint le plus récemment (le plus gros montant si l'heure est inconnue)."),
+        stat("Premier goal manqué",
+             GOALS_CTE + f"SELECT {eur_text('g.amount')} || ' : ' || {short('g.name', 90)} || "
+             f"CASE WHEN g.category = 'donation' AND g.amount > f.total THEN ' (il manquait ' || {eur_text('g.amount - f.total')} || ')' ELSE '' END "
+             f"FROM g, (SELECT {FINAL_TOTAL} AS total) f WHERE NOT g.reached ORDER BY g.amount, g.position LIMIT 1",
+             16, w=8, y=y, color="orange", text_field=True, no_value="Tous les goals sont atteints !",
+             description="Le plus petit goal non atteint, et ce qu'il manquait au compteur final pour y arriver."),
+    ]
+
+
+def goals_table(x, y):
+    return table(
+        "Donation goals",
+        # amount as text: the currencyEUR unit abbreviates ("€1.50K") and a goal is an exact figure
+        GOALS_CTE + "SELECT replace(replace(regexp_replace(to_char(g.amount, 'FM999,999,999.00'), '\\.00$', ''), ',', ' '), '.', ',') || ' €' AS \"Montant\", "
+        'g.name AS "Donation goal", ' + GOAL_TYPE + ' AS "Type", '
+        "CASE WHEN g.reached THEN 'Atteint' ELSE 'Non atteint' END AS \"Statut\", "
+        "to_char(g.reached_at AT TIME ZONE 'Europe/Paris', 'DD/MM \"à\" HH24\"h\"MI') AS \"Atteint le\" "
+        "FROM g ORDER BY g.amount, g.position",
+        x, y, w=24, h=16, description=GOALS_NOTE,
+        overrides=[
+            {"matcher": {"id": "byName", "options": "Montant"},
+             "properties": [{"id": "custom.width", "value": 130}, {"id": "custom.align", "value": "right"}]},
+            {"matcher": {"id": "byName", "options": "Type"}, "properties": [{"id": "custom.width", "value": 140}]},
+            {"matcher": {"id": "byName", "options": "Atteint le"}, "properties": [{"id": "custom.width", "value": 130}]},
+            {"matcher": {"id": "byName", "options": "Donation goal"},
+             "properties": [{"id": "custom.cellOptions", "value": {"type": "auto", "wrapText": True}}]},
+            {"matcher": {"id": "byName", "options": "Statut"},
+             "properties": [{"id": "custom.width", "value": 120},
+                            {"id": "custom.cellOptions", "value": {"type": "color-text"}},
+                            {"id": "mappings", "value": [{"type": "value", "options": {
+                                "Atteint": {"color": "green", "index": 0}, "Non atteint": {"color": "orange", "index": 1}}}]}]},
+        ],
+    )
+
+
+# Vertical markers on the donations chart at the moment each threshold goal was reached.
+def goals_annotation(panel_ids):
+    sql = (GOALS_CTE + f"SELECT g.reached_at AS time, {eur_text('g.amount')} || ' : ' || {short('g.name', 80)} AS text "
+           "FROM g WHERE g.reached AND g.reached_at IS NOT NULL AND $__timeFilter(g.reached_at) ORDER BY 1")
+    return {
+        "name": "Donation goals", "datasource": DS, "enable": True, "hide": False, "iconColor": "yellow",
+        "target": {"format": "table", "rawQuery": True, "rawSql": sql, "refId": "Anno"},
+        "filter": {"exclude": False, "ids": list(panel_ids)},
+    }
 
 
 def game_timeline(x, y):
@@ -1378,9 +1466,13 @@ def single_select(dash, name):
     for v in dash["templating"]["list"]:
         if v["name"] != name:
             v["query"] = v["query"].replace(a, b)
+    for ann in dash["annotations"]["list"]:
+        ann["target"]["rawSql"] = ann["target"]["rawSql"].replace(a, b)
     return dash
 
 
+streamer = streamer_panels()
+donations_chart = next(p["id"] for p in streamer if p["title"] == "Dons au fil du temps")
 write(single_select(dashboard_base("zevent-streamer-public", "ZEVENT streamer",
                                    [STREAMER_VAR_DETAIL] + [hidden_var(n, q) for n, q in HERO_VARS.items()],
-                                   streamer_panels()), "streamer"))
+                                   streamer, annotations=[goals_annotation([donations_chart])]), "streamer"))
