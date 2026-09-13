@@ -1,0 +1,1199 @@
+{
+  "uid": "zevent-associations-public",
+  "title": "ZEVENT associations",
+  "tags": [
+    "zevent"
+  ],
+  "timezone": "browser",
+  "editable": false,
+  "graphTooltip": 1,
+  "refresh": "",
+  "timepicker": {
+    "hidden": true,
+    "refresh_intervals": []
+  },
+  "time": {
+    "from": "2026-09-03T17:01:00.000Z",
+    "to": "2026-09-06T23:12:00.000Z"
+  },
+  "schemaVersion": 39,
+  "version": 1,
+  "templating": {
+    "list": [
+      {
+        "name": "part_9",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "zevent-pg"
+        },
+        "definition": "part_9",
+        "query": "SELECT replace(replace(to_char(donation_total / 9, 'FM999,999,999'), ',', ' '), '.', ',') || ' \u20ac' FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz ORDER BY ts DESC LIMIT 1",
+        "hide": 2,
+        "refresh": 2,
+        "multi": false,
+        "includeAll": false,
+        "sort": 0,
+        "current": {}
+      },
+      {
+        "name": "part_27",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "zevent-pg"
+        },
+        "definition": "part_27",
+        "query": "SELECT replace(replace(to_char(donation_total / 27, 'FM999,999,999'), ',', ' '), '.', ',') || ' \u20ac' FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz ORDER BY ts DESC LIMIT 1",
+        "hide": 2,
+        "refresh": 2,
+        "multi": false,
+        "includeAll": false,
+        "sort": 0,
+        "current": {}
+      },
+      {
+        "name": "part_45",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "zevent-pg"
+        },
+        "definition": "part_45",
+        "query": "SELECT replace(replace(to_char(donation_total / 45, 'FM999,999,999'), ',', ' '), '.', ',') || ' \u20ac' FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz ORDER BY ts DESC LIMIT 1",
+        "hide": 2,
+        "refresh": 2,
+        "multi": false,
+        "includeAll": false,
+        "sort": 0,
+        "current": {}
+      },
+      {
+        "name": "part_180",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "zevent-pg"
+        },
+        "definition": "part_180",
+        "query": "SELECT replace(replace(to_char(donation_total / 180, 'FM999,999,999'), ',', ' '), '.', ',') || ' \u20ac' FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz ORDER BY ts DESC LIMIT 1",
+        "hide": 2,
+        "refresh": 2,
+        "multi": false,
+        "includeAll": false,
+        "sort": 0,
+        "current": {}
+      }
+    ]
+  },
+  "links": [
+    {
+      "type": "link",
+      "title": "Stats principales",
+      "url": "/d/zevent-public?kiosk=1",
+      "icon": "dashboard",
+      "keepTime": true,
+      "includeVars": false,
+      "targetBlank": false,
+      "asDropdown": false,
+      "tags": [],
+      "tooltip": ""
+    },
+    {
+      "type": "link",
+      "title": "Timeline",
+      "url": "/d/zevent-live-public?kiosk=1",
+      "icon": "dashboard",
+      "keepTime": true,
+      "includeVars": false,
+      "targetBlank": false,
+      "asDropdown": false,
+      "tags": [],
+      "tooltip": ""
+    },
+    {
+      "type": "link",
+      "title": "Analyses",
+      "url": "/d/zevent-insights-public?kiosk=1",
+      "icon": "dashboard",
+      "keepTime": true,
+      "includeVars": false,
+      "targetBlank": false,
+      "asDropdown": false,
+      "tags": [],
+      "tooltip": ""
+    },
+    {
+      "type": "link",
+      "title": "Streamer",
+      "url": "/d/zevent-streamer-public?kiosk=1",
+      "icon": "dashboard",
+      "keepTime": true,
+      "includeVars": false,
+      "targetBlank": false,
+      "asDropdown": false,
+      "tags": [],
+      "tooltip": ""
+    },
+    {
+      "type": "link",
+      "title": "Viewers",
+      "url": "/d/zevent-viewers-public?kiosk=1",
+      "icon": "dashboard",
+      "keepTime": true,
+      "includeVars": false,
+      "targetBlank": false,
+      "asDropdown": false,
+      "tags": [],
+      "tooltip": ""
+    }
+  ],
+  "annotations": {
+    "list": []
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Total final de l'\u00e9v\u00e9nement",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT replace(replace(to_char((SELECT donation_total FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz ORDER BY ts DESC LIMIT 1), 'FM999,999,999'), ',', ' '), '.', ',') || ' \u20ac'",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "green"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/.*/",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "description": "Total de l'\u00e9v\u00e9nement \u00e0 la fin des dons, r\u00e9parti entre les associations."
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Par \u00e9dition (1/9)",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT replace(replace(to_char((SELECT donation_total FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz ORDER BY ts DESC LIMIT 1) / 9, 'FM999,999,999'), ',', ' '), '.', ',') || ' \u20ac'",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/.*/",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "description": "Le total divis\u00e9 en 9 parts \u00e9gales, une par \u00e9dition pr\u00e9c\u00e9dente."
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Associations b\u00e9n\u00e9ficiaires",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT 22",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "yellow"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "description": "Toutes les associations soutenues depuis 2016 encore en activit\u00e9, d'apr\u00e8s zevent.fr."
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Plus petite part",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "SELECT replace(replace(to_char((SELECT donation_total FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz ORDER BY ts DESC LIMIT 1) / 180, 'FM999,999,999'), ',', ' '), '.', ',') || ' \u20ac'",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "orange"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/.*/",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "description": "La part d'une association du P\u00f4le enfance : un quart du cinqui\u00e8me de la part 2025."
+    },
+    {
+      "id": 5,
+      "type": "text",
+      "title": "Comment la cagnotte est-elle r\u00e9partie ?",
+      "transparent": false,
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 24,
+        "h": 8
+      },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"font-size:15px;line-height:1.5;padding:4px 12px\">\n  <p style=\"margin:0 0 8px\"><b>Pour le ZEVENT 2026, la Fondation de France collecte les dons et les reverse aux\n  22 associations soutenues depuis 2016, \u00ab selon les r\u00e9partitions des 9 \u00e9ditions pr\u00e9c\u00e9dentes \u00bb</b>\n  (<a href=\"https://zevent.fr/associations\" target=\"_blank\" rel=\"noopener\">zevent.fr/associations</a>).</p>\n  <p style=\"margin:0 0 8px\">Lecture retenue ici : le total final est divis\u00e9 en <b>9 parts \u00e9gales, une par \u00e9dition</b>\n  (2016 \u00e0 2025, pas d'\u00e9dition en 2023), et la part de chaque \u00e9dition est <b>partag\u00e9e \u00e0 parts \u00e9gales entre les b\u00e9n\u00e9ficiaires\n  de cette \u00e9dition</b>. En 2025 le P\u00f4le enfance (L'envol, Le Rire M\u00e9decin, Sourire \u00e0 la Vie, Sparadrap) comptait pour un seul\n  b\u00e9n\u00e9ficiaire aux c\u00f4t\u00e9s de quatre autres : son cinqui\u00e8me est divis\u00e9 en quatre. The SeaCleaners, b\u00e9n\u00e9ficiaire en 2022, ne\n  fait plus partie des associations soutenues : la part 2022 va aux trois autres.</p>\n  <p style=\"margin:0 0 8px;opacity:.8\">Les montants sont donc une estimation calcul\u00e9e sur le total final de l'\u00e9v\u00e9nement ; la\n  r\u00e9partition r\u00e9elle est faite par la Fondation de France, qui retient les frais li\u00e9s \u00e0 l'\u00e9mission des re\u00e7us fiscaux\n  (et les avances \u00e9ventuelles) sans taux publi\u00e9 : aucune d\u00e9duction n'est appliqu\u00e9e ici. Textes et logos des associations : zevent.fr.</p>\n  <p style=\"margin:0;opacity:.8\"><b>Et l'\u00c9tat ?</b> Il ne pr\u00e9l\u00e8ve rien sur la collecte : les dons faits \u00e0 une fondation reconnue\n  d'utilit\u00e9 publique sont exon\u00e9r\u00e9s de droits de mutation (articles 757 et 795 du Code g\u00e9n\u00e9ral des imp\u00f4ts) et l'activit\u00e9 non\n  lucrative de la fondation n'est soumise ni \u00e0 l'imp\u00f4t sur les soci\u00e9t\u00e9s, ni \u00e0 la TVA. L'\u00c9tat contribue au contraire : chaque\n  donateur imposable r\u00e9cup\u00e8re 66 % de son don en r\u00e9duction d'imp\u00f4t sur le revenu (dans la limite de 20 % du revenu imposable),\n  d'o\u00f9 le re\u00e7u fiscal envoy\u00e9 par la Fondation de France.</p>\n</div>"
+      }
+    },
+    {
+      "id": 6,
+      "type": "barchart",
+      "title": "Montant estim\u00e9 par association",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 10,
+        "h": 18
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "WITH t AS (SELECT donation_total AS total FROM ((SELECT donation_total FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz ORDER BY ts DESC LIMIT 1)) x(donation_total)), a AS (SELECT * FROM (VALUES ('Helebor', 2025, NULL, 5, 45, 'https://www.helebor.fr/', '/public/associations/helebor.png'), ('Bureau du C\u0153ur', 2024, NULL, 5, 45, 'https://www.bureauxducoeur.org', '/public/associations/bureauxducoeur.png'), ('Chapitre 2', 2024, NULL, 5, 45, 'https://chapitre2.org/', '/public/associations/chapitre2.png'), ('WWF', 2022, NULL, 3, 27, 'https://www.wwf.fr/', '/public/associations/wwf.png'), ('MSF', 2018, NULL, 1, 9, 'https://www.msf.fr/', '/public/associations/msf.png'), ('Nightline', 2025, NULL, 5, 45, 'https://www.nightline.fr/', '/public/associations/nightline.png'), ('Solidarit\u00e9 Paysans', 2024, NULL, 5, 45, 'https://www.solidarite-paysans.org/', '/public/associations/solidaritepaysans.png'), ('Save the Children', 2016, NULL, 1, 9, 'https://www.savethechildren.net/', '/public/associations/save_the_children.png'), ('Amnesty International', 2020, NULL, 1, 9, 'https://www.amnesty.fr/', '/public/associations/amnesty.png'), ('Action contre la Faim', 2021, NULL, 1, 9, 'https://www.actioncontrelafaim.org/', '/public/associations/action_contre_la_faim.svg'), ('Croix-Rouge', 2017, NULL, 1, 9, 'https://www.croix-rouge.fr/', '/public/associations/croix_rouge.png'), ('Institut Pasteur', 2019, NULL, 1, 9, 'https://www.pasteur.fr/fr', '/public/associations/institut_pasteur.png'), ('Sea Shepherd France', 2022, NULL, 3, 27, 'https://www.seashepherd.fr/', '/public/associations/sea_shepherd.png'), ('LPO', 2022, NULL, 3, 27, 'https://www.lpo.fr/', '/public/associations/lpo.png'), ('Secours populaire fran\u00e7ais', 2024, NULL, 5, 45, 'https://www.secourspopulaire.fr/', '/public/associations/secourspopulaire.png'), ('Cop1', 2024, NULL, 5, 45, 'https://www.cop1.fr/', '/public/associations/cop1.png'), ('Association Fran\u00e7aise des Aidants', 2025, NULL, 5, 45, 'https://www.aidants.fr/', '/public/associations/aidants.png'), ('La Ligue contre le Cancer', 2025, NULL, 5, 45, 'https://www.ligue-cancer.net/', '/public/associations/ligue-cancer.png'), ('Sparadrap', 2025, 'P\u00f4le enfance', 5, 180, 'https://www.sparadrap.org/', '/public/associations/sparadrap.png'), ('Le Rire M\u00e9decin', 2025, 'P\u00f4le enfance', 5, 180, 'https://www.leriremedecin.org/', '/public/associations/rire-medecin.png'), ('Sourire \u00e0 la Vie', 2025, 'P\u00f4le enfance', 5, 180, 'https://www.sourirealavie.fr/', '/public/associations/sourire.png'), ('L''envol', 2025, 'P\u00f4le enfance', 5, 180, 'https://www.lenvol.asso.fr/', '/public/associations/envol.png')) a(name, edition, grp, n, parts, link, logo)) SELECT a.name AS \"Association\", t.total / a.parts AS \"Montant estim\u00e9\" FROM a, t ORDER BY 2 DESC, 1",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "fillOpacity": 80,
+            "lineWidth": 1
+          },
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "green"
+          },
+          "unit": "currencyEUR",
+          "decimals": 0
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Association"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "string"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "orientation": "horizontal",
+        "xField": "Association",
+        "showValue": "always",
+        "barWidth": 0.8,
+        "stacking": "none",
+        "legend": {
+          "showLegend": false,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "description": "Part estim\u00e9e de chaque association dans le total final, d'apr\u00e8s la r\u00e8gle ci-dessus."
+    },
+    {
+      "id": 7,
+      "type": "table",
+      "title": "R\u00e9partition par association",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 10,
+        "y": 12,
+        "w": 14,
+        "h": 18
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "WITH t AS (SELECT donation_total AS total FROM ((SELECT donation_total FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz ORDER BY ts DESC LIMIT 1)) x(donation_total)), a AS (SELECT * FROM (VALUES ('Helebor', 2025, NULL, 5, 45, 'https://www.helebor.fr/', '/public/associations/helebor.png'), ('Bureau du C\u0153ur', 2024, NULL, 5, 45, 'https://www.bureauxducoeur.org', '/public/associations/bureauxducoeur.png'), ('Chapitre 2', 2024, NULL, 5, 45, 'https://chapitre2.org/', '/public/associations/chapitre2.png'), ('WWF', 2022, NULL, 3, 27, 'https://www.wwf.fr/', '/public/associations/wwf.png'), ('MSF', 2018, NULL, 1, 9, 'https://www.msf.fr/', '/public/associations/msf.png'), ('Nightline', 2025, NULL, 5, 45, 'https://www.nightline.fr/', '/public/associations/nightline.png'), ('Solidarit\u00e9 Paysans', 2024, NULL, 5, 45, 'https://www.solidarite-paysans.org/', '/public/associations/solidaritepaysans.png'), ('Save the Children', 2016, NULL, 1, 9, 'https://www.savethechildren.net/', '/public/associations/save_the_children.png'), ('Amnesty International', 2020, NULL, 1, 9, 'https://www.amnesty.fr/', '/public/associations/amnesty.png'), ('Action contre la Faim', 2021, NULL, 1, 9, 'https://www.actioncontrelafaim.org/', '/public/associations/action_contre_la_faim.svg'), ('Croix-Rouge', 2017, NULL, 1, 9, 'https://www.croix-rouge.fr/', '/public/associations/croix_rouge.png'), ('Institut Pasteur', 2019, NULL, 1, 9, 'https://www.pasteur.fr/fr', '/public/associations/institut_pasteur.png'), ('Sea Shepherd France', 2022, NULL, 3, 27, 'https://www.seashepherd.fr/', '/public/associations/sea_shepherd.png'), ('LPO', 2022, NULL, 3, 27, 'https://www.lpo.fr/', '/public/associations/lpo.png'), ('Secours populaire fran\u00e7ais', 2024, NULL, 5, 45, 'https://www.secourspopulaire.fr/', '/public/associations/secourspopulaire.png'), ('Cop1', 2024, NULL, 5, 45, 'https://www.cop1.fr/', '/public/associations/cop1.png'), ('Association Fran\u00e7aise des Aidants', 2025, NULL, 5, 45, 'https://www.aidants.fr/', '/public/associations/aidants.png'), ('La Ligue contre le Cancer', 2025, NULL, 5, 45, 'https://www.ligue-cancer.net/', '/public/associations/ligue-cancer.png'), ('Sparadrap', 2025, 'P\u00f4le enfance', 5, 180, 'https://www.sparadrap.org/', '/public/associations/sparadrap.png'), ('Le Rire M\u00e9decin', 2025, 'P\u00f4le enfance', 5, 180, 'https://www.leriremedecin.org/', '/public/associations/rire-medecin.png'), ('Sourire \u00e0 la Vie', 2025, 'P\u00f4le enfance', 5, 180, 'https://www.sourirealavie.fr/', '/public/associations/sourire.png'), ('L''envol', 2025, 'P\u00f4le enfance', 5, 180, 'https://www.lenvol.asso.fr/', '/public/associations/envol.png')) a(name, edition, grp, n, parts, link, logo)) SELECT a.logo AS logo, a.name AS \"Association\", a.link AS link, a.edition AS \"\u00c9dition\", coalesce(a.grp, '') AS \"Collectif\", '1/' || a.parts AS \"Part\", 1.0 / a.parts AS \"Part du total\", replace(replace(to_char(t.total / a.parts, 'FM999,999,999'), ',', ' '), '.', ',') || ' \u20ac' AS \"Montant estim\u00e9\" FROM a, t ORDER BY a.parts, a.edition DESC, a.name",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "minWidth": 50
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Association"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Site officiel",
+                    "url": "${__data.fields.link}",
+                    "targetBlank": true
+                  }
+                ]
+              },
+              {
+                "id": "custom.width",
+                "value": 270
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "link"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "\u00c9dition"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "string"
+              },
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "logo"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "image"
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 44
+              },
+              {
+                "id": "displayName",
+                "value": " "
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Part du total"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": []
+      },
+      "description": "Cliquez sur une association pour ouvrir son site. \u00ab Part \u00bb : la fraction du total final qui lui revient."
+    },
+    {
+      "id": 8,
+      "type": "table",
+      "title": "R\u00e9partition par \u00e9dition",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "zevent-pg"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 30,
+        "w": 24,
+        "h": 12
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "zevent-pg"
+          },
+          "rawQuery": true,
+          "rawSql": "WITH t AS (SELECT donation_total AS total FROM ((SELECT donation_total FROM snapshot WHERE ts <= '2026-09-06T23:12:00.000Z'::timestamptz ORDER BY ts DESC LIMIT 1)) x(donation_total)), a AS (SELECT * FROM (VALUES ('Helebor', 2025, NULL, 5, 45, 'https://www.helebor.fr/', '/public/associations/helebor.png'), ('Bureau du C\u0153ur', 2024, NULL, 5, 45, 'https://www.bureauxducoeur.org', '/public/associations/bureauxducoeur.png'), ('Chapitre 2', 2024, NULL, 5, 45, 'https://chapitre2.org/', '/public/associations/chapitre2.png'), ('WWF', 2022, NULL, 3, 27, 'https://www.wwf.fr/', '/public/associations/wwf.png'), ('MSF', 2018, NULL, 1, 9, 'https://www.msf.fr/', '/public/associations/msf.png'), ('Nightline', 2025, NULL, 5, 45, 'https://www.nightline.fr/', '/public/associations/nightline.png'), ('Solidarit\u00e9 Paysans', 2024, NULL, 5, 45, 'https://www.solidarite-paysans.org/', '/public/associations/solidaritepaysans.png'), ('Save the Children', 2016, NULL, 1, 9, 'https://www.savethechildren.net/', '/public/associations/save_the_children.png'), ('Amnesty International', 2020, NULL, 1, 9, 'https://www.amnesty.fr/', '/public/associations/amnesty.png'), ('Action contre la Faim', 2021, NULL, 1, 9, 'https://www.actioncontrelafaim.org/', '/public/associations/action_contre_la_faim.svg'), ('Croix-Rouge', 2017, NULL, 1, 9, 'https://www.croix-rouge.fr/', '/public/associations/croix_rouge.png'), ('Institut Pasteur', 2019, NULL, 1, 9, 'https://www.pasteur.fr/fr', '/public/associations/institut_pasteur.png'), ('Sea Shepherd France', 2022, NULL, 3, 27, 'https://www.seashepherd.fr/', '/public/associations/sea_shepherd.png'), ('LPO', 2022, NULL, 3, 27, 'https://www.lpo.fr/', '/public/associations/lpo.png'), ('Secours populaire fran\u00e7ais', 2024, NULL, 5, 45, 'https://www.secourspopulaire.fr/', '/public/associations/secourspopulaire.png'), ('Cop1', 2024, NULL, 5, 45, 'https://www.cop1.fr/', '/public/associations/cop1.png'), ('Association Fran\u00e7aise des Aidants', 2025, NULL, 5, 45, 'https://www.aidants.fr/', '/public/associations/aidants.png'), ('La Ligue contre le Cancer', 2025, NULL, 5, 45, 'https://www.ligue-cancer.net/', '/public/associations/ligue-cancer.png'), ('Sparadrap', 2025, 'P\u00f4le enfance', 5, 180, 'https://www.sparadrap.org/', '/public/associations/sparadrap.png'), ('Le Rire M\u00e9decin', 2025, 'P\u00f4le enfance', 5, 180, 'https://www.leriremedecin.org/', '/public/associations/rire-medecin.png'), ('Sourire \u00e0 la Vie', 2025, 'P\u00f4le enfance', 5, 180, 'https://www.sourirealavie.fr/', '/public/associations/sourire.png'), ('L''envol', 2025, 'P\u00f4le enfance', 5, 180, 'https://www.lenvol.asso.fr/', '/public/associations/envol.png')) a(name, edition, grp, n, parts, link, logo)) SELECT b.year AS \"\u00c9dition\", e.name AS \"Nom\", b.beneficiaries AS \"B\u00e9n\u00e9ficiaires\", replace(replace(to_char(e.total, 'FM999,999,999'), ',', ' '), '.', ',') || ' \u20ac' AS \"R\u00e9colt\u00e9 \u00e0 l'\u00e9poque\", replace(replace(to_char(t.total / 9, 'FM999,999,999'), ',', ' '), '.', ',') || ' \u20ac' AS \"Part 2026 de l'\u00e9dition\", replace(replace(to_char(t.total / 9 / b.n, 'FM999,999,999'), ',', ' '), '.', ',') || ' \u20ac' AS \"Par b\u00e9n\u00e9ficiaire\" FROM (VALUES (2016, 'Save the Children', 1), (2017, 'Croix-Rouge', 1), (2018, 'MSF', 1), (2019, 'Institut Pasteur', 1), (2020, 'Amnesty International', 1), (2021, 'Action contre la Faim', 1), (2022, 'LPO, Sea Shepherd France, WWF', 3), (2024, 'Bureau du C\u0153ur, Chapitre 2, Cop1, Secours populaire fran\u00e7ais, Solidarit\u00e9 Paysans', 5), (2025, 'Association Fran\u00e7aise des Aidants, Helebor, La Ligue contre le Cancer, Nightline, P\u00f4le enfance (L''envol, Le Rire M\u00e9decin, Sourire \u00e0 la Vie, Sparadrap)', 5)) b(year, beneficiaries, n) JOIN (VALUES (2016, 'Avenger Project', 170770), (2017, 'ZEvent', 451851), (2018, 'ZEvent', 1094731), (2019, 'ZEvent', 3510682), (2020, 'ZEvent', 5724377), (2021, 'ZEvent', 10064480), (2022, 'ZEvent', 10182126), (2024, 'ZEvent', 10145881), (2025, 'ZEvent', 16658660)) e(year, name, total) ON e.year = b.year, t ORDER BY b.year DESC",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "minWidth": 50
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "\u00c9dition"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "string"
+              },
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Nom"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 130
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "B\u00e9n\u00e9ficiaires"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "auto",
+                  "wrapText": true
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "R\u00e9colt\u00e9 \u00e0 l'\u00e9poque"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 190
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Part 2026 de l'\u00e9dition"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 190
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Par b\u00e9n\u00e9ficiaire"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 190
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": []
+      },
+      "description": "Chaque \u00e9dition pr\u00e9c\u00e9dente re\u00e7oit 1/9 du total 2026, partag\u00e9 entre ses b\u00e9n\u00e9ficiaires (le P\u00f4le enfance compte pour un). \u00ab R\u00e9colt\u00e9 \u00e0 l'\u00e9poque \u00bb : le total de cette \u00e9dition-l\u00e0."
+    },
+    {
+      "id": 9,
+      "type": "row",
+      "title": "La collecte",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 42,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 10,
+      "type": "text",
+      "title": "",
+      "transparent": true,
+      "gridPos": {
+        "x": 0,
+        "y": 43,
+        "w": 12,
+        "h": 25
+      },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"padding:4px 12px;font-size:14px;line-height:1.45\">\n  <div style=\"display:flex;align-items:center;gap:18px;margin-bottom:10px\">\n    <a href=\"https://www.fondationdefrance.org/fr\" target=\"_blank\" rel=\"noopener\" style=\"flex-shrink:0\"><img src=\"/public/associations/fdf.png\" alt=\"\" style=\"width:96px;height:96px;object-fit:contain;background:#fff;border-radius:12px;padding:6px;display:block\"></a>\n    <div style=\"min-width:0\">\n      <div style=\"font-size:24px;font-weight:800;line-height:1.1\">Fondation de France</div>\n      <div style=\"opacity:.75;margin-top:4px\">Collecte et reversement des dons \u00b7 <a href=\"https://www.fondationdefrance.org/fr\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit\">Site officiel</a></div>\n      \n    </div>\n  </div>\n  <div class=\"content-asso\"><p><b>Pour le ZEVENT 2026, la Fondation de France assure la collecte des dons et le reversement aux 22 associations b\u00e9n\u00e9ficiaires de l\u2019op\u00e9ration.</b></p><h2>La Fondation de France, premier r\u00e9seau de philanthropie en France</h2><p>Chacun de nous a le pouvoir d\u2019agir pour l\u2019int\u00e9r\u00eat g\u00e9n\u00e9ral. Cette conviction est, depuis plus de 50 ans, le moteur de la Fondation de France.<br><br>Chaque jour, elle encourage, accompagne et transforme les envies d\u2019agir en actions utiles et efficaces pour construire un monde plus apais\u00e9, solidaire et durable. La Fondation de France a d\u00e9velopp\u00e9 un savoir-faire unique, en s\u2019appuyant sur les meilleurs experts, des centaines de b\u00e9n\u00e9voles et des milliers d\u2019acteurs de terrain, dans tous les domaines de l\u2019int\u00e9r\u00eat g\u00e9n\u00e9ral : aide aux personnes vuln\u00e9rables, recherche m\u00e9dicale, environnement, culture, \u00e9ducation\u2026<br><br>Avec les 974 fondations qu\u2019elle abrite, elle soutient chaque ann\u00e9e 13 000 initiatives prometteuses et innovantes, en France et \u00e0 l\u2019international. Ind\u00e9pendante et priv\u00e9e, elle agit gr\u00e2ce \u00e0 la g\u00e9n\u00e9rosit\u00e9 des donateurs.</p><h2>Quel r\u00f4le joue la Fondation de France pour le ZEVENT 2026 ? </h2><p>La Fondation de France poss\u00e8de un savoir-faire reconnu dans la gestion d\u2019op\u00e9rations de collecte complexe, concernant de multiples structures b\u00e9n\u00e9ficiaires. C\u2019est la raison pour laquelle elle avait particip\u00e9 aux derni\u00e8res \u00e9ditions du ZEVENT.<br><br>Cette ann\u00e9e, la Fondation de France assurera la collecte des dons du ZEVENT 2026. Elle reversera ensuite ces dons aux 22 associations b\u00e9n\u00e9ficiaires, selon les r\u00e9partitions des 9 \u00e9ditions pr\u00e9c\u00e9dentes.<br><br>Un re\u00e7u fiscal sera envoy\u00e9 par la Fondation de France \u00e0 chaque donateur.<br><br>La Fondation de France veillera au caract\u00e8re d\u2019int\u00e9r\u00eat g\u00e9n\u00e9ral des projets propos\u00e9s par les structures gr\u00e2ce \u00e0 la collecte, et accompagnera les associations dans leur mise en \u0153uvre.</p></div>\n</div>"
+      }
+    },
+    {
+      "id": 11,
+      "type": "row",
+      "title": "\u00c9dition 2025 : Association Fran\u00e7aise des Aidants, Helebor, La Ligue contre le Cancer, Nightline, P\u00f4le enfance (L'envol, Le Rire M\u00e9decin, Sourire \u00e0 la Vie, Sparadrap)",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 68,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 12,
+      "type": "text",
+      "title": "",
+      "transparent": true,
+      "gridPos": {
+        "x": 0,
+        "y": 69,
+        "w": 12,
+        "h": 20
+      },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"padding:4px 12px;font-size:14px;line-height:1.45\">\n  <div style=\"display:flex;align-items:center;gap:18px;margin-bottom:10px\">\n    <a href=\"https://www.aidants.fr/\" target=\"_blank\" rel=\"noopener\" style=\"flex-shrink:0\"><img src=\"/public/associations/aidants.png\" alt=\"\" style=\"width:96px;height:96px;object-fit:contain;background:#fff;border-radius:12px;padding:6px;display:block\"></a>\n    <div style=\"min-width:0\">\n      <div style=\"font-size:24px;font-weight:800;line-height:1.1\">Association Fran\u00e7aise des Aidants</div>\n      <div style=\"opacity:.75;margin-top:4px\">B\u00e9n\u00e9ficiaire de l'\u00e9dition 2025 \u00b7 <a href=\"https://www.aidants.fr/\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit\">Site officiel</a></div>\n      <div style=\"font-size:19px;font-weight:700;color:#3fb950;margin-top:8px\">\u2248 ${part_45} <span style=\"font-size:13px;font-weight:500;opacity:.75\">(1/45 du total)</span></div>\n    </div>\n  </div>\n  <div class=\"content-asso\"><p>Depuis sa cr\u00e9ation en 2003, l\u2019Association Fran\u00e7aise des aidants \u00e9coute et porte la parole des proches aidants de personnes malades, en situation de handicap et ce, quel que soit leur \u00e2ge. Elle agit pour qu\u2019ils soient pris en consid\u00e9ration.</p><p>Une action autour de 3 piliers :</p><ul><li>agir pour qu\u2019aider son proche devienne un choix librement consenti et accompagn\u00e9 par la soci\u00e9t\u00e9.</li><li>organiser des dispositifs dans les territoires, comme les \u201cCaf\u00e9s des aidants\u00ae\u201d, avec les proches aidants et les professionnels.</li><li>former \u00e0 la fois les professionnels du secteur social, m\u00e9dico-social et sanitaire et sensibiliser les acteurs de l\u2019entreprise \u00e0 travers des formations et conf\u00e9rences\u2026</li></ul><h2>\u00c0 quoi serviront les dons ZEVENT 2026 ?</h2><p>L\u2019Association Fran\u00e7aise des aidants pourra :</p><ul><li>mettre en place des nouveaux dispositifs de r\u00e9pit pour les jeunes aidants dans des r\u00e9gions n\u2019ayant pas de dispositif d\u00e9di\u00e9 aux jeunes aidants ;</li><li>proposer des biographies hospitali\u00e8res pour contribuer au r\u00e9tablissement des proches aidants apr\u00e8s le deuil de la personne accompagn\u00e9e ;</li><li>cr\u00e9er des contenus num\u00e9riques pour les professionnels de sant\u00e9 qui accompagnent les aidants sur le terrain au quotidien : des podcasts avec des professionnels pour t\u00e9moigner de leurs d\u00e9marches en faveur des aidants, des d\u00e9fis rencontr\u00e9s et des r\u00e9ussites ; des capsules vid\u00e9os courtes de sensibilisation avec les m\u00eames professionnels.</li></ul></div>\n</div>"
+      }
+    },
+    {
+      "id": 13,
+      "type": "text",
+      "title": "",
+      "transparent": true,
+      "gridPos": {
+        "x": 12,
+        "y": 69,
+        "w": 12,
+        "h": 20
+      },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"padding:4px 12px;font-size:14px;line-height:1.45\">\n  <div style=\"display:flex;align-items:center;gap:18px;margin-bottom:10px\">\n    <a href=\"https://www.helebor.fr/\" target=\"_blank\" rel=\"noopener\" style=\"flex-shrink:0\"><img src=\"/public/associations/helebor.png\" alt=\"\" style=\"width:96px;height:96px;object-fit:contain;background:#fff;border-radius:12px;padding:6px;display:block\"></a>\n    <div style=\"min-width:0\">\n      <div style=\"font-size:24px;font-weight:800;line-height:1.1\">Helebor</div>\n      <div style=\"opacity:.75;margin-top:4px\">B\u00e9n\u00e9ficiaire de l'\u00e9dition 2025 \u00b7 <a href=\"https://www.helebor.fr/\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit\">Site officiel</a></div>\n      <div style=\"font-size:19px;font-weight:700;color:#3fb950;margin-top:8px\">\u2248 ${part_45} <span style=\"font-size:13px;font-weight:500;opacity:.75\">(1/45 du total)</span></div>\n    </div>\n  </div>\n  <div class=\"content-asso\"><p>HELEBOR cr\u00e9e et d\u00e9veloppe des projets en soins palliatifs qui contribuent \u00e0 l\u2019am\u00e9lioration de la qualit\u00e9 de vie des personnes gravement malades et de leurs proches.</p><h2>\u00c0 quoi serviront les dons ZEVENT 2026 ? </h2><p>HELEBOR pourra franchir une \u00e9tape cl\u00e9 dans le d\u00e9veloppement de ses projets\u00a0:</p><ul><li>poursuivre l\u2019am\u00e9nagement de la Maison de r\u00e9pit \u00e0 Agen pour des patients en soins palliatifs</li><li>am\u00e9nager un patio \u00e0 Pau en espace de motricit\u00e9 et de stimulation sensorielle pour des enfants gravement malades avec des troubles moteurs, dont certains sont pris en charge en soins palliatifs pr\u00e9coces.</li></ul></div>\n</div>"
+      }
+    },
+    {
+      "id": 14,
+      "type": "text",
+      "title": "",
+      "transparent": true,
+      "gridPos": {
+        "x": 0,
+        "y": 89,
+        "w": 12,
+        "h": 25
+      },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"padding:4px 12px;font-size:14px;line-height:1.45\">\n  <div style=\"display:flex;align-items:center;gap:18px;margin-bottom:10px\">\n    <a href=\"https://www.ligue-cancer.net/\" target=\"_blank\" rel=\"noopener\" style=\"flex-shrink:0\"><img src=\"/public/associations/ligue-cancer.png\" alt=\"\" style=\"width:96px;height:96px;object-fit:contain;background:#fff;border-radius:12px;padding:6px;display:block\"></a>\n    <div style=\"min-width:0\">\n      <div style=\"font-size:24px;font-weight:800;line-height:1.1\">La Ligue contre le Cancer</div>\n      <div style=\"opacity:.75;margin-top:4px\">B\u00e9n\u00e9ficiaire de l'\u00e9dition 2025 \u00b7 <a href=\"https://www.ligue-cancer.net/\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit\">Site officiel</a></div>\n      <div style=\"font-size:19px;font-weight:700;color:#3fb950;margin-top:8px\">\u2248 ${part_45} <span style=\"font-size:13px;font-weight:500;opacity:.75\">(1/45 du total)</span></div>\n    </div>\n  </div>\n  <div class=\"content-asso\"><p>Depuis plus de 100 ans, la Ligue contre le cancer se bat pour faire reculer la maladie et ne laisser personne seul face \u00e0 elle. Pr\u00e9sente partout en France gr\u00e2ce \u00e0 103 comit\u00e9s d\u00e9partementaux, elle est aujourd\u2019hui le 1er financeur non gouvernemental de la recherche en canc\u00e9rologie en France.</p><p>Son combat ne se limite pas \u00e0 la recherche : chaque jour, la Ligue accompagne les personnes malades et leurs proches aidants, agit sur la promotion de la pr\u00e9vention et des d\u00e9pistages, lutte contre les in\u00e9galit\u00e9s d\u2019acc\u00e8s aux soins et agit pour une soci\u00e9t\u00e9 plus solidaire.</p><h2>\u00c0 quoi serviront les dons ZEVENT 2026 ?</h2><p>Les dons serviront \u00e0 financer un projet de recherche au service de la pr\u00e9vention et du d\u00e9pistage des cancers des poumons, permettant d'aller-vers des zones recul\u00e9es en \u00e9troite collaboration avec les forces territoriales (comit\u00e9s, h\u00f4pitaux et universit\u00e9s) gr\u00e2ce \u00e0 un camion mobile.</p><p>CENTAURE\u00a0est un dispositif mobile innovant, qui sera d\u00e9ploy\u00e9 dans plusieurs r\u00e9gions, et qui permettra d\u2019aller directement \u00e0 la rencontre des personnes sur les territoires.</p><p>Ce camion mobile servira \u00e0 :</p><ul><li>rep\u00e9rer les personnes \u00e9ligibles au d\u00e9pistage ;</li><li>les informer et les accompagner dans leur parcours de d\u00e9pistage, dans le cadre du projet pilote national ;</li><li>tester durablement ce dispositif dans plusieurs territoires afin d\u2019en mesurer l\u2019efficacit\u00e9 et l\u2019impact.</li></ul><p>Cela permettra le d\u00e9pistage du cancer du poumon chez les personnes les plus expos\u00e9es, notamment les gros fumeurs, et chez celles qui sont \u00e9loign\u00e9es des structures de soins ; et la r\u00e9duction des in\u00e9galit\u00e9s de sant\u00e9 li\u00e9es au tabac, car le cancer du poumon touche d\u2019abord les personnes les plus pr\u00e9caires.</p></div>\n</div>"
+      }
+    },
+    {
+      "id": 15,
+      "type": "text",
+      "title": "",
+      "transparent": true,
+      "gridPos": {
+        "x": 12,
+        "y": 89,
+        "w": 12,
+        "h": 25
+      },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"padding:4px 12px;font-size:14px;line-height:1.45\">\n  <div style=\"display:flex;align-items:center;gap:18px;margin-bottom:10px\">\n    <a href=\"https://www.nightline.fr/\" target=\"_blank\" rel=\"noopener\" style=\"flex-shrink:0\"><img src=\"/public/associations/nightline.png\" alt=\"\" style=\"width:96px;height:96px;object-fit:contain;background:#fff;border-radius:12px;padding:6px;display:block\"></a>\n    <div style=\"min-width:0\">\n      <div style=\"font-size:24px;font-weight:800;line-height:1.1\">Nightline</div>\n      <div style=\"opacity:.75;margin-top:4px\">B\u00e9n\u00e9ficiaire de l'\u00e9dition 2025 \u00b7 <a href=\"https://www.nightline.fr/\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit\">Site officiel</a></div>\n      <div style=\"font-size:19px;font-weight:700;color:#3fb950;margin-top:8px\">\u2248 ${part_45} <span style=\"font-size:13px;font-weight:500;opacity:.75\">(1/45 du total)</span></div>\n    </div>\n  </div>\n  <div class=\"content-asso\"><p>Les chiffres sur la sant\u00e9 mentale des jeunes en France sont alarmants. En 2023, Sant\u00e9 Publique France indique que les jeunes sont 21 % \u00e0 \u00eatre concern\u00e9s par la d\u00e9pression, contre 11,7 % en 2017. C'est pour r\u00e9pondre \u00e0 cet enjeu de sant\u00e9 publique majeur que Nightline se mobilise depuis dix ans.</p><p>Nightline France est une association engag\u00e9e pour la sant\u00e9 mentale des jeunes et des \u00e9tudiants depuis 2016, \u00e0 travers des actions de soutien, d\u2019orientation et de sensibilisation. Sa mission est d\u2019offrir des ressources accessibles et adapt\u00e9es aux jeunes, con\u00e7ues par et pour eux, avec l\u2019appui de professionnels. Depuis sa cr\u00e9ation, l\u2019association agit concr\u00e8tement pour lib\u00e9rer la parole et r\u00e9duire l\u2019isolement des jeunes, souvent confront\u00e9s \u00e0 des difficult\u00e9s psychologiques. Nightline est aujourd\u2019hui pr\u00e9sente dans 9 r\u00e9gions en France m\u00e9tropolitaine et ultramarine. Chaque action vise \u00e0 faire reculer les tabous et \u00e0 permettre \u00e0 chaque jeune de se sentir \u00e9cout\u00e9 et soutenu.</p><h2>\u00c0 quoi serviront les dons ZEVENT 2026 ?</h2><p>Les chiffres sur la sant\u00e9 mentale des jeunes en France sont alarmants. Par exemple, plus d\u2019un jeune sur deux d\u00e9clare avoir d\u00e9j\u00e0 \u00e9t\u00e9 affect\u00e9 par un probl\u00e8me de sant\u00e9 mentale.</p><p>Vos dons permettront \u00e0 Nightline de continuer \u00e0 r\u00e9pondre \u00e0 cet enjeu de sant\u00e9 publique majeur :</p><ul><li>avec la cr\u00e9ation d\u2019un num\u00e9ro unique national. La ligne d'\u00e9coute nocturne, gratuite et confidentielle deviendra accessible \u00e0 tous les \u00e9tudiants quelle que soit leur localisation en France. </li><li>8 nouvelles acad\u00e9mies couvertes (dont la Nouvelle-Cal\u00e9donie), pour toujours plus d'actions de proximit\u00e9 sur les campus : Fresque de la Sant\u00e9 mentale\u00ae, dispositif Sentinelles \u00e9tudiantes, interventions aupr\u00e8s des jeunes. Ce d\u00e9ploiement permettra d'impacter environ 10 000 jeunes suppl\u00e9mentaires d\u00e8s 2026, soit une augmentation de plus de 20% par rapport \u00e0 2025.</li></ul><p>Dans le cadre de la Grande Cause Nationale sant\u00e9 mentale, Nightline continuera de porter haut la voix des jeunes, pour que le sujet reste une priorit\u00e9 de soci\u00e9t\u00e9.</p><p>Gr\u00e2ce \u00e0 votre soutien, Nightline pourra poursuivre son engagement en France pour que chaque jeune puisse trouver une oreille attentive et des ressources adapt\u00e9es, quel que soit son parcours.</p></div>\n</div>"
+      }
+    },
+    {
+      "id": 16,
+      "type": "text",
+      "title": "",
+      "transparent": true,
+      "gridPos": {
+        "x": 0,
+        "y": 114,
+        "w": 12,
+        "h": 21
+      },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"padding:4px 12px;font-size:14px;line-height:1.45\">\n  <div style=\"display:flex;align-items:center;gap:18px;margin-bottom:10px\">\n    <a href=\"https://www.lenvol.asso.fr/\" target=\"_blank\" rel=\"noopener\" style=\"flex-shrink:0\"><img src=\"/public/associations/envol.png\" alt=\"\" style=\"width:96px;height:96px;object-fit:contain;background:#fff;border-radius:12px;padding:6px;display:block\"></a>\n    <div style=\"min-width:0\">\n      <div style=\"font-size:24px;font-weight:800;line-height:1.1\">L'envol</div>\n      <div style=\"opacity:.75;margin-top:4px\">B\u00e9n\u00e9ficiaire de l'\u00e9dition 2025 \u00b7 P\u00f4le enfance \u00b7 <a href=\"https://www.lenvol.asso.fr/\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit\">Site officiel</a></div>\n      <div style=\"font-size:19px;font-weight:700;color:#3fb950;margin-top:8px\">\u2248 ${part_180} <span style=\"font-size:13px;font-weight:500;opacity:.75\">(1/180 du total)</span></div>\n    </div>\n  </div>\n  <div class=\"content-asso\"><p>En France, 650 000 familles sont touch\u00e9es par la maladie grave ou le handicap d\u2019un enfant.L\u2019association organise des s\u00e9jours de vacances adapt\u00e9s et m\u00e9dicalis\u00e9s pour tous les enfants et jeunes adultes malades, quelle que soit leur maladie (cancers, dr\u00e9panocytose, maladies rares\u2026), y compris en cas de handicaps associ\u00e9s et de soins m\u00e9dicaux importants.</p><p>Diff\u00e9rents formats sont propos\u00e9s : s\u00e9jours pour enfants malades de 6 \u00e0 17 ans, week-ends en famille, s\u00e9jours pour la fratrie. Des s\u00e9jours sont aussi pr\u00e9vus pour les fr\u00e8res et s\u0153urs non-malades et pour les jeunes adultes malades de 18 \u00e0 25 ans.</p><p>Pour beaucoup, L\u2019ENVOL est la seule solution de vacances, du fait de la pathologie et des soins complexes de l\u2019enfant, mais aussi, parfois, du fait de la situation \u00e9conomique de la famille. L\u2019ENVOL existe pour les enfants et les familles qui ne peuvent aller nulle part ailleurs, et c\u2019est pourquoi tous ses programmes sont enti\u00e8rement gratuits.</p><p>L\u2019ENVOL, ce sont aussi 3 autres actions compl\u00e9mentaires aux s\u00e9jours : des ateliers \u00e0 l\u2019h\u00f4pital, des sorties r\u00e9cr\u00e9atives en famille et des kits de jeux pour enfants hospitalis\u00e9s.</p><h2>\u00c0 quoi serviront les dons ZEVENT 2026 ? </h2><p>Pour r\u00e9ussir cette nouvelle \u00e9tape de d\u00e9veloppement, le soutien des streamers et de leurs communaut\u00e9s repr\u00e9sente un levier essentiel pour nous aider \u00e0 changer d\u2019\u00e9chelle, s\u00e9curiser durablement nos actions et faire \u00e9merger ce projet ambitieux de La Maison de l\u2019Envol au service des enfants gravement malades et de leurs familles.</p></div>\n</div>"
+      }
+    },
+    {
+      "id": 17,
+      "type": "text",
+      "title": "",
+      "transparent": true,
+      "gridPos": {
+        "x": 12,
+        "y": 114,
+        "w": 12,
+        "h": 21
+      },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"padding:4px 12px;font-size:14px;line-height:1.45\">\n  <div style=\"display:flex;align-items:center;gap:18px;margin-bottom:10px\">\n    <a href=\"https://www.leriremedecin.org/\" target=\"_blank\" rel=\"noopener\" style=\"flex-shrink:0\"><img src=\"/public/associations/rire-medecin.png\" alt=\"\" style=\"width:96px;height:96px;object-fit:contain;background:#fff;border-radius:12px;padding:6px;display:block\"></a>\n    <div style=\"min-width:0\">\n      <div style=\"font-size:24px;font-weight:800;line-height:1.1\">Le Rire M\u00e9decin</div>\n      <div style=\"opacity:.75;margin-top:4px\">B\u00e9n\u00e9ficiaire de l'\u00e9dition 2025 \u00b7 P\u00f4le enfance \u00b7 <a href=\"https://www.leriremedecin.org/\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit\">Site officiel</a></div>\n      <div style=\"font-size:19px;font-weight:700;color:#3fb950;margin-top:8px\">\u2248 ${part_180} <span style=\"font-size:13px;font-weight:500;opacity:.75\">(1/180 du total)</span></div>\n    </div>\n  </div>\n  <div class=\"content-asso\"><p>Le Rire M\u00e9decin : redonner le sourire, m\u00eame \u00e0 l\u2019h\u00f4pital et ce depuis 35 ans.</p><p>En France, pr\u00e8s de 2 millions d'enfants sont hospitalis\u00e9s* chaque ann\u00e9e. Pour ces enfants et leurs familles, la maladie est une \u00e9preuve difficile, marqu\u00e9e par l\u2019attente, les soins, la douleur parfois, et souvent un profond sentiment d\u2019isolement.</p><p>Face \u00e0 ce constat, Le Rire M\u00e9decin se mobilise : 155 com\u00e9diens-clowns professionnels apportent, avec po\u00e9sie et imagination, un souffle de l\u00e9g\u00e8ret\u00e9 et de joie dans 85 services p\u00e9diatriques. En \u00e9troite collaboration avec les \u00e9quipes soignantes, ils improvisent dans chaque chambre des spectacles sur mesure, adapt\u00e9s \u00e0 l\u2019enfant hospitalis\u00e9, \u00e0 son \u00e2ge, son \u00e9tat de sant\u00e9, sa personnalit\u00e9 et ses \u00e9motions.</p><p>Chaque ann\u00e9e, plus de 100 000 interventions clownesques en duo sont r\u00e9alis\u00e9es au chevet des enfants malades. Autant de rencontres uniques, pleines d\u2019\u00e9motions, de complicit\u00e9\u2026 et d\u2019\u00e9clats de rire pour les jeunes patients, leurs proches et les soignants.</p><h2>\u00c0 quoi serviront les dons ZEVENT 2026 ? </h2><p>Gr\u00e2ce \u00e0 cette nouvelle \u00e9dition du ZEVENT en 2026, Le Rire M\u00e9decin ira encore plus loin en d\u00e9veloppant des interventions dans de nouveaux services et plus d\u2019h\u00f4pitaux.</p><p>Nous \u00e9tendrons nos actions, en poursuivant nos actions \u00e0 Tours, \u00e0 Bondy, mais aussi dans le service des urgences du CHU d\u2019Orl\u00e9ans, et dans un nouvel h\u00f4pital, au CHU de Rouen, au sein du service de p\u00e9diatrie g\u00e9n\u00e9rale, qui accueille \u00e9galement une unit\u00e9 d\u00e9di\u00e9e \u00e0 la m\u00e9decine de l\u2019adolescent et \u00e0 la sant\u00e9 mentale. </p><p>Gr\u00e2ce \u00e0 vous, 13 500 enfants suppl\u00e9mentaires seront b\u00e9n\u00e9ficiaires de la pr\u00e9sence des clowns \u00e0 l\u2019h\u00f4pital.</p></div>\n</div>"
+      }
+    },
+    {
+      "id": 18,
+      "type": "text",
+      "title": "",
+      "transparent": true,
+      "gridPos": {
+        "x": 0,
+        "y": 135,
+        "w": 12,
+        "h": 17
+      },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"padding:4px 12px;font-size:14px;line-height:1.45\">\n  <div style=\"display:flex;align-items:center;gap:18px;margin-bottom:10px\">\n    <a href=\"https://www.sourirealavie.fr/\" target=\"_blank\" rel=\"noopener\" style=\"flex-shrink:0\"><img src=\"/public/associations/sourire.png\" alt=\"\" style=\"width:96px;height:96px;object-fit:contain;background:#fff;border-radius:12px;padding:6px;display:block\"></a>\n    <div style=\"min-width:0\">\n      <div style=\"font-size:24px;font-weight:800;line-height:1.1\">Sourire \u00e0 la Vie</div>\n      <div style=\"opacity:.75;margin-top:4px\">B\u00e9n\u00e9ficiaire de l'\u00e9dition 2025 \u00b7 P\u00f4le enfance \u00b7 <a href=\"https://www.sourirealavie.fr/\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit\">Site officiel</a></div>\n      <div style=\"font-size:19px;font-weight:700;color:#3fb950;margin-top:8px\">\u2248 ${part_180} <span style=\"font-size:13px;font-weight:500;opacity:.75\">(1/180 du total)</span></div>\n    </div>\n  </div>\n  <div class=\"content-asso\"><p>Les cancers p\u00e9diatriques sont la 1\u00e8re cause de mortalit\u00e9 m\u00e9dicale chez l\u2019enfant et l\u2019adolescent. 2 550 nouveaux cas sont diagnostiqu\u00e9s chaque ann\u00e9e en France, soit un enfant toutes les 3,5h.</p><p>Pour donner aux enfants toutes les chances de sortir de leur cancer dans les meilleures conditions, Sourire \u00e0 la Vie a \u00e9labor\u00e9 un programme d\u2019accompagnement global, \u00e0 360\u00b0, multidisciplinaire, qui s\u2019adapte \u00e0 la situation m\u00e9dicale de chaque enfant. Enti\u00e8rement gratuit pour les familles, il s\u2019inscrit sur le long terme, en commen\u00e7ant d\u00e8s le diagnostic \u00e0 l\u2019h\u00f4pital et en se poursuivant durablement en dehors.</p><h2>\u00c0 quoi serviront les dons ZEVENT 2026 ? </h2><p>Nous allons pouvoir d\u00e9velopper une toute nouvelle activit\u00e9, des Soins M\u00e9dicaux et de R\u00e9adaptation (SMR) sur le site de Ch\u00e2teau Sourire. Il s\u2019agira d\u2019hospitalisation \u00e0 temps complet et \u00e0 temps partiel pour les enfants malades de cancers. Ainsi l'association va pouvoir devenir un \u00e9tablissement de sant\u00e9 avec une capacit\u00e9 de 12 lits d\u2019hospitalisation et de 10 places d\u2019h\u00f4pital de jour. </p><p>Gr\u00e2ce \u00e0 vous, cela permettra de pouvoir dispenser des soins et de r\u00e9\u00e9duquer les enfants en prolongement des soins aigus hospitaliers. Une prise en charge compl\u00e8te et absolument in\u00e9dite en France pourra se mettre en place d\u00e8s 2026\u00a0! </p></div>\n</div>"
+      }
+    },
+    {
+      "id": 19,
+      "type": "text",
+      "title": "",
+      "transparent": true,
+      "gridPos": {
+        "x": 12,
+        "y": 135,
+        "w": 12,
+        "h": 17
+      },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"padding:4px 12px;font-size:14px;line-height:1.45\">\n  <div style=\"display:flex;align-items:center;gap:18px;margin-bottom:10px\">\n    <a href=\"https://www.sparadrap.org/\" target=\"_blank\" rel=\"noopener\" style=\"flex-shrink:0\"><img src=\"/public/associations/sparadrap.png\" alt=\"\" style=\"width:96px;height:96px;object-fit:contain;background:#fff;border-radius:12px;padding:6px;display:block\"></a>\n    <div style=\"min-width:0\">\n      <div style=\"font-size:24px;font-weight:800;line-height:1.1\">Sparadrap</div>\n      <div style=\"opacity:.75;margin-top:4px\">B\u00e9n\u00e9ficiaire de l'\u00e9dition 2025 \u00b7 P\u00f4le enfance \u00b7 <a href=\"https://www.sparadrap.org/\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit\">Site officiel</a></div>\n      <div style=\"font-size:19px;font-weight:700;color:#3fb950;margin-top:8px\">\u2248 ${part_180} <span style=\"font-size:13px;font-weight:500;opacity:.75\">(1/180 du total)</span></div>\n    </div>\n  </div>\n  <div class=\"content-asso\"><p>L'association SPARADRAP a pour but de guider les enfants dans le contexte des soins m\u00e9dicaux et hospitaliers.</p><p>L\u2019association Sparadrap informe, accompagne et rassure les enfants et leurs proches gr\u00e2ce \u00e0 ses nombreuses ressources p\u00e9dagogiques sur la sant\u00e9. Elle participe \u00e0 une meilleure prise en charge des enfants, en sensibilisant et formant les professionnels de sant\u00e9.</p><p>Ses actions permettent aux enfants de diminuer leur anxi\u00e9t\u00e9 et leur douleur, de ne pas avoir peur des blouses blanches et aux familles d\u2019\u00eatre partenaires du soin tout en facilitant le travail des professionnels de sant\u00e9.</p><h2>\u00c0 quoi serviront les dons ZEVENT 2026 ?</h2><p>Avec les dons de l\u2019\u00e9dition 2026, SPARADRAP pourra notamment\u00a0offrir \u00e0 des adolescents son livret sur la sant\u00e9 mentale, proposer d\u2019autres webinaires pour aider les parents d\u2019enfants malades ainsi que des vid\u00e9os d\u2019information (avec traduction), etc.</p></div>\n</div>"
+      }
+    },
+    {
+      "id": 20,
+      "type": "row",
+      "title": "\u00c9dition 2024 : Bureau du C\u0153ur, Chapitre 2, Cop1, Secours populaire fran\u00e7ais, Solidarit\u00e9 Paysans",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 152,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 21,
+      "type": "text",
+      "title": "",
+      "transparent": true,
+      "gridPos": {
+        "x": 0,
+        "y": 153,
+        "w": 12,
+        "h": 17
+      },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"padding:4px 12px;font-size:14px;line-height:1.45\">\n  <div style=\"display:flex;align-items:center;gap:18px;margin-bottom:10px\">\n    <a href=\"https://www.bureauxducoeur.org\" target=\"_blank\" rel=\"noopener\" style=\"flex-shrink:0\"><img src=\"/public/associations/bureauxducoeur.png\" alt=\"\" style=\"width:96px;height:96px;object-fit:contain;background:#fff;border-radius:12px;padding:6px;display:block\"></a>\n    <div style=\"min-width:0\">\n      <div style=\"font-size:24px;font-weight:800;line-height:1.1\">Bureau du C\u0153ur</div>\n      <div style=\"opacity:.75;margin-top:4px\">B\u00e9n\u00e9ficiaire de l'\u00e9dition 2024 \u00b7 <a href=\"https://www.bureauxducoeur.org\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit\">Site officiel</a></div>\n      <div style=\"font-size:19px;font-weight:700;color:#3fb950;margin-top:8px\">\u2248 ${part_45} <span style=\"font-size:13px;font-weight:500;opacity:.75\">(1/45 du total)</span></div>\n    </div>\n  </div>\n  <div class=\"content-asso\"><p>Il y a aujourd\u2019hui plus de 330 000 personnes sans logement p\u00e9renne en France, tandis que les bureaux ne sont occup\u00e9s que 30% du temps : la nuit, et le week-end, ils sont vides. Les Bureaux du C\u0153ur tentent d\u2019apporter une solution \u00e0 ce probl\u00e8me de mal-logement, en permettant \u00e0 toute personne en situation de pr\u00e9carit\u00e9 d\u2019acc\u00e9der \u00e0 un logement d\u00e9cent et \u00e0 une vie digne, quels que soient le montant de ses ressources et sa situation sociale.</p><h2>\u00c0 quoi serviront les dons ZEVENT 2026 ? </h2><p>Gr\u00e2ce au ZEVENT, ce qui n'\u00e9tait au d\u00e9part qu'une intuition est devenu une r\u00e9alit\u00e9 \u00e0 grande \u00e9chelle.\u00a0Concr\u00e8tement, ce sont d\u00e9j\u00e0 plus de 1 000 personnes qui ont pu dormir \u00e0 l\u2019abri dans des bureaux d\u2019entreprises, partout en France.</p><p>Aujourd\u2019hui, ce soutien nous donne les moyens de changer d\u2019\u00e9chelle, en mobilisant toujours plus d\u2019entreprises et de salari\u00e9\u00b7es pour r\u00e9pondre \u00e0 des besoins qui ne cessent de cro\u00eetre.</p><p>Demain, il va nous permettre d\u2019aller encore plus loin : faire de l\u2019accueil en entreprise un r\u00e9flexe solidaire partout en France, toucher encore plus de vies et d\u00e9montrer qu'avec des solutions simples, on peut avoir un impact immense.</p></div>\n</div>"
+      }
+    },
+    {
+      "id": 22,
+      "type": "text",
+      "title": "",
+      "transparent": true,
+      "gridPos": {
+        "x": 12,
+        "y": 153,
+        "w": 12,
+        "h": 17
+      },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"padding:4px 12px;font-size:14px;line-height:1.45\">\n  <div style=\"display:flex;align-items:center;gap:18px;margin-bottom:10px\">\n    <a href=\"https://chapitre2.org/\" target=\"_blank\" rel=\"noopener\" style=\"flex-shrink:0\"><img src=\"/public/associations/chapitre2.png\" alt=\"\" style=\"width:96px;height:96px;object-fit:contain;background:#fff;border-radius:12px;padding:6px;display:block\"></a>\n    <div style=\"min-width:0\">\n      <div style=\"font-size:24px;font-weight:800;line-height:1.1\">Chapitre 2</div>\n      <div style=\"opacity:.75;margin-top:4px\">B\u00e9n\u00e9ficiaire de l'\u00e9dition 2024 \u00b7 <a href=\"https://chapitre2.org/\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit\">Site officiel</a></div>\n      <div style=\"font-size:19px;font-weight:700;color:#3fb950;margin-top:8px\">\u2248 ${part_45} <span style=\"font-size:13px;font-weight:500;opacity:.75\">(1/45 du total)</span></div>\n    </div>\n  </div>\n  <div class=\"content-asso\"><p>Chapitre 2 accompagne les jeunes entre 14 et 25 ans en situation de vuln\u00e9rabilit\u00e9 \u00e0 s\u2019ins\u00e9rer professionnellement et socialement dans la vie, vers l\u2019autonomie. L\u2019acc\u00e8s \u00e0 l\u2019autonomie est un parcours long et complexe pour les jeunes en situation de vuln\u00e9rabilit\u00e9 ou sans soutien. Chapitre 2 propose une offre de service globale qui permet d\u2019\u00e9viter les ruptures de parcours.</p><h2>\u00c0 quoi serviront les dons ZEVENT 2026 ? </h2><p>Gr\u00e2ce \u00e0 la collecte du ZEVENT 2024, Chapitre 2 a pu ouvrir deux nouvelles antennes (\u00e0 Marseille et dans le Val-de-Marne) mais aussi lancer des actions en Seine-Saint-Denis. Au total, cela a permis d'accompagner environ 100 jeunes suppl\u00e9mentaires sur ces nouveaux territoires.</p><p>En 2026, ces actions r\u00e9cemment lanc\u00e9es seront d\u00e9ploy\u00e9es plus largement et permettront d'accompagner un nombre de jeunes encore plus important.</p></div>\n</div>"
+      }
+    },
+    {
+      "id": 23,
+      "type": "text",
+      "title": "",
+      "transparent": true,
+      "gridPos": {
+        "x": 0,
+        "y": 170,
+        "w": 12,
+        "h": 22
+      },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"padding:4px 12px;font-size:14px;line-height:1.45\">\n  <div style=\"display:flex;align-items:center;gap:18px;margin-bottom:10px\">\n    <a href=\"https://www.cop1.fr/\" target=\"_blank\" rel=\"noopener\" style=\"flex-shrink:0\"><img src=\"/public/associations/cop1.png\" alt=\"\" style=\"width:96px;height:96px;object-fit:contain;background:#fff;border-radius:12px;padding:6px;display:block\"></a>\n    <div style=\"min-width:0\">\n      <div style=\"font-size:24px;font-weight:800;line-height:1.1\">Cop1</div>\n      <div style=\"opacity:.75;margin-top:4px\">B\u00e9n\u00e9ficiaire de l'\u00e9dition 2024 \u00b7 <a href=\"https://www.cop1.fr/\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit\">Site officiel</a></div>\n      <div style=\"font-size:19px;font-weight:700;color:#3fb950;margin-top:8px\">\u2248 ${part_45} <span style=\"font-size:13px;font-weight:500;opacity:.75\">(1/45 du total)</span></div>\n    </div>\n  </div>\n  <div class=\"content-asso\"><p>Cop1 est une association ind\u00e9pendante motiv\u00e9e par un but simple :\u00a0porter assistance \u00e0 tout \u00e9tudiant dans le besoin\u00a0gr\u00e2ce \u00e0 des distributions gratuites de denr\u00e9es alimentaires, de produits d\u2019hygi\u00e8ne, de v\u00eatements, un acc\u00e8s aux droits, \u00e0 la culture, au sport, \u00e0 l\u2019emploi et de nombreuses activit\u00e9s !</p><h2>\u00c0 quoi serviront les dons ZEVENT 2026 ?</h2><p>Aujourd\u2019hui, les besoins des jeunes et des \u00e9tudiants persistent, tout comme la volont\u00e9 de Cop1 d\u2019y r\u00e9pondre plus amplement. C\u2019est une fois de plus avec le soutien du ZEVENT que nous pourrons y parvenir, en ouvrant dans 5 nouvelles villes \u00e9tudiantes !</p></div>\n</div>"
+      }
+    },
+    {
+      "id": 24,
+      "type": "text",
+      "title": "",
+      "transparent": true,
+      "gridPos": {
+        "x": 12,
+        "y": 170,
+        "w": 12,
+        "h": 22
+      },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"padding:4px 12px;font-size:14px;line-height:1.45\">\n  <div style=\"display:flex;align-items:center;gap:18px;margin-bottom:10px\">\n    <a href=\"https://www.secourspopulaire.fr/\" target=\"_blank\" rel=\"noopener\" style=\"flex-shrink:0\"><img src=\"/public/associations/secourspopulaire.png\" alt=\"\" style=\"width:96px;height:96px;object-fit:contain;background:#fff;border-radius:12px;padding:6px;display:block\"></a>\n    <div style=\"min-width:0\">\n      <div style=\"font-size:24px;font-weight:800;line-height:1.1\">Secours populaire fran\u00e7ais</div>\n      <div style=\"opacity:.75;margin-top:4px\">B\u00e9n\u00e9ficiaire de l'\u00e9dition 2024 \u00b7 <a href=\"https://www.secourspopulaire.fr/\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit\">Site officiel</a></div>\n      <div style=\"font-size:19px;font-weight:700;color:#3fb950;margin-top:8px\">\u2248 ${part_45} <span style=\"font-size:13px;font-weight:500;opacity:.75\">(1/45 du total)</span></div>\n    </div>\n  </div>\n  <div class=\"content-asso\"><p>Le Secours populaire fran\u00e7ais s\u2019engage quotidiennement pour un monde plus juste et plus solidaire. Ses b\u00e9n\u00e9voles, de tous \u00e2ges et tous horizons, agissent pr\u00e8s de chez eux pour faire vivre une solidarit\u00e9 sans fronti\u00e8re et inconditionnelle, fid\u00e8lement \u00e0 la devise de l\u2019association, \u00ab\u00a0Tout ce qui est humain est n\u00f4tre\u00a0\u00bb.</p><h2>\u00c0 quoi serviront les dons ZEVENT 2026 ?</h2><p>Avoir un emploi durable constitue le meilleur rempart contre la pr\u00e9carit\u00e9 car il est vecteur de revenus et de reconnaissance sociale.</p><p>Sans devenir expert de l\u2019insertion professionnelle, nous pouvons mettre en place diff\u00e9rentes actions pour favoriser l\u2019acc\u00e8s \u00e0 l\u2019emploi ou \u00e0 la formation :</p><ul><li>identifier les probl\u00e9matiques des personnes et les accompagner,</li><li>les orienter vers des partenaires sp\u00e9cialis\u00e9s</li><li>ou encore \u00e9tendre nos r\u00e9seaux en nouant des partenariats avec des acteurs de l\u2019emploi, soutenir l'obtention du permis de conduire dans une vis\u00e9e professionnelle.</li></ul><p>En tant qu\u2019association d\u2019\u00e9ducation populaire, notre r\u00f4le est aussi d\u2019\u00e9largir les horizons des plus jeunes en favorisant la d\u00e9couverte des m\u00e9tiers\u00a0: nous cr\u00e9ons des passerelles avec les entreprises et nos partenaires des secteurs agricole, sportif ou encore de l\u2019animation et des loisirs afin de faire d\u00e9couvrir diff\u00e9rents m\u00e9tiers, faciliter l\u2019acc\u00e8s \u00e0 des stages, \u00e9quiper les jeunes apprentis, leur permettre de suivre des formations compl\u00e9mentaires ou d\u2019acc\u00e9der \u00e0 un emploi.</p><p>Le soutien de ZEVENT concourra \u00e0 amplifier l'aide aux 5 000 personnes accompagn\u00e9es vers l\u2019emploi chaque ann\u00e9e.</p></div>\n</div>"
+      }
+    },
+    {
+      "id": 25,
+      "type": "text",
+      "title": "",
+      "transparent": true,
+      "gridPos": {
+        "x": 0,
+        "y": 192,
+        "w": 12,
+        "h": 16
+      },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"padding:4px 12px;font-size:14px;line-height:1.45\">\n  <div style=\"display:flex;align-items:center;gap:18px;margin-bottom:10px\">\n    <a href=\"https://www.solidarite-paysans.org/\" target=\"_blank\" rel=\"noopener\" style=\"flex-shrink:0\"><img src=\"/public/associations/solidaritepaysans.png\" alt=\"\" style=\"width:96px;height:96px;object-fit:contain;background:#fff;border-radius:12px;padding:6px;display:block\"></a>\n    <div style=\"min-width:0\">\n      <div style=\"font-size:24px;font-weight:800;line-height:1.1\">Solidarit\u00e9 Paysans</div>\n      <div style=\"opacity:.75;margin-top:4px\">B\u00e9n\u00e9ficiaire de l'\u00e9dition 2024 \u00b7 <a href=\"https://www.solidarite-paysans.org/\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit\">Site officiel</a></div>\n      <div style=\"font-size:19px;font-weight:700;color:#3fb950;margin-top:8px\">\u2248 ${part_45} <span style=\"font-size:13px;font-weight:500;opacity:.75\">(1/45 du total)</span></div>\n    </div>\n  </div>\n  <div class=\"content-asso\"><p>Pour d\u00e9fendre et accompagner les familles, aider les agriculteurs et agricultrices \u00e0 faire valoir leurs droits, pr\u00e9server l'emploi et lutter contre la pr\u00e9carit\u00e9, des agriculteurs ont cr\u00e9\u00e9 Solidarit\u00e9 Paysans, mouvement de lutte contre l'exclusion en milieu rural.\u00a0L'association Solidarit\u00e9 Paysans regroupe des associations locales qui agissent dans toute la France par un r\u00e9seau de b\u00e9n\u00e9voles et salari\u00e9.es.</p><p>Dans un contexte o\u00f9 le rythme des crises \u00e9conomiques, climatiques et sanitaires s\u2019acc\u00e9l\u00e8re pour les paysannes et paysans, Solidarit\u00e9 Paysans maintient plus que jamais sa raison d\u2019\u00eatre :</p><p>\u00ab lutter contre l\u2019exclusion, conforter l\u2019autonomie des personnes et contribuer avec elles \u00e0 leur d\u00e9fense \u00bb.</p><h2>\u00c0 quoi serviront les dons ZEVENT 2026 ? </h2><p>Et ce n\u2019est que le d\u00e9but ! Votre g\u00e9n\u00e9rosit\u00e9 va permettre d\u2019amplifier ces actions, afin de mettre en place des conditions d\u2019exercice du m\u00e9tier de paysan qui soient dignes et qui remettent les paysans et paysannes au centre du syst\u00e8me agricole, et de soutenir les transitions n\u00e9cessaires qui redonnent espoir et confiance.</p></div>\n</div>"
+      }
+    },
+    {
+      "id": 26,
+      "type": "row",
+      "title": "\u00c9dition 2022 : LPO, Sea Shepherd France, WWF",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 208,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 27,
+      "type": "text",
+      "title": "",
+      "transparent": true,
+      "gridPos": {
+        "x": 0,
+        "y": 209,
+        "w": 12,
+        "h": 18
+      },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"padding:4px 12px;font-size:14px;line-height:1.45\">\n  <div style=\"display:flex;align-items:center;gap:18px;margin-bottom:10px\">\n    <a href=\"https://www.lpo.fr/\" target=\"_blank\" rel=\"noopener\" style=\"flex-shrink:0\"><img src=\"/public/associations/lpo.png\" alt=\"\" style=\"width:96px;height:96px;object-fit:contain;background:#fff;border-radius:12px;padding:6px;display:block\"></a>\n    <div style=\"min-width:0\">\n      <div style=\"font-size:24px;font-weight:800;line-height:1.1\">LPO</div>\n      <div style=\"opacity:.75;margin-top:4px\">B\u00e9n\u00e9ficiaire de l'\u00e9dition 2022 \u00b7 <a href=\"https://www.lpo.fr/\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit\">Site officiel</a></div>\n      <div style=\"font-size:19px;font-weight:700;color:#3fb950;margin-top:8px\">\u2248 ${part_27} <span style=\"font-size:13px;font-weight:500;opacity:.75\">(1/27 du total)</span></div>\n    </div>\n  </div>\n  <div class=\"content-asso\"><p>La Ligue pour la Protection des Oiseaux (LPO), est l\u2019un des plus importantes associations fran\u00e7aises d\u00e9di\u00e9es \u00e0 la protection de la nature. Les oiseaux sont d\u2019excellents indicateurs de la sant\u00e9 des \u00e9cosyst\u00e8mes. L\u00e0 o\u00f9 ils se portent mal, c\u2019est toute le vivant qui souffre. Mais des solutions existent ! En agissant concr\u00e8tement pour la nature, la LPO contribue \u00e0 rendre nos territoires vivables dans le contexte du changement climatique.</p><h2>\u00c0 quoi serviront les dons ZEVENT 2026 ?</h2><p>Les dons permettront de mettre en \u0153uvre des programmes de protection de quatre esp\u00e8ces d\u2019oiseaux embl\u00e9matiques de nos milieux de vie (la ville, la campagne, la montagne et le littoral), aux c\u00f4t\u00e9s de tous les acteurs des territoires, pour am\u00e9liorer leur survie\u00a0:</p><ul><li>Busards\u00a0: prot\u00e9ger leurs nids dans les plaines agricoles, en travaillant avec les agriculteurs et en favorisant des habitats comme les haies et les mares.</li><li>Gypa\u00e8te barbu\u00a0: poursuivre sa r\u00e9introduction et renforcer les actions pour relier les populations des Alpes, des Pyr\u00e9n\u00e9es et du Massif central.</li><li>Hirondelles de fen\u00eatre\u00a0: pr\u00e9server l\u2019esp\u00e8ce en limitant la destruction des nids, en lien avec les collectivit\u00e9s, les agriculteurs et les acteurs de la r\u00e9novation.</li><li>Macareux moine\u00a0: prot\u00e9ger ses sites de nidification, suivre l\u2019impact des pollutions marines et r\u00e9duire les captures accidentelles dans les filets de p\u00eache.</li></ul></div>\n</div>"
+      }
+    },
+    {
+      "id": 28,
+      "type": "text",
+      "title": "",
+      "transparent": true,
+      "gridPos": {
+        "x": 12,
+        "y": 209,
+        "w": 12,
+        "h": 18
+      },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"padding:4px 12px;font-size:14px;line-height:1.45\">\n  <div style=\"display:flex;align-items:center;gap:18px;margin-bottom:10px\">\n    <a href=\"https://www.seashepherd.fr/\" target=\"_blank\" rel=\"noopener\" style=\"flex-shrink:0\"><img src=\"/public/associations/sea_shepherd.png\" alt=\"\" style=\"width:96px;height:96px;object-fit:contain;background:#fff;border-radius:12px;padding:6px;display:block\"></a>\n    <div style=\"min-width:0\">\n      <div style=\"font-size:24px;font-weight:800;line-height:1.1\">Sea Shepherd France</div>\n      <div style=\"opacity:.75;margin-top:4px\">B\u00e9n\u00e9ficiaire de l'\u00e9dition 2022 \u00b7 <a href=\"https://www.seashepherd.fr/\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit\">Site officiel</a></div>\n      <div style=\"font-size:19px;font-weight:700;color:#3fb950;margin-top:8px\">\u2248 ${part_27} <span style=\"font-size:13px;font-weight:500;opacity:.75\">(1/27 du total)</span></div>\n    </div>\n  </div>\n  <div class=\"content-asso\"><p>Sea Shepherd France est une association de d\u00e9fense de l'Oc\u00e9an sp\u00e9cialis\u00e9e dans la lutte contre le braconnage et dans la sensibilisation du grand public aux enjeux li\u00e9s \u00e0 la pr\u00e9servation de la vie marine.</p><h2>\u00c0 quoi serviront les dons ZEVENT 2026 ?</h2><p>Tous ces projets ont \u00e9t\u00e9 rendus possibles en grande partie gr\u00e2ce aux dons collect\u00e9s lors de l\u2019\u00e9dition 2022. Toutes ces campagnes se poursuivent aujourd\u2019hui et n\u00e9cessitent des financements, donc nous allouerons la somme collect\u00e9e cette ann\u00e9e en priorit\u00e9 aux missions cit\u00e9es et au centre de soins en Bretagne.</p></div>\n</div>"
+      }
+    },
+    {
+      "id": 29,
+      "type": "text",
+      "title": "",
+      "transparent": true,
+      "gridPos": {
+        "x": 0,
+        "y": 227,
+        "w": 12,
+        "h": 16
+      },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"padding:4px 12px;font-size:14px;line-height:1.45\">\n  <div style=\"display:flex;align-items:center;gap:18px;margin-bottom:10px\">\n    <a href=\"https://www.wwf.fr/\" target=\"_blank\" rel=\"noopener\" style=\"flex-shrink:0\"><img src=\"/public/associations/wwf.png\" alt=\"\" style=\"width:96px;height:96px;object-fit:contain;background:#fff;border-radius:12px;padding:6px;display:block\"></a>\n    <div style=\"min-width:0\">\n      <div style=\"font-size:24px;font-weight:800;line-height:1.1\">WWF</div>\n      <div style=\"opacity:.75;margin-top:4px\">B\u00e9n\u00e9ficiaire de l'\u00e9dition 2022 \u00b7 <a href=\"https://www.wwf.fr/\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit\">Site officiel</a></div>\n      <div style=\"font-size:19px;font-weight:700;color:#3fb950;margin-top:8px\">\u2248 ${part_27} <span style=\"font-size:13px;font-weight:500;opacity:.75\">(1/27 du total)</span></div>\n    </div>\n  </div>\n  <div class=\"content-asso\"><p>Depuis 1973, le WWF France agit au quotidien afin d'offrir aux g\u00e9n\u00e9rations futures une plan\u00e8te vivante. Nous \u0153uvrons pour mettre un frein \u00e0 la d\u00e9gradation de l'environnement et construire un avenir o\u00f9 les humains vivent en harmonie avec la nature.</p><h2>\u00c0 quoi serviront les dons ZEVENT 2026 ?</h2><ul><li>Poursuivre le travail de CIBEL pour sa partie bassin du Congo pendant au moins deux ans, et surtout en R\u00e9publique du Congo.</li><li>Prot\u00e9ger l\u2019un des derniers refuges majeurs du lion africain gr\u00e2ce \u00e0 une action de terrain mesurable et locale\u00a0: Sauver la part du lion au Zimbabwe\". Ce projet vise \u00e0 enrayer le d\u00e9clin des lions d\u2019Afrique en prot\u00e9geant une population cl\u00e9 dans le parc national de Hwange, au Zimbabwe, un territoire strat\u00e9gique pour la survie de l\u2019esp\u00e8ce. Il combine suivi scientifique, restauration des habitats et r\u00e9duction des conflits entre humains et faune sauvage, en s\u2019appuyant fortement sur l\u2019implication des communaut\u00e9s locales et des solutions \u00e9prouv\u00e9es sur le terrain. Le soutien des gamers de Z Event permettrait d\u2019amplifier rapidement l\u2019impact du programme, de s\u00e9curiser un refuge majeur pour les lions et de contribuer \u00e0 un projet visible, mesurable et align\u00e9 avec les enjeux biodiversit\u00e9 et d\u00e9veloppement durable.</li></ul></div>\n</div>"
+      }
+    },
+    {
+      "id": 30,
+      "type": "row",
+      "title": "\u00c9dition 2021 : Action contre la Faim",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 243,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 31,
+      "type": "text",
+      "title": "",
+      "transparent": true,
+      "gridPos": {
+        "x": 0,
+        "y": 244,
+        "w": 12,
+        "h": 28
+      },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"padding:4px 12px;font-size:14px;line-height:1.45\">\n  <div style=\"display:flex;align-items:center;gap:18px;margin-bottom:10px\">\n    <a href=\"https://www.actioncontrelafaim.org/\" target=\"_blank\" rel=\"noopener\" style=\"flex-shrink:0\"><img src=\"/public/associations/action_contre_la_faim.svg\" alt=\"\" style=\"width:96px;height:96px;object-fit:contain;background:#fff;border-radius:12px;padding:6px;display:block\"></a>\n    <div style=\"min-width:0\">\n      <div style=\"font-size:24px;font-weight:800;line-height:1.1\">Action contre la Faim</div>\n      <div style=\"opacity:.75;margin-top:4px\">B\u00e9n\u00e9ficiaire de l'\u00e9dition 2021 \u00b7 <a href=\"https://www.actioncontrelafaim.org/\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit\">Site officiel</a></div>\n      <div style=\"font-size:19px;font-weight:700;color:#3fb950;margin-top:8px\">\u2248 ${part_9} <span style=\"font-size:13px;font-weight:500;opacity:.75\">(1/9 du total)</span></div>\n    </div>\n  </div>\n  <div class=\"content-asso\"><p>En 2025, 673 millions de personnes souffrent de la faim dans le monde. L\u2019 ONG internationale humanitaire fran\u00e7aise Action contre la Faim se bat contre cette injustice depuis 47 ans. Nos actions humanitaires se concentrent sur la pr\u00e9vention, le d\u00e9pistage et le traitement de la sous-nutrition.</p><h2>\u00c0 quoi serviront les dons ZEVENT 2026 ? </h2><p>Vos dons permettront \u00e0 Action contre la Faim de soutenir ses actions dans deux pays, la R\u00e9publique centrafricaine et l\u2019Irak\u00a0;</p><p>En RCA, dans un pays qui fait face \u00e0 une baisse drastique des financements mondiaux malgr\u00e9 une situation humanitaire critique, ils permettront\u00a0:</p><ul><li>De poursuivre nos actions pour que les communaut\u00e9s, et principalement les enfants de moins de cinq ans et les femmes enceintes et allaitantes, aient acc\u00e8s aux soins de sant\u00e9 notamment en formant les agents de sant\u00e9, en fournissant du mat\u00e9riel m\u00e9dical et des produits nutritionnels et en r\u00e9habilitant les infrastructures</li><li>De soutenir la relance agricole tout en aidant les familles \u00e0 d\u00e9velopper d\u2019autres sources de revenus</li><li>De fournir des soins de sant\u00e9 mentale et de soutien psychosocial</li><li>D\u2019am\u00e9liorer l\u2019acc\u00e8s \u00e0 de l\u2019eau potable pour r\u00e9duire les risques de maladies</li></ul><p>Le Cameroun est confront\u00e9 \u00e0 une crise multiforme entre ins\u00e9curit\u00e9 li\u00e9e aux groupes arm\u00e9s autour du Lac Tchad dans l\u2019Extr\u00eame-Nord, des conflits communautaires et la pr\u00e9sence de nombreux r\u00e9fugi\u00e9s centrafricains dans l\u2019Est du pays. L\u2019ins\u00e9curit\u00e9 alimentaire et la situation nutritionnelle sont tr\u00e8s pr\u00e9occupantes \u00e0 l\u2019extr\u00eame nord du pays avec des d\u00e9placements de population, des chocs climatiques r\u00e9currents dans cette zone sah\u00e9lienne et des conflits communautaires souvent li\u00e9s \u00e0 l\u2019acc\u00e8s aux ressources naturelles qui s\u2019ajoutent \u00e0 des fragilit\u00e9s structurelles. </p><p>Dans ce contexte et malgr\u00e9 des baisses consid\u00e9rables de financements depuis 2025, Action contre la Faim : </p><ul><li>Met en \u0153uvre des projets d\u2019urgence et de r\u00e9silience dans l\u2019Extr\u00eame Nord et des projets de r\u00e9silience \u00e0 l\u2019Est,</li><li>D\u00e9ploie des cliniques mobiles pour offrir des soins de sant\u00e9 dans les zones les plus recul\u00e9es, </li><li>Renforce les soins de sant\u00e9 mentale, </li><li>Forme les agriculteurs et agricultrices \u00e0 l\u2019agro\u00e9cologie, </li><li>Soutien l\u2019insertion professionnelle des jeunes. </li></ul></div>\n</div>"
+      }
+    },
+    {
+      "id": 32,
+      "type": "row",
+      "title": "\u00c9dition 2020 : Amnesty International",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 272,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 33,
+      "type": "text",
+      "title": "",
+      "transparent": true,
+      "gridPos": {
+        "x": 0,
+        "y": 273,
+        "w": 12,
+        "h": 20
+      },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"padding:4px 12px;font-size:14px;line-height:1.45\">\n  <div style=\"display:flex;align-items:center;gap:18px;margin-bottom:10px\">\n    <a href=\"https://www.amnesty.fr/\" target=\"_blank\" rel=\"noopener\" style=\"flex-shrink:0\"><img src=\"/public/associations/amnesty.png\" alt=\"\" style=\"width:96px;height:96px;object-fit:contain;background:#fff;border-radius:12px;padding:6px;display:block\"></a>\n    <div style=\"min-width:0\">\n      <div style=\"font-size:24px;font-weight:800;line-height:1.1\">Amnesty International</div>\n      <div style=\"opacity:.75;margin-top:4px\">B\u00e9n\u00e9ficiaire de l'\u00e9dition 2020 \u00b7 <a href=\"https://www.amnesty.fr/\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit\">Site officiel</a></div>\n      <div style=\"font-size:19px;font-weight:700;color:#3fb950;margin-top:8px\">\u2248 ${part_9} <span style=\"font-size:13px;font-weight:500;opacity:.75\">(1/9 du total)</span></div>\n    </div>\n  </div>\n  <div class=\"content-asso\"><p>Amnesty International est une ONG ind\u00e9pendante qui lutte pour la libert\u00e9 d\u2019expression et contre les discriminations. L\u2019association milite pour le respect et la d\u00e9fense des droits humains partout dans le monde, et veille \u00e0 garantir les libert\u00e9s, \u00e0 mettre fin aux discriminations, \u00e0 prot\u00e9ger les populations civiles et \u00e0 obtenir justice, avec force et d\u00e9termination.</p><h2>\u00c0 quoi serviront les dons ZEVENT 2026 ? </h2><p>Gr\u00e2ce aux dons qui seront collect\u00e9s dans le cadre du ZEVENT 2026, Amnesty International France agira de fa\u00e7on tr\u00e8s concr\u00e8te pour d\u00e9fendre les droits humains en France et dans le monde.</p><p>Les dons permettront notamment de soutenir l\u2019op\u00e9ration embl\u00e9matique Changer leur histoire, qui permet chaque ann\u00e9e, d\u2019aider directement des personnes injustement emprisonn\u00e9es ou menac\u00e9es.</p><p>Les dons financeront \u00e9galement l\u2019\u00e9ducation aux droits humains et la formation de milliers de citoyen\u00b7nes, b\u00e9n\u00e9voles, jeunes et professionnel\u00b7les, pour leur donner les outils n\u00e9cessaires afin de lutter contre le racisme, les discriminations, la d\u00e9sinformation et les discours de haine, notamment dans un contexte \u00e9lectoral sensible. </p><p>\u00c0 l\u2019international, les dons soutiendront aussi des programmes essentiels pour lutter contre la d\u00e9sinformation, d\u00e9fendre la justice climatique et prot\u00e9ger les d\u00e9fenseur\u00b7es des droits humains. Concr\u00e8tement, cela permettra d\u2019informer, de mobiliser, de prot\u00e9ger et d\u2019obtenir des changements r\u00e9els pour les personnes dont les droits sont menac\u00e9s.</p></div>\n</div>"
+      }
+    },
+    {
+      "id": 34,
+      "type": "row",
+      "title": "\u00c9dition 2019 : Institut Pasteur",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 293,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 35,
+      "type": "text",
+      "title": "",
+      "transparent": true,
+      "gridPos": {
+        "x": 0,
+        "y": 294,
+        "w": 12,
+        "h": 17
+      },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"padding:4px 12px;font-size:14px;line-height:1.45\">\n  <div style=\"display:flex;align-items:center;gap:18px;margin-bottom:10px\">\n    <a href=\"https://www.pasteur.fr/fr\" target=\"_blank\" rel=\"noopener\" style=\"flex-shrink:0\"><img src=\"/public/associations/institut_pasteur.png\" alt=\"\" style=\"width:96px;height:96px;object-fit:contain;background:#fff;border-radius:12px;padding:6px;display:block\"></a>\n    <div style=\"min-width:0\">\n      <div style=\"font-size:24px;font-weight:800;line-height:1.1\">Institut Pasteur</div>\n      <div style=\"opacity:.75;margin-top:4px\">B\u00e9n\u00e9ficiaire de l'\u00e9dition 2019 \u00b7 <a href=\"https://www.pasteur.fr/fr\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit\">Site officiel</a></div>\n      <div style=\"font-size:19px;font-weight:700;color:#3fb950;margin-top:8px\">\u2248 ${part_9} <span style=\"font-size:13px;font-weight:500;opacity:.75\">(1/9 du total)</span></div>\n    </div>\n  </div>\n  <div class=\"content-asso\"><p>L\u2019Institut Pasteur est une fondation \u00e0 but non lucratif dont la mission est de contribuer \u00e0 la pr\u00e9vention et au traitement des maladies, en priorit\u00e9 infectieuses, par la recherche, l'innovation, l\u2019enseignement, et des actions de sant\u00e9 publique.</p><h2>\u00c0 quoi serviront les dons ZEVENT 2026 ?</h2><p>Le recherche sur le microbiote est l\u2019un des domaines les plus prometteurs de la m\u00e9decine actuelle. Mieux comprendre ces milliards de micro-organismes qui vivent dans notre corps pourrait transformer la pr\u00e9vention et le traitement de nombreuses maladies, avec des approches plus personnalis\u00e9es, et donc plus efficaces. D\u00e9pression, maladies neurod\u00e9g\u00e9n\u00e9ratives, cancers, allergies, maladies chroniques, infections ou sant\u00e9 de l\u2019enfant et de la m\u00e8re : les microbiotes jouent un r\u00f4le essentiel dans notre sant\u00e9 tout au long de la vie.</p><p>\u00c0 l\u2019Institut Pasteur, les fonds collect\u00e9s lors du ZEVENT 2026 permettront de :</p><ul><li>financer des recherches transdisciplinaires pour mieux comprendre le microbiote</li><li>et acc\u00e9l\u00e9rer le d\u00e9veloppement de nouvelles solutions visant \u00e0 mieux soigner les maladies, mais aussi \u00e0 les pr\u00e9venir.</li></ul></div>\n</div>"
+      }
+    },
+    {
+      "id": 36,
+      "type": "row",
+      "title": "\u00c9dition 2018 : MSF",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 311,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 37,
+      "type": "text",
+      "title": "",
+      "transparent": true,
+      "gridPos": {
+        "x": 0,
+        "y": 312,
+        "w": 12,
+        "h": 18
+      },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"padding:4px 12px;font-size:14px;line-height:1.45\">\n  <div style=\"display:flex;align-items:center;gap:18px;margin-bottom:10px\">\n    <a href=\"https://www.msf.fr/\" target=\"_blank\" rel=\"noopener\" style=\"flex-shrink:0\"><img src=\"/public/associations/msf.png\" alt=\"\" style=\"width:96px;height:96px;object-fit:contain;background:#fff;border-radius:12px;padding:6px;display:block\"></a>\n    <div style=\"min-width:0\">\n      <div style=\"font-size:24px;font-weight:800;line-height:1.1\">MSF</div>\n      <div style=\"opacity:.75;margin-top:4px\">B\u00e9n\u00e9ficiaire de l'\u00e9dition 2018 \u00b7 <a href=\"https://www.msf.fr/\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit\">Site officiel</a></div>\n      <div style=\"font-size:19px;font-weight:700;color:#3fb950;margin-top:8px\">\u2248 ${part_9} <span style=\"font-size:13px;font-weight:500;opacity:.75\">(1/9 du total)</span></div>\n    </div>\n  </div>\n  <div class=\"content-asso\"><p>M\u00e9decins Sans Fronti\u00e8res (MSF) est une association m\u00e9dicale humanitaire internationale, cr\u00e9\u00e9e en 1971 \u00e0 Paris par des m\u00e9decins et des journalistes. Depuis plus de cinquante ans, elle apporte une assistance m\u00e9dicale \u00e0 des populations dont la vie ou la sant\u00e9 sont menac\u00e9es, en France ou \u00e0 l\u2019\u00e9tranger : principalement en cas de conflits arm\u00e9s, mais aussi d'\u00e9pid\u00e9mies, de pand\u00e9mies, de catastrophes naturelles ou encore d'exclusion des soins.</p><h2>\u00c0 quoi serviront les dons ZEVENT 2026 ?</h2><p>MSF pourra\u00a0renforcer ses interventions m\u00e9dicales aupr\u00e8s de populations touch\u00e9es par des crises humanitaires, des conflits arm\u00e9s ou des catastrophes naturelles.</p><ul><li>Ces fonds permettront de d\u00e9ployer rapidement des \u00e9quipes m\u00e9dicales sur le terrain, d\u2019assurer des soins d\u2019urgence et d\u2019apporter un soutien vital aux personnes les plus vuln\u00e9rables.</li><li>Concr\u00e8tement, la collecte contribuera \u00e0 financer des consultations m\u00e9dicales, des soins hospitaliers, des campagnes de vaccination et l\u2019acc\u00e8s aux m\u00e9dicaments essentiels, dans plus de 70 pays.</li><li>Elle permettra \u00e9galement \u00e0 MSF de maintenir sa capacit\u00e9 d\u2019intervention rapide, ind\u00e9pendante et impartiale, afin de r\u00e9pondre aux urgences l\u00e0 o\u00f9 les besoins sont les plus critiques.</li></ul><p>Chaque don participera ainsi \u00e0 sauver des vies et \u00e0 soulager les souffrances de milliers de patients et de leurs familles.</p></div>\n</div>"
+      }
+    },
+    {
+      "id": 38,
+      "type": "row",
+      "title": "\u00c9dition 2017 : Croix-Rouge",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 330,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 39,
+      "type": "text",
+      "title": "",
+      "transparent": true,
+      "gridPos": {
+        "x": 0,
+        "y": 331,
+        "w": 12,
+        "h": 31
+      },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"padding:4px 12px;font-size:14px;line-height:1.45\">\n  <div style=\"display:flex;align-items:center;gap:18px;margin-bottom:10px\">\n    <a href=\"https://www.croix-rouge.fr/\" target=\"_blank\" rel=\"noopener\" style=\"flex-shrink:0\"><img src=\"/public/associations/croix_rouge.png\" alt=\"\" style=\"width:96px;height:96px;object-fit:contain;background:#fff;border-radius:12px;padding:6px;display:block\"></a>\n    <div style=\"min-width:0\">\n      <div style=\"font-size:24px;font-weight:800;line-height:1.1\">Croix-Rouge</div>\n      <div style=\"opacity:.75;margin-top:4px\">B\u00e9n\u00e9ficiaire de l'\u00e9dition 2017 \u00b7 <a href=\"https://www.croix-rouge.fr/\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit\">Site officiel</a></div>\n      <div style=\"font-size:19px;font-weight:700;color:#3fb950;margin-top:8px\">\u2248 ${part_9} <span style=\"font-size:13px;font-weight:500;opacity:.75\">(1/9 du total)</span></div>\n    </div>\n  </div>\n  <div class=\"content-asso\"><p>Anim\u00e9e par le principe fondamental d'Humanit\u00e9, la Croix-Rouge fran\u00e7aise est en premi\u00e8re ligne pour pr\u00e9parer et prot\u00e9ger les populations, et renforcer la r\u00e9silience collective face aux d\u00e9fis croissants de notre monde. Dans un contexte o\u00f9 les crises s'intensifient et l'impr\u00e9vu est constant, nos volontaires agissent sans rel\u00e2che. Nous sommes pr\u00e9sents pour faire face \u00e0 l'urgence, secourir les plus vuln\u00e9rables, et sensibiliser le grand public aux risques de crise, contribuant ainsi \u00e0 la s\u00e9curit\u00e9 et \u00e0 la r\u00e9silience des communaut\u00e9s.</p><p>Au-del\u00e0 de l'action imm\u00e9diate, la Croix-Rouge fran\u00e7aise offre \u00e9galement un soutien essentiel, notamment en sant\u00e9 mentale et psychosocial, en offrant une \u00e9coute bienveillante \u00e0 ceux qui en ont besoin.</p><p>Nous nous engageons \u00e9galement activement dans le R\u00e9tablissement des liens familiaux et \u0153uvrons \u00e0 la Protection de l'enfance. Ces deux missions convergent pour accompagner les plus fragiles, pr\u00e9venir les situations de d\u00e9tresse, d\u00e9fendre la dignit\u00e9 humaine et pr\u00e9server ou reconstituer les liens familiaux, piliers fondamentaux de la r\u00e9silience individuelle et collective.</p><h2>\u00c0 quoi serviront les dons ZEVENT 2026 ?</h2><p>Vos dons permettront \u00e0 la Croix-Rouge fran\u00e7aise :</p><ul><li>d\u2019\u00e9quiper en d\u00e9fibrillateur et mat\u00e9riel de secouriste les \u201cPremiers R\u00e9pondants\u201d,\u00a0des b\u00e9n\u00e9voles secouristes form\u00e9s et \u00e9quip\u00e9s d\u2019un d\u00e9fibrillateur portatif qui interviennent en ultra-proximit\u00e9 en cas d\u2019arr\u00eat cardiaque, avant l\u2019arriv\u00e9e des secours,</li><li>de moderniser et entretenir le parc de V\u00e9hicules de Premiers Secours \u00e0 Personnes de la Croix-Rouge, les ambulances qui permettent aux secouristes d\u2019intervenir sur les lieux d\u2019urgence avec leur mat\u00e9riel,</li><li>de pr\u00e9venir et sensibiliser plus d'\u00e9l\u00e8ves aux risques naturels dans les territoires ultra marins avec le module \"Par\u00e9 pas Par\u00e9\"</li><li>de former et encadrer les b\u00e9n\u00e9voles \u00e9coutants de la ligne t\u00e9l\u00e9phonique \"Croix-Rouge fran\u00e7aise \u00e0 votre \u00e9coute\" (0 800 858 858), soutien psychosocial gratuit, anonyme et confidentiel.</li><li>de d\u00e9ployer le nouveau module de sensibilisation et pr\u00e9vention \u201cTous Acteurs de la Sant\u00e9 Mentale de la Croix-Rouge fran\u00e7aise\"</li><li>de soutenir la mission statutaire de R\u00e9tablissement des liens familiaux de la Croix-Rouge fran\u00e7aise dans un contexte croissant de familles s\u00e9par\u00e9es par les conflits arm\u00e9s, les catastrophes naturelles, les violences et les migrations forc\u00e9es.</li><li>de renforcer notre action aupr\u00e8s des jeunes en difficult\u00e9 au titre de la Protection de l\u2019enfance : proposer des lieux de vie protecteurs, des accompagnements renforc\u00e9s par des \u00e9ducateurs sp\u00e9cialis\u00e9s, psychologues et travailleurs sociaux.</li></ul><p>Gr\u00e2ce \u00e0 votre soutien, la Croix-Rouge fran\u00e7aise pourra poursuivre son engagement essentiel d'intervenir en cas de crise, d'all\u00e9ger les souffrances, de renforcer les liens humains et de construire une r\u00e9silience durable pour tous</p></div>\n</div>"
+      }
+    },
+    {
+      "id": 40,
+      "type": "row",
+      "title": "\u00c9dition 2016 : Save the Children",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 362,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 41,
+      "type": "text",
+      "title": "",
+      "transparent": true,
+      "gridPos": {
+        "x": 0,
+        "y": 363,
+        "w": 12,
+        "h": 20
+      },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"padding:4px 12px;font-size:14px;line-height:1.45\">\n  <div style=\"display:flex;align-items:center;gap:18px;margin-bottom:10px\">\n    <a href=\"https://www.savethechildren.net/\" target=\"_blank\" rel=\"noopener\" style=\"flex-shrink:0\"><img src=\"/public/associations/save_the_children.png\" alt=\"\" style=\"width:96px;height:96px;object-fit:contain;background:#fff;border-radius:12px;padding:6px;display:block\"></a>\n    <div style=\"min-width:0\">\n      <div style=\"font-size:24px;font-weight:800;line-height:1.1\">Save the Children</div>\n      <div style=\"opacity:.75;margin-top:4px\">B\u00e9n\u00e9ficiaire de l'\u00e9dition 2016 \u00b7 <a href=\"https://www.savethechildren.net/\" target=\"_blank\" rel=\"noopener\" style=\"color:inherit\">Site officiel</a></div>\n      <div style=\"font-size:19px;font-weight:700;color:#3fb950;margin-top:8px\">\u2248 ${part_9} <span style=\"font-size:13px;font-weight:500;opacity:.75\">(1/9 du total)</span></div>\n    </div>\n  </div>\n  <div class=\"content-asso\"><p>Save the Children est une ONG qui d\u00e9fend les droits de l'enfant \u00e0 travers le monde. Chaque ann\u00e9e, nous atteignons des dizaines de millions d\u2019enfants dans plus de 100 pays gr\u00e2ce \u00e0 notre travail qui change des vies. Nous r\u00e9pondons rapidement aux urgences humanitaires, proposons des programmes de d\u00e9veloppement innovants et veillons \u00e0 ce que les voix des enfants soient entendues pour construire un avenir meilleur pour et avec les enfants.</p><h2>\u00c0 quoi serviront les dons ZEVENT 2026 ? </h2><p>Le Soudan fait face \u00e0 une crise humanitaire majeure. Plus de 30,7 millions de personnes, dont 17,3 millions d\u2019enfants, ont besoin d\u2019une aide urgente. Pr\u00e9sente dans 12 des 18 \u00c9tats du pays, Save the Children apporte une assistance vitale en sant\u00e9, nutrition, \u00e9ducation, protection de l\u2019enfance, s\u00e9curit\u00e9 alimentaire et moyens de subsistance.</p><p>Gr\u00e2ce aux dons, nous pourrons :</p><ul><li>fournir des soins m\u00e9dicaux essentiels et renforcer la prise en charge de la malnutrition ;</li><li>soutenir les m\u00e8res et les b\u00e9b\u00e9s pour pr\u00e9venir la malnutrition ;</li><li>assurer des vaccinations, des soins maternels et un soutien psychosocial ;</li><li>permettre aux enfants de continuer \u00e0 apprendre malgr\u00e9 la crise ;</li><li>prot\u00e9ger les enfants contre l\u2019exploitation et les risques li\u00e9s au conflit.</li></ul><p>Concr\u00e8tement, les dons pourront permettre de soutenir un centre de sant\u00e9 pendant un an et d\u2019aider des milliers de personnes.</p></div>\n</div>"
+      }
+    }
+  ]
+}

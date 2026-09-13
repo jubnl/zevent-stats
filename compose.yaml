@@ -42,6 +42,8 @@ services:
     volumes:
       - grafana-public-data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      # association logos, served at /public/associations/ (grafana/pull_associations.py)
+      - ./grafana/public/associations:/usr/share/grafana/public/associations:ro
     ports:
       - "127.0.0.1:3031:3000"
     depends_on:

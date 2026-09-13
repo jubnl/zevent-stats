@@ -198,6 +198,18 @@
       "asDropdown": false,
       "tags": [],
       "tooltip": ""
+    },
+    {
+      "type": "link",
+      "title": "Associations",
+      "url": "/d/zevent-associations-public?kiosk=1",
+      "icon": "dashboard",
+      "keepTime": true,
+      "includeVars": false,
+      "targetBlank": false,
+      "asDropdown": false,
+      "tags": [],
+      "tooltip": ""
     }
   ],
   "annotations": {

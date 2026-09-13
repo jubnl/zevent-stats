@@ -9,11 +9,18 @@ each has buttons to the others:
                                remote, games, donations not tied to a streamer. Location filter
   zevent-streamer-public.json  ZEVENT streamer: one streamer in detail, with their donation goals; opens on the leader
   zevent-viewers-public.json   ZEVENT viewers: the viewers of every streamer stacked over time
+  zevent-associations-public.json  ZEVENT associations: the split of the final total between the 22 beneficiaries
+                               and what each association will do with it (grafana/associations.py)
 The "-public" uid suffix is kept because the URLs are published (the proxy redirects / to /d/zevent-public).
 """
 import copy
 import json
+import re
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent))
+import associations  # noqa: E402  (grafana/associations.py)
 
 DS = {"type": "grafana-postgresql-datasource", "uid": "zevent-pg"}
 _id = 0
@@ -1280,6 +1287,7 @@ DASHBOARDS = [  # (uid, button title)
     ("zevent-insights-public", "Analyses"),
     ("zevent-streamer-public", "Streamer"),
     ("zevent-viewers-public", "Viewers"),
+    ("zevent-associations-public", "Associations"),
 ]
 
 
@@ -1465,6 +1473,202 @@ def viewers_panels():
 
 
 # ---------------------------------------------------------------------------------------------------
+# ZEVENT associations: how the final total is split between the 22 beneficiaries (grafana/associations.py:
+# one ninth per previous edition, then equal parts between that edition's beneficiaries; no fee deducted,
+# the Fondation de France publishes no rate for the tax-receipt costs it keeps) and what each
+# association says it will do with the money (texts and logos from zevent.fr/associations, pulled by
+# grafana/pull_associations.py into associations.json and public/associations/). The logos are served by
+# Grafana from /public/associations/ (bind mount in compose.yaml).
+ASSOCIATIONS = associations.load()
+SHARES = associations.shares(ASSOCIATIONS)
+LOGO_URL = "/public/associations/"
+# the total at the end of the event (frozen by freeze_sql)
+FINAL = "(SELECT donation_total FROM snapshot ORDER BY ts DESC LIMIT 1)"
+
+
+def sql_str(s):
+    return "'" + s.replace("'", "''") + "'"
+
+
+# every beneficiary as a VALUES list: a(name, edition, grp, n, parts, link, logo)
+SHARES_VALUES = "(VALUES " + ", ".join(
+    f"({sql_str(a['name'])}, {a['edition']}, {sql_str(a['group']) if a['group'] else 'NULL'}, {a['beneficiaries']}, "
+    f"{a['parts']}, {sql_str(a['link'])}, {sql_str(LOGO_URL + a['logo'])})"
+    for a in SHARES) + ") a(name, edition, grp, n, parts, link, logo)"
+SHARES_CTE = f"WITH t AS (SELECT donation_total AS total FROM ({FINAL}) x(donation_total)), a AS (SELECT * FROM {SHARES_VALUES}) "
+
+
+def edition_beneficiaries(year):
+    """'Helebor, Nightline, Pôle enfance (L'envol, ...)' for the edition table."""
+    names, groups = [], {}
+    for a in SHARES:
+        if a["edition"] != year:
+            continue
+        if a["group"]:
+            groups.setdefault(a["group"], []).append(a["name"])
+        else:
+            names.append(a["name"])
+    return ", ".join(sorted(names) + [f"{g} ({', '.join(sorted(m))})" for g, m in groups.items()])
+
+
+# one row per previous edition: e(year, beneficiaries, n)
+EDITION_SHARES_VALUES = "(VALUES " + ", ".join(
+    f"({y}, {sql_str(edition_beneficiaries(y))}, {len({a['group'] or a['name'] for a in SHARES if a['edition'] == y})})"
+    for y, _, _ in EDITIONS) + ") b(year, beneficiaries, n)"
+
+N_ASSOCIATIONS = len(SHARES)
+MAX_PARTS = max(a["parts"] for a in SHARES)
+N_EDITIONS = associations.PREVIOUS_EDITIONS
+POLE = associations.POLE_ENFANCE_NAME
+
+REPARTITION_HTML = f"""
+<div style="font-size:15px;line-height:1.5;padding:4px 12px">
+  <p style="margin:0 0 8px"><b>Pour le ZEVENT 2026, la Fondation de France collecte les dons et les reverse aux
+  {N_ASSOCIATIONS} associations soutenues depuis 2016, « selon les répartitions des {N_EDITIONS} éditions précédentes »</b>
+  (<a href="https://zevent.fr/associations" target="_blank" rel="noopener">zevent.fr/associations</a>).</p>
+  <p style="margin:0 0 8px">Lecture retenue ici : le total final est divisé en <b>{N_EDITIONS} parts égales, une par édition</b>
+  (2016 à 2025, pas d'édition en 2023), et la part de chaque édition est <b>partagée à parts égales entre les bénéficiaires
+  de cette édition</b>. En 2025 le {POLE} (L'envol, Le Rire Médecin, Sourire à la Vie, Sparadrap) comptait pour un seul
+  bénéficiaire aux côtés de quatre autres : son cinquième est divisé en quatre. The SeaCleaners, bénéficiaire en 2022, ne
+  fait plus partie des associations soutenues : la part 2022 va aux trois autres.</p>
+  <p style="margin:0 0 8px;opacity:.8">Les montants sont donc une estimation calculée sur le total final de l'événement ; la
+  répartition réelle est faite par la Fondation de France, qui retient les frais liés à l'émission des reçus fiscaux
+  (et les avances éventuelles) sans taux publié : aucune déduction n'est appliquée ici. Textes et logos des associations : zevent.fr.</p>
+  <p style="margin:0;opacity:.8"><b>Et l'État ?</b> Il ne prélève rien sur la collecte : les dons faits à une fondation reconnue
+  d'utilité publique sont exonérés de droits de mutation (articles 757 et 795 du Code général des impôts) et l'activité non
+  lucrative de la fondation n'est soumise ni à l'impôt sur les sociétés, ni à la TVA. L'État contribue au contraire : chaque
+  donateur imposable récupère 66 % de son don en réduction d'impôt sur le revenu (dans la limite de 20 % du revenu imposable),
+  d'où le reçu fiscal envoyé par la Fondation de France.</p>
+</div>
+"""
+
+
+def part_var(parts):
+    """Hidden variable holding the amount of one part in `parts` as text, for the association text panels."""
+    return {"name": f"part_{parts}", "type": "query", "datasource": DS, "definition": f"part_{parts}",
+            "query": f"SELECT {eur_text(f'donation_total / {parts}')} FROM snapshot ORDER BY ts DESC LIMIT 1",
+            "hide": 2, "refresh": 2, "multi": False, "includeAll": False, "sort": 0, "current": {}}
+
+
+ASSOCIATION_VARS = [part_var(p) for p in sorted({a["parts"] for a in SHARES})]
+
+
+def association_html(a):
+    share = next((s for s in SHARES if s["name"] == a["name"]), None)
+    if share:
+        sub = f" · {share['group']}" if share["group"] else ""
+        meta = f"Bénéficiaire de l'édition {share['edition']}{sub}"
+        amount = (f'<div style="font-size:19px;font-weight:700;color:#3fb950;margin-top:8px">≈ ${{part_{share["parts"]}}}'
+                  f' <span style="font-size:13px;font-weight:500;opacity:.75">(1/{share["parts"]} du total)</span></div>')
+    else:
+        meta, amount = "Collecte et reversement des dons", ""
+    logo = f'<img src="{LOGO_URL}{a["logo"]}" alt="" style="width:96px;height:96px;object-fit:contain;background:#fff;border-radius:12px;padding:6px;display:block">' if a["logo"] else ""
+    return f"""
+<div style="padding:4px 12px;font-size:14px;line-height:1.45">
+  <div style="display:flex;align-items:center;gap:18px;margin-bottom:10px">
+    <a href="{a['link']}" target="_blank" rel="noopener" style="flex-shrink:0">{logo}</a>
+    <div style="min-width:0">
+      <div style="font-size:24px;font-weight:800;line-height:1.1">{a['name']}</div>
+      <div style="opacity:.75;margin-top:4px">{meta} · <a href="{a['link']}" target="_blank" rel="noopener" style="color:inherit">Site officiel</a></div>
+      {amount}
+    </div>
+  </div>
+  {a['html']}
+</div>
+"""
+
+
+def association_panel_height(a):
+    """Grid units (30 px) for the header plus the description: each block (paragraph, bullet, heading) is
+    wrapped at ~105 characters on a half-width panel, a blank line (double <br>) is half a line, headings
+    are one big line; a short overflow scrolls."""
+    px = 130
+    for tag, body in re.findall(r"<(p|li|h2)[^>]*>(.*?)</\1>", a["html"], flags=re.S):
+        parts = [re.sub(r"<[^>]+>", "", part) for part in re.split(r"<br>", body)]
+        lines = sum(-(-len(part) // 105) if part.strip() else 0.5 for part in parts)
+        px += (34 if tag == "h2" else 21 * lines) + (12 if tag != "li" else 0)
+    return min(32, -(-int(px) // 30))
+
+
+def association_rows(y):
+    """A row per edition, newest first, the collector first; the association panels in two columns."""
+    by_edition = {}
+    for a in ASSOCIATIONS:
+        by_edition.setdefault(a["edition"], []).append(a)
+    out = []
+    for edition in [None] + sorted((e for e in by_edition if e), reverse=True):
+        group = sorted(by_edition[edition], key=lambda a: (a["name"] in associations.POLE_ENFANCE, a["name"].lower()))
+        title = "La collecte" if edition is None else f"Édition {edition} : {edition_beneficiaries(edition)}"
+        out.append(row(title, y))
+        y += 1
+        for i in range(0, len(group), 2):
+            pair = group[i:i + 2]
+            h = max(association_panel_height(a) for a in pair)
+            for col, a in enumerate(pair):
+                out.append(text_panel(association_html(a), col * 12, y, 12, h))
+            y += h
+    return out
+
+
+def associations_panels():
+    reset_ids()
+    tiles = [
+        stat("Total final de l'événement", f"SELECT {eur_text(FINAL)}", 0, w=6, color="green", text_field=True,
+             description="Total de l'événement à la fin des dons, réparti entre les associations."),
+        stat(f"Par édition (1/{N_EDITIONS})", f"SELECT {eur_text(f'{FINAL} / {N_EDITIONS}')}", 6, w=6, color="blue",
+             text_field=True, description=f"Le total divisé en {N_EDITIONS} parts égales, une par édition précédente."),
+        stat("Associations bénéficiaires", f"SELECT {N_ASSOCIATIONS}", 12, w=6, color="yellow",
+             description="Toutes les associations soutenues depuis 2016 encore en activité, d'après zevent.fr."),
+        stat("Plus petite part", f"SELECT {eur_text(f'{FINAL} / {MAX_PARTS}')}", 18, w=6,
+             color="orange", text_field=True,
+             description=f"La part d'une association du {POLE} : un quart du cinquième de la part 2025."),
+    ]
+    y = 4
+    intro = text_panel(REPARTITION_HTML, 0, y, 24, 8)
+    intro["title"] = "Comment la cagnotte est-elle répartie ?"
+    intro["transparent"] = False
+    y += 8
+    chart = barchart("Montant estimé par association", SHARES_CTE +
+                     'SELECT a.name AS "Association", t.total / a.parts AS "Montant estimé" FROM a, t ORDER BY 2 DESC, 1',
+                     0, y, w=10, h=18, x_field="Association", unit="currencyEUR", orientation="horizontal",
+                     description="Part estimée de chaque association dans le total final, d'après la règle ci-dessus.")
+    chart["options"]["showValue"] = "always"
+    chart["fieldConfig"]["defaults"]["decimals"] = 0
+    per_association = table(
+        "Répartition par association", SHARES_CTE +
+        f"SELECT a.logo AS logo, a.name AS \"Association\", a.link AS link, a.edition AS \"Édition\", "
+        f"coalesce(a.grp, '') AS \"Collectif\", '1/' || a.parts AS \"Part\", 1.0 / a.parts AS \"Part du total\", "
+        f"{eur_text('t.total / a.parts')} AS \"Montant estimé\" FROM a, t ORDER BY a.parts, a.edition DESC, a.name",
+        10, y, w=14, h=18, image_cols=("logo",), percent_cols=("Part du total",),
+        overrides=[
+            {"matcher": {"id": "byName", "options": "Association"},
+             "properties": [{"id": "links", "value": [{"title": "Site officiel", "url": "${__data.fields.link}", "targetBlank": True}]},
+                            {"id": "custom.width", "value": 270}]},
+            {"matcher": {"id": "byName", "options": "link"}, "properties": [{"id": "custom.hidden", "value": True}]},
+            {"matcher": {"id": "byName", "options": "Édition"}, "properties": [{"id": "unit", "value": "string"}, {"id": "custom.width", "value": 70}]},
+        ],
+        description="Cliquez sur une association pour ouvrir son site. « Part » : la fraction du total final qui lui revient.")
+    y += 18
+    per_edition = table(
+        "Répartition par édition", SHARES_CTE +
+        f"SELECT b.year AS \"Édition\", e.name AS \"Nom\", b.beneficiaries AS \"Bénéficiaires\", {eur_text('e.total')} AS \"Récolté à l'époque\", "
+        f"{eur_text(f't.total / {N_EDITIONS}')} AS \"Part 2026 de l'édition\", {eur_text(f't.total / {N_EDITIONS} / b.n')} AS \"Par bénéficiaire\" "
+        f"FROM {EDITION_SHARES_VALUES} JOIN {EDITIONS_VALUES} ON e.year = b.year, t ORDER BY b.year DESC",
+        0, y, w=24, h=12,
+        overrides=[{"matcher": {"id": "byName", "options": "Édition"}, "properties": [{"id": "unit", "value": "string"}, {"id": "custom.width", "value": 70}]},
+                   {"matcher": {"id": "byName", "options": "Nom"}, "properties": [{"id": "custom.width", "value": 130}]},
+                   # the long 2025 list wraps instead of being cut; the money columns give it the room
+                   {"matcher": {"id": "byName", "options": "Bénéficiaires"},
+                    "properties": [{"id": "custom.cellOptions", "value": {"type": "auto", "wrapText": True}}]}]
+                  + [{"matcher": {"id": "byName", "options": c}, "properties": [{"id": "custom.width", "value": 190}]}
+                     for c in ("Récolté à l'époque", "Part 2026 de l'édition", "Par bénéficiaire")],
+        description=f"Chaque édition précédente reçoit 1/{N_EDITIONS} du total 2026, partagé entre ses bénéficiaires "
+                    f"(le {POLE} compte pour un). « Récolté à l'époque » : le total de cette édition-là.")
+    y += 12
+    return tiles + [intro, chart, per_association, per_edition] + association_rows(y)
+
+
+# ---------------------------------------------------------------------------------------------------
 here = Path(__file__).parent
 
 
@@ -1482,6 +1686,7 @@ write(dashboard_base("zevent-live-public", "ZEVENT timeline", [LOCATION_VAR_LAN,
                      live_panels(LOC, "$location")))
 write(dashboard_base("zevent-insights-public", "ZEVENT analyses", [LOCATION_VAR], insights_panels()))
 write(dashboard_base("zevent-viewers-public", "ZEVENT viewers", [LOCATION_VAR, streamer_var(LOC)], viewers_panels()))
+write(dashboard_base("zevent-associations-public", "ZEVENT associations", ASSOCIATION_VARS, associations_panels()))
 def single_select(dash, name):
     """Rewrite IN ($name) as IN (${name:sqlstring}) in every query: a single-select value is inserted unquoted."""
     a, b = f"IN (${name})", f"IN (${{{name}:sqlstring}})"
