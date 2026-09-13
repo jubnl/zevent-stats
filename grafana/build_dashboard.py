@@ -1480,7 +1480,9 @@ def viewers_panels():
 # grafana/pull_associations.py into associations.json and public/associations/). The logos are served by
 # Grafana from /public/associations/ (bind mount in compose.yaml).
 ASSOCIATIONS = associations.load()
-SHARES = associations.shares(ASSOCIATIONS)
+EDITION_TOTALS = {y: t for y, _, t in EDITIONS}
+SHARES = associations.shares(ASSOCIATIONS, totals=EDITION_TOTALS)
+ALL_EDITIONS_TOTAL = sum(EDITION_TOTALS.values())   # the nine previous editions; 2026 is added in SQL
 LOGO_URL = "/public/associations/"
 # the total at the end of the event (frozen by freeze_sql)
 FINAL = "(SELECT donation_total FROM snapshot ORDER BY ts DESC LIMIT 1)"
@@ -1490,16 +1492,18 @@ def sql_str(s):
     return "'" + s.replace("'", "''") + "'"
 
 
-# every beneficiary as a VALUES list: a(name, edition, grp, n, parts, link, logo)
+# every beneficiary as a VALUES list: a(name, edition, grp, n, parts, past, link, logo); `past` is what it
+# received from its own edition (associations.shares)
 SHARES_VALUES = "(VALUES " + ", ".join(
     f"({sql_str(a['name'])}, {a['edition']}, {sql_str(a['group']) if a['group'] else 'NULL'}, {a['beneficiaries']}, "
-    f"{a['parts']}, {sql_str(a['link'])}, {sql_str(LOGO_URL + a['logo'])})"
-    for a in SHARES) + ") a(name, edition, grp, n, parts, link, logo)"
+    f"{a['parts']}, {a['past']:.2f}, {sql_str(a['link'])}, {sql_str(LOGO_URL + a['logo'])})"
+    for a in SHARES) + ") a(name, edition, grp, n, parts, past, link, logo)"
 SHARES_CTE = f"WITH t AS (SELECT donation_total AS total FROM ({FINAL}) x(donation_total)), a AS (SELECT * FROM {SHARES_VALUES}) "
 
 
-def edition_beneficiaries(year):
-    """'Helebor, Nightline, Pôle enfance (L'envol, ...)' for the edition table."""
+def edition_beneficiaries(year, former=False):
+    """'Helebor, Nightline, Pôle enfance (L'envol, ...)' for the edition table; with `former`, the beneficiaries
+    of the time that are gone are appended."""
     names, groups = [], {}
     for a in SHARES:
         if a["edition"] != year:
@@ -1508,13 +1512,20 @@ def edition_beneficiaries(year):
             groups.setdefault(a["group"], []).append(a["name"])
         else:
             names.append(a["name"])
-    return ", ".join(sorted(names) + [f"{g} ({', '.join(sorted(m))})" for g, m in groups.items()])
+    gone = [f"{n} (n'existe plus)" for n in associations.FORMER_BENEFICIARIES.get(year, [])] if former else []
+    return ", ".join(sorted(names) + [f"{g} ({', '.join(sorted(m))})" for g, m in groups.items()] + gone)
 
 
-# one row per previous edition: e(year, beneficiaries, n)
+def edition_beneficiary_count(year, former=False):
+    n = len({a["group"] or a["name"] for a in SHARES if a["edition"] == year})
+    return n + (len(associations.FORMER_BENEFICIARIES.get(year, [])) if former else 0)
+
+
+# one row per previous edition: b(year, beneficiaries, n, past_n), n counting the 2026 beneficiaries of that
+# edition and past_n those of the time
 EDITION_SHARES_VALUES = "(VALUES " + ", ".join(
-    f"({y}, {sql_str(edition_beneficiaries(y))}, {len({a['group'] or a['name'] for a in SHARES if a['edition'] == y})})"
-    for y, _, _ in EDITIONS) + ") b(year, beneficiaries, n)"
+    f"({y}, {sql_str(edition_beneficiaries(y, former=True))}, {edition_beneficiary_count(y)}, {edition_beneficiary_count(y, former=True)})"
+    for y, _, _ in EDITIONS) + ") b(year, beneficiaries, n, past_n)"
 
 N_ASSOCIATIONS = len(SHARES)
 MAX_PARTS = max(a["parts"] for a in SHARES)
@@ -1533,7 +1544,9 @@ REPARTITION_HTML = f"""
   fait plus partie des associations soutenues : la part 2022 va aux trois autres.</p>
   <p style="margin:0 0 8px;opacity:.8">Les montants sont donc une estimation calculée sur le total final de l'événement ; la
   répartition réelle est faite par la Fondation de France, qui retient les frais liés à l'émission des reçus fiscaux
-  (et les avances éventuelles) sans taux publié : aucune déduction n'est appliquée ici. Textes et logos des associations : zevent.fr.</p>
+  (et les avances éventuelles) sans taux publié : aucune déduction n'est appliquée ici. « Reçu lors de son édition » applique
+  la même règle aux éditions passées : le total de l'édition partagé à parts égales entre ses bénéficiaires d'alors (The
+  SeaCleaners compris en 2022, le {POLE} comptant pour un en 2025), sans les frais. Textes et logos des associations : zevent.fr.</p>
   <p style="margin:0;opacity:.8"><b>Et l'État ?</b> Il ne prélève rien sur la collecte : les dons faits à une fondation reconnue
   d'utilité publique sont exonérés de droits de mutation (articles 757 et 795 du Code général des impôts) et l'activité non
   lucrative de la fondation n'est soumise ni à l'impôt sur les sociétés, ni à la TVA. L'État contribue au contraire : chaque
@@ -1543,14 +1556,26 @@ REPARTITION_HTML = f"""
 """
 
 
-def part_var(parts):
-    """Hidden variable holding the amount of one part in `parts` as text, for the association text panels."""
-    return {"name": f"part_{parts}", "type": "query", "datasource": DS, "definition": f"part_{parts}",
-            "query": f"SELECT {eur_text(f'donation_total / {parts}')} FROM snapshot ORDER BY ts DESC LIMIT 1",
+def amount_var(name, expr):
+    """Hidden variable holding an amount derived from the final total (`expr` over donation_total) as text, for
+    the association text panels: part_<parts> is one part in <parts>, cumul_<edition>[_pole] that part plus what
+    a beneficiary of that edition (a member of the collective with _pole) received then."""
+    return {"name": name, "type": "query", "datasource": DS, "definition": name,
+            "query": f"SELECT {eur_text(expr)} FROM snapshot ORDER BY ts DESC LIMIT 1",
             "hide": 2, "refresh": 2, "multi": False, "includeAll": False, "sort": 0, "current": {}}
 
 
-ASSOCIATION_VARS = [part_var(p) for p in sorted({a["parts"] for a in SHARES})]
+def cumul_key(a):
+    return f"cumul_{a['edition']}{'_pole' if a['group'] else ''}"
+
+
+ASSOCIATION_VARS = [amount_var(f"part_{p}", f"donation_total / {p}") for p in sorted({a["parts"] for a in SHARES})] + [
+    amount_var(cumul_key(a), f"donation_total / {a['parts']} + {a['past']:.2f}")
+    for a in sorted({cumul_key(a): a for a in SHARES}.values(), key=lambda a: (a["edition"], a["group"] or ""))]
+
+
+def eur(amount):
+    return f"{amount:,.0f}".replace(",", " ") + " €"
 
 
 def association_html(a):
@@ -1559,7 +1584,9 @@ def association_html(a):
         sub = f" · {share['group']}" if share["group"] else ""
         meta = f"Bénéficiaire de l'édition {share['edition']}{sub}"
         amount = (f'<div style="font-size:19px;font-weight:700;color:#3fb950;margin-top:8px">≈ ${{part_{share["parts"]}}}'
-                  f' <span style="font-size:13px;font-weight:500;opacity:.75">(1/{share["parts"]} du total)</span></div>')
+                  f' <span style="font-size:13px;font-weight:500;opacity:.75">(1/{share["parts"]} du total 2026)</span></div>'
+                  f'<div style="font-size:13px;opacity:.8;margin-top:4px">Reçu lors de l\'édition {share["edition"]} : {eur(share["past"])}'
+                  f' · Total ZEVENT, toutes éditions : <b>≈ ${{{cumul_key(share)}}}</b></div>')
     else:
         meta, amount = "Collecte et reversement des dons", ""
     logo = f'<img src="{LOGO_URL}{a["logo"]}" alt="" style="width:96px;height:96px;object-fit:contain;background:#fff;border-radius:12px;padding:6px;display:block">' if a["logo"] else ""
@@ -1582,7 +1609,7 @@ def association_panel_height(a):
     """Grid units (30 px) for the header plus the description: each block (paragraph, bullet, heading) is
     wrapped at ~105 characters on a half-width panel, a blank line (double <br>) is half a line, headings
     are one big line; a short overflow scrolls."""
-    px = 130
+    px = 150
     for tag, body in re.findall(r"<(p|li|h2)[^>]*>(.*?)</\1>", a["html"], flags=re.S):
         parts = [re.sub(r"<[^>]+>", "", part) for part in re.split(r"<br>", body)]
         lines = sum(-(-len(part) // 105) if part.strip() else 0.5 for part in parts)
@@ -1619,40 +1646,50 @@ def associations_panels():
              text_field=True, description=f"Le total divisé en {N_EDITIONS} parts égales, une par édition précédente."),
         stat("Associations bénéficiaires", f"SELECT {N_ASSOCIATIONS}", 12, w=6, color="yellow",
              description="Toutes les associations soutenues depuis 2016 encore en activité, d'après zevent.fr."),
-        stat("Plus petite part", f"SELECT {eur_text(f'{FINAL} / {MAX_PARTS}')}", 18, w=6,
+        stat("Reversé en 10 éditions", f"SELECT {eur_text(f'{FINAL} + {ALL_EDITIONS_TOTAL}')}", 18, w=6,
              color="orange", text_field=True,
-             description=f"La part d'une association du {POLE} : un quart du cinquième de la part 2025."),
+             description="Le total 2026 plus les totaux des neuf éditions précédentes (Avenger Project 2016 compris), "
+                         "tels qu'affichés sur zevent.fr."),
     ]
     y = 4
-    intro = text_panel(REPARTITION_HTML, 0, y, 24, 8)
+    intro = text_panel(REPARTITION_HTML, 0, y, 24, 9)
     intro["title"] = "Comment la cagnotte est-elle répartie ?"
     intro["transparent"] = False
-    y += 8
-    chart = barchart("Montant estimé par association", SHARES_CTE +
-                     'SELECT a.name AS "Association", t.total / a.parts AS "Montant estimé" FROM a, t ORDER BY 2 DESC, 1',
-                     0, y, w=10, h=18, x_field="Association", unit="currencyEUR", orientation="horizontal",
-                     description="Part estimée de chaque association dans le total final, d'après la règle ci-dessus.")
-    chart["options"]["showValue"] = "always"
+    y += 9
+    chart = barchart("Reçu par association, toutes éditions", SHARES_CTE +
+                     'SELECT a.name AS "Association", a.past AS "Éditions précédentes", t.total / a.parts AS "2026 (estimation)" '
+                     'FROM a, t ORDER BY a.past + t.total / a.parts DESC, 1',
+                     0, y, w=10, h=18, x_field="Association", unit="currencyEUR", orientation="horizontal", stacking="normal",
+                     series_colors={"Éditions précédentes": "blue", "2026 (estimation)": "green"},
+                     description="Ce que chaque association a reçu de sa propre édition (règle des parts égales) plus sa part "
+                                 "estimée du total 2026. Survolez une barre pour les deux montants.")
     chart["fieldConfig"]["defaults"]["decimals"] = 0
     per_association = table(
         "Répartition par association", SHARES_CTE +
         f"SELECT a.logo AS logo, a.name AS \"Association\", a.link AS link, a.edition AS \"Édition\", "
-        f"coalesce(a.grp, '') AS \"Collectif\", '1/' || a.parts AS \"Part\", 1.0 / a.parts AS \"Part du total\", "
-        f"{eur_text('t.total / a.parts')} AS \"Montant estimé\" FROM a, t ORDER BY a.parts, a.edition DESC, a.name",
-        10, y, w=14, h=18, image_cols=("logo",), percent_cols=("Part du total",),
+        f"coalesce(a.grp, '') AS \"Collectif\", '1/' || a.parts AS \"Part\", "
+        f"{eur_text('t.total / a.parts')} AS \"Part 2026\", {eur_text('a.past')} AS \"Reçu à l'époque\", "
+        f"{eur_text('t.total / a.parts + a.past')} AS \"Total\" "
+        f"FROM a, t ORDER BY t.total / a.parts + a.past DESC, a.edition DESC, a.name",
+        10, y, w=14, h=18, image_cols=("logo",),
         overrides=[
             {"matcher": {"id": "byName", "options": "Association"},
              "properties": [{"id": "links", "value": [{"title": "Site officiel", "url": "${__data.fields.link}", "targetBlank": True}]},
-                            {"id": "custom.width", "value": 270}]},
+                            {"id": "custom.width", "value": 240}]},
             {"matcher": {"id": "byName", "options": "link"}, "properties": [{"id": "custom.hidden", "value": True}]},
             {"matcher": {"id": "byName", "options": "Édition"}, "properties": [{"id": "unit", "value": "string"}, {"id": "custom.width", "value": 70}]},
+            {"matcher": {"id": "byName", "options": "Collectif"}, "properties": [{"id": "custom.width", "value": 110}]},
+            {"matcher": {"id": "byName", "options": "Part"}, "properties": [{"id": "custom.width", "value": 60}]},
         ],
-        description="Cliquez sur une association pour ouvrir son site. « Part » : la fraction du total final qui lui revient.")
+        description="Cliquez sur une association pour ouvrir son site. « Part » : la fraction du total 2026 qui lui revient ; "
+                    "« Reçu à l'époque » : sa part du total de l'édition où elle était bénéficiaire ; « Total » : les deux "
+                    "additionnés, tout ce qu'elle a reçu du ZEVENT.")
     y += 18
     per_edition = table(
         "Répartition par édition", SHARES_CTE +
         f"SELECT b.year AS \"Édition\", e.name AS \"Nom\", b.beneficiaries AS \"Bénéficiaires\", {eur_text('e.total')} AS \"Récolté à l'époque\", "
-        f"{eur_text(f't.total / {N_EDITIONS}')} AS \"Part 2026 de l'édition\", {eur_text(f't.total / {N_EDITIONS} / b.n')} AS \"Par bénéficiaire\" "
+        f"{eur_text('e.total / b.past_n')} AS \"Par bénéficiaire\", "
+        f"{eur_text(f't.total / {N_EDITIONS}')} AS \"Part 2026\", {eur_text(f't.total / {N_EDITIONS} / b.n')} AS \"Par bénéficiaire 2026\" "
         f"FROM {EDITION_SHARES_VALUES} JOIN {EDITIONS_VALUES} ON e.year = b.year, t ORDER BY b.year DESC",
         0, y, w=24, h=12,
         overrides=[{"matcher": {"id": "byName", "options": "Édition"}, "properties": [{"id": "unit", "value": "string"}, {"id": "custom.width", "value": 70}]},
@@ -1660,10 +1697,11 @@ def associations_panels():
                    # the long 2025 list wraps instead of being cut; the money columns give it the room
                    {"matcher": {"id": "byName", "options": "Bénéficiaires"},
                     "properties": [{"id": "custom.cellOptions", "value": {"type": "auto", "wrapText": True}}]}]
-                  + [{"matcher": {"id": "byName", "options": c}, "properties": [{"id": "custom.width", "value": 190}]}
-                     for c in ("Récolté à l'époque", "Part 2026 de l'édition", "Par bénéficiaire")],
+                  + [{"matcher": {"id": "byName", "options": c}, "properties": [{"id": "custom.width", "value": 170}]}
+                     for c in ("Récolté à l'époque", "Par bénéficiaire", "Part 2026", "Par bénéficiaire 2026")],
         description=f"Chaque édition précédente reçoit 1/{N_EDITIONS} du total 2026, partagé entre ses bénéficiaires "
-                    f"(le {POLE} compte pour un). « Récolté à l'époque » : le total de cette édition-là.")
+                    f"(le {POLE} compte pour un). « Récolté à l'époque » : le total de cette édition-là, partagé entre ses "
+                    "bénéficiaires d'alors, The SeaCleaners compris en 2022.")
     y += 12
     return tiles + [intro, chart, per_association, per_edition] + association_rows(y)
 

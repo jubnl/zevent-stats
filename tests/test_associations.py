@@ -31,3 +31,12 @@ def test_shares_split_by_edition_then_by_beneficiary_with_the_pole_enfance_as_on
 def test_shares_default_to_the_nine_previous_editions():
     s = {r["name"]: r for r in shares(ASSOCS)}
     assert s["Save the Children"]["weight"] == 1 / 9
+
+
+def test_past_amount_is_the_edition_total_split_between_its_beneficiaries_at_the_time():
+    s = {r["name"]: r for r in shares(ASSOCS, editions=3, totals={2016: 900, 2022: 1200, 2025: 6000})}
+    assert s["Save the Children"]["past"] == 900
+    assert s["WWF"]["past"] == 300 and s["WWF"]["past_beneficiaries"] == 4   # The SeaCleaners counted in 2022
+    assert s["Helebor"]["past"] == 1200
+    assert s["Sparadrap"]["past"] == 300                                       # a quarter of the collective's fifth
+    assert "past" not in shares(ASSOCS)[0]

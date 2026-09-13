@@ -18,16 +18,22 @@ ASSOCIATIONS_JSON = Path(__file__).parent / "associations.json"
 PREVIOUS_EDITIONS = 9
 POLE_ENFANCE = {"Le Rire Médecin", "Sourire à la Vie", "Sparadrap", "L'envol"}
 POLE_ENFANCE_NAME = "Pôle enfance"
+# Beneficiaries of a previous edition that are not among the 22 of 2026 (The SeaCleaners was wound up): they
+# shared their edition's total at the time, so that total was cut one more way than the 2026 share is.
+FORMER_BENEFICIARIES = {2022: ["The SeaCleaners"]}
 
 
 def load():
     return json.loads(ASSOCIATIONS_JSON.read_text())
 
 
-def shares(associations, editions=PREVIOUS_EDITIONS):
+def shares(associations, editions=PREVIOUS_EDITIONS, totals=None):
     """One row per beneficiary (entries without an edition, the collector, are left out) with `parts`, the
     number of equal parts the total is cut into for it (its share is 1/parts, also given as `weight`), plus
-    `beneficiaries` (of its edition, a collective counting once) and `group` (the collective's name, or None)."""
+    `beneficiaries` (of its edition, a collective counting once), `group` (the collective's name, or None) and
+    `past_beneficiaries` (the beneficiaries of its edition at the time, former ones included). With `totals`,
+    {edition: total raised then}, `past` is what it received from its own edition under the same equal-split
+    rule: the edition's total over its beneficiaries at the time, a collective's part split between its members."""
     def group(a):
         return POLE_ENFANCE_NAME if a["name"] in POLE_ENFANCE else None
 
@@ -41,6 +47,11 @@ def shares(associations, editions=PREVIOUS_EDITIONS):
         if not a["edition"]:
             continue
         n = len(per_edition[a["edition"]])
-        parts = editions * n * (members if group(a) else 1)
-        out.append({**a, "group": group(a), "beneficiaries": n, "parts": parts, "weight": 1 / parts})
+        sub = members if group(a) else 1
+        parts = editions * n * sub
+        past_n = n + len(FORMER_BENEFICIARIES.get(a["edition"], []))
+        row = {**a, "group": group(a), "beneficiaries": n, "past_beneficiaries": past_n, "parts": parts, "weight": 1 / parts}
+        if totals:
+            row["past"] = totals[a["edition"]] / past_n / sub
+        out.append(row)
     return out
